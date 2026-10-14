@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copyright (C) 2026 Sebastian J. Wolf and other contributors
+
+    This file is part of Chronograph.
+
+    Chronograph is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Chronograph is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Chronograph. If not, see <http://www.gnu.org/licenses/>.
+-->
+<!--
+    App icon master. Renders to icons/<size>/harbour-chronograph.png, and is
+    installed along with the rest of images/ so AboutPage can show it as the
+    logo - which is why it lives here rather than beside the rendered PNGs.
+
+    Built to Jolla's "Apps icon story" (48_SAILFISH-APPS-ICON-STORY.pdf):
+    an 86-unit canvas, the base shape filling it edge to edge with only a
+    0.3-unit gap, and the metaphor kept inside the shape's inset outline,
+    12 units in from the sides.
+
+    The base shape is the circle, coloured like the guide's orange circle on
+    page 9 (row 2, column 2): dark at the bottom left, light at the top right.
+    The stops are sampled off the guide's own artwork where the 45-degree
+    diagonal meets the circle. The metaphor borrows the palette of the guide's
+    clock on page 12 - a cream face with deep blue hands.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1"
+     width="86" height="86" viewBox="0 0 86 86">
+  <defs>
+    <linearGradient id="base" x1="12.81" y1="73.19" x2="73.19" y2="12.81" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#e16c31"/>
+      <stop offset="1" stop-color="#fbb558"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="43" cy="43" r="42.7" fill="url(#base)"/>
+
+  <!-- The case: crown on top, a pusher either side of it, the face below. -->
+  <g fill="#f7ebc9">
+    <rect x="39.5" y="17" width="7" height="10" rx="1.5" ry="1.5"/>
+    <rect x="34.5" y="12" width="17" height="7" rx="3.5" ry="3.5"/>
+    <rect x="39.5" y="19.5" width="7" height="8" rx="1.5" ry="1.5" transform="rotate(-45 43 47)"/>
+    <rect x="39.5" y="19.5" width="7" height="8" rx="1.5" ry="1.5" transform="rotate(45 43 47)"/>
+    <circle cx="43" cy="47" r="24"/>
+  </g>
+
+  <!-- Quarter marks, the hand stopped at five seconds, and the hub. -->
+  <g stroke="#1472a0" stroke-linecap="round" fill="none">
+    <path d="M 43 27.5 L 43 31.5 M 62.5 47 L 58.5 47 M 43 66.5 L 43 62.5 M 23.5 47 L 27.5 47"
+          stroke-width="2.6"/>
+    <path d="M 43 47 L 54 28" stroke-width="3.6"/>
+  </g>
+  <circle cx="43" cy="47" r="3.4" fill="#1472a0"/>
+</svg>

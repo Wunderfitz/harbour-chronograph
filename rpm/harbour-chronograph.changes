@@ -1,0 +1,4 @@
+* Tue Oct 13 2026 Sebastian Wolf <sebastian@ygriega.de> 0.1-1
+- First version: counts steps with the accelerometer from the moment the app
+  starts, also while the display is off, and shows the count on the main page
+  and on the cover. Nothing is stored yet; closing the app ends the count.

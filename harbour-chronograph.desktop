@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+X-Nemo-Application-Type=silica-qt5
+Icon=harbour-chronograph
+Exec=harbour-chronograph
+Name=Chronograph
+Comment=Count your steps
+
+[X-Sailjail]
+Permissions=Sensors
+OrganizationName=de.ygriega
+ApplicationName=chronograph
