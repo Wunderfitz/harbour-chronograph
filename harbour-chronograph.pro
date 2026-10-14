@@ -6,18 +6,22 @@
 TARGET = harbour-chronograph
 
 CONFIG += sailfishapp
-QT += sensors
+QT += sensors sql
 # BackgroundActivity, which keeps the phone awake while steps are counted
 PKGCONFIG += keepalive
 
 SOURCES += \
     src/main.cpp \
+    src/Database.cpp \
     src/StepCounter.cpp \
-    src/StepDetector.cpp
+    src/StepDetector.cpp \
+    src/StepHistory.cpp
 
 HEADERS += \
+    src/Database.h \
     src/StepCounter.h \
-    src/StepDetector.h
+    src/StepDetector.h \
+    src/StepHistory.h
 
 DISTFILES += \
     qml/harbour-chronograph.qml \
@@ -33,6 +37,7 @@ DISTFILES += \
     rpm/harbour-chronograph.changes \
     translations/*.ts \
     tests/tst_stepdetector.cpp \
+    tests/tst_stephistory.cpp \
     tests/replay_recording.cpp \
     README.md \
     CLAUDE.md

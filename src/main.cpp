@@ -25,15 +25,16 @@
 
 #include <sailfishapp.h>
 
+#include "Database.h"
 #include "StepCounter.h"
+#include "StepHistory.h"
 
 int main(int argc, char *argv[])
 {
     QScopedPointer<QGuiApplication> app(SailfishApp::application(argc, argv));
     /* The same pair as the [X-Sailjail] section of the .desktop file. Sailjail
      * only lets the app write below ~/.local/share/<organization>/<application>
-     * and its siblings, which is where QStandardPaths will point once there is
-     * something to persist. */
+     * and its siblings, which is where QStandardPaths points the database. */
     app->setOrganizationName(QStringLiteral("de.ygriega"));
     app->setApplicationName(QStringLiteral("chronograph"));
 
@@ -43,12 +44,19 @@ int main(int argc, char *argv[])
         "de.ygriega.chronograph", 1, 0, "StepCounter",
         QStringLiteral("StepCounter is exposed as the 'stepCounter' context property"));
 
-    /* Constructed before the view, so counting starts with the app rather than
-     * with whichever page first looks at it. */
+    /* All three constructed before the view, so counting starts with the app
+     * rather than with whichever page first looks at it - and destroyed after
+     * the event loop ends, in reverse, which is when StepHistory makes its last
+     * save. */
+    Database database(Database::defaultFilePath());
+    StepHistory stepHistory(&database);
     StepCounter stepCounter;
+    QObject::connect(&stepCounter, &StepCounter::stepsAdded,
+                     &stepHistory, &StepHistory::addSteps);
 
     QScopedPointer<QQuickView> view(SailfishApp::createView());
     view->rootContext()->setContextProperty(QStringLiteral("stepCounter"), &stepCounter);
+    view->rootContext()->setContextProperty(QStringLiteral("stepHistory"), &stepHistory);
     view->setSource(SailfishApp::pathToMainQml());
     view->show();
 

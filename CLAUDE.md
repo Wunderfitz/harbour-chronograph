@@ -3,7 +3,9 @@
 An activity tracker for Sailfish OS, built **iteratively**. Iteration 1 (version
 0.1) counts steps with the accelerometer from the moment the app starts, also
 while the display is off, and shows the count on the main page and the cover.
-Nothing is persisted yet.
+Iteration 2 (0.2) keeps the steps of each calendar day in a local SQLite
+database; the main page and the cover show today's, the main page also the
+three days before.
 
 ## Ground rules
 
@@ -69,7 +71,7 @@ One qmake project at the root, in the layout of Fernschreiber and Piepmatz
 `app/` + subdirs split exists only because it vendors a C++20 library; nothing
 here needs that. Revisit if a library ever has to be built alongside.
 
-### Steps are found in Qt-free C++, counted by a QObject
+### Steps are found in Qt-free C++, counted by a QObject, kept by another
 
 - `StepDetector` (`src/StepDetector.*`) is the algorithm, in plain C++11 with no
   Qt at all: timestamps and three axes in, steps out. That is what lets
@@ -77,14 +79,22 @@ here needs that. Revisit if a library ever has to be built alongside.
 - `StepCounter` (`src/StepCounter.*`) is the QML-facing `QObject`: it owns the
   `QAccelerometer` and the keepalive, feeds readings to the detector and
   exposes `steps` and `status` (`Starting`, `Counting`, `Unavailable`).
-- `main.cpp` constructs `StepCounter` **before** the view, so counting starts
-  with the app rather than with whichever page first looks at it, and hands it
-  to QML as the `stepCounter` context property. The type is also registered as
+- `StepHistory` (`src/StepHistory.*`) keeps the steps per calendar day (see
+  [Persistence](#persistence-sqlite-one-row-per-day)). It gets them through
+  `StepCounter::stepsAdded(int)` and exposes `todaySteps` and `recentDays`.
+  `StepCounter::steps` is still the count since the app started; only the
+  recording uses it now.
+- `main.cpp` constructs `Database`, `StepHistory` and `StepCounter` **before**
+  the view, so counting starts with the app rather than with whichever page
+  first looks at it, and hands the latter two to QML as the `stepHistory` and
+  `stepCounter` context properties. They live on `main()`'s stack, so they are
+  destroyed after the event loop and the view, in reverse order: that is when
+  `StepHistory` makes its last save. `StepCounter` is also registered as
   uncreatable (`de.ygriega.chronograph 1.0`, `StepCounter`) only so QML can name
   the status values - the same split Lauscher uses for `mdr`/`Mdr`.
 
-Persistence, history and anything else stateful belong in new C++ classes next
-to `StepCounter`, not in QML.
+History, settings and anything else stateful belong in C++ classes next to
+`StepHistory`, not in QML.
 
 ### Reading the accelerometer: QtSensors in C++
 
@@ -188,31 +198,68 @@ good enough and wants no further refinements; its known flaws are accepted
 the project owner reopens the question. A bug found on a device - a crash, or
 counting that breaks outright - is still fixed, with a test case for it.
 
-### No persistence yet
+### Persistence: SQLite, one row per day
 
-Iteration 1 keeps the count in memory only; closing the app ends it. The
-organization and application names are set anyway (`de.ygriega` /
-`chronograph`, in `main.cpp` and in `[X-Sailjail]` alike), because Sailjail only
-lets the app write below `~/.local/share/de.ygriega/chronograph` and its
-`.config`/`.cache` siblings - which is where `QStandardPaths` points once both
-agree. Keep them in step.
+Decided 2026-10-14 for iteration 2. **QtSql with its SQLite driver**
+(`QT += sql`): `libQt5Sql.so.5` is Harbour-allowed, and Fernschreiber and
+Piepmatz use it the same way. The driver plugin (`libqsqlite.so`) ships with
+the OS; like the sensorfw plugin it is not `Require`d, as Harbour would refuse it.
+
+- **Where:** `chronograph.db` in `QStandardPaths::AppDataLocation`, i.e.
+  `~/.local/share/de.ygriega/chronograph/` - the one place Sailjail lets the
+  app write, because the organization and application names (`de.ygriega` /
+  `chronograph`) are the same in `main.cpp` and in `[X-Sailjail]`. Keep them in
+  step. The recordings share the directory; their clean-up only touches
+  `recording-*.csv`.
+- **`Database`** (`src/Database.*`) owns the connection and the schema, nothing
+  else. **The schema is a list of statements, one per version**, and
+  `PRAGMA user_version` says how many a file has had; opening a file applies
+  the rest in one transaction. A new feature's table is a new statement
+  **appended** to `kSchema` in `Database.cpp` - never edit, reorder or remove
+  one, as files on phones are already past it. A file from a newer app version
+  is opened as it is. If the file cannot be opened or migrated, it stays closed
+  and the app counts in memory only.
+- **The classes that use a table own its queries**: `daily_steps` belongs to
+  `StepHistory`. Further features get their own class and their own table.
+- **`daily_steps`**: `day TEXT PRIMARY KEY` (the local date, `yyyy-MM-dd`, so
+  text order is date order) and `steps INTEGER`, the whole day's count. Rows are
+  written with `INSERT OR REPLACE`, which is fine while the count is the only
+  value; a table that gains columns needs `UPDATE` instead.
+- **Steps count for the day they are counted on**, local time. On start
+  `StepHistory` reads today's row and carries on from it. The day changes at a
+  precise single-shot timer just after midnight (it re-arms itself), and every
+  step checks the date as well, which also catches the clock being changed. A
+  walk confirmed just after midnight may take a few steps from before it into
+  the new day.
+- **Writes are batched**, not done per step (twice a second while walking): a
+  save comes **30 s after the last step** - the end of a walk or a stop on the
+  way - and during a long walk **every 5 minutes at the latest**; also at the
+  change of day and when `StepHistory` is destroyed, i.e. when the user closes
+  the app. Standing still writes nothing. A crash, a kill or a shutdown loses at
+  most the last five minutes: SIGTERM is not handled.
+- **The previous days** are the three before today, yesterday first, 0 where
+  there is no row. Re-read from the database at start and at each change of day
+  only; nothing else changes them.
 
 ## Layout
 
 ```
 harbour-chronograph.pro       CONFIG += sailfishapp, QT += sensors, PKGCONFIG += keepalive
 harbour-chronograph.desktop   Sailjail: Permissions=Sensors (the Harbour exception)
-src/main.cpp                  creates StepCounter, then the view
+src/main.cpp                  creates Database, StepHistory, StepCounter, then the view
+src/Database.*                the SQLite connection and the schema's migrations
+src/StepHistory.*             steps per day: today's count, saving, the previous days
 src/StepCounter.*             QAccelerometer + keepalive, the QML facade
 src/StepDetector.*            the algorithm, Qt-free
 tests/tst_stepdetector.cpp    host-side checks for StepDetector (not packaged)
+tests/tst_stephistory.cpp     Database and StepHistory, run in the build engine
 tests/replay_recording.cpp    replays a phone recording through StepDetector
 tests/raw-data/               personal data, git-ignored, local only: the recordings,
                               their ground truth (README), parts, FINDINGS.md
 qml/harbour-chronograph.qml   ApplicationWindow
-qml/pages/OverviewPage        the count; pulley menu with the about page
+qml/pages/OverviewPage        today's count, the three days before; pulley menu with the about page
 qml/pages/AboutPage           logo, version, what to know, credits
-qml/cover/CoverPage           the count over the chronograph backdrop
+qml/cover/CoverPage           today's count over the chronograph backdrop
 qml/components/               BackgroundImage, AboutLink, AboutParagraph (from Lauscher)
 images/                       icon master and cover backdrops (SVG), installed whole
 icons/<size>/                 the rendered launcher icon
@@ -234,8 +281,9 @@ cd ../build-harbour-chronograph-4.6.0.13-aarch64
 ```
 
 - Installed targets: 4.6.0.13 and 5.1.0.11, each for aarch64, armv7hl and i486.
-  Iteration 1 was built for 4.6 aarch64 and armv7hl and for 5.1 aarch64 and i486,
-  with no compiler warnings under `-Wall`.
+  Iterations 1 and 2 were built for 4.6 aarch64 and armv7hl and for 5.1 aarch64
+  and i486, with no compiler warnings under `-Wall`; iteration 2 for 4.6 i486
+  as well, which the persistence tests need.
 - `sfdk check` must show exactly one Harbour error, the Sensors permission. It
   also warns that the binary is not stripped, which is how the SDK builds it,
   not something the project controls.
@@ -275,6 +323,31 @@ Run from the project root. Two kinds of check:
 Run it after any change to `StepDetector`, and add a case for any bug found on
 a device - synthetic, modelled on what went wrong. Also build once with `-O0`:
 it catches odr-uses of static members that `-O2` hides.
+
+**`tests/tst_stephistory.cpp`** checks `Database` and `StepHistory` with a clock
+of its own: the schema and its migration, saving only when asked and on
+destruction, a restart the same day, midnight, the clock set back, the previous
+days, a newer schema and no database at all. It needs QtSql and its SQLite
+driver, which the host does not have, so it runs in the build engine against
+the i486 target - from that target's build directory, after one `sfdk build`
+there (`build-shell` only works at the top of a build tree, and takes the
+command without `--`):
+
+```sh
+cd ../build-harbour-chronograph-4.6.0.13-i486
+~/SailfishOS/bin/sfdk -c target=SailfishOS-4.6.0.13-i486 build-shell sh -c '
+    S=../harbour-chronograph B=../build-tst_stephistory && mkdir -p $B &&
+    moc $S/src/StepHistory.h -o $B/moc_StepHistory.cpp &&
+    g++ -std=c++11 -Wall -Wextra -fPIC -I$S/src \
+        $(pkg-config --cflags Qt5Sql | sed "s/-I/-isystem /g") \
+        $S/tests/tst_stephistory.cpp $S/src/Database.cpp $S/src/StepHistory.cpp \
+        $B/moc_StepHistory.cpp $(pkg-config --libs Qt5Sql) -o $B/tst_stephistory &&
+    $B/tst_stephistory'
+```
+
+Qt 5.6's headers go in with `-isystem`: the engine's compiler is newer than
+they are and warns about them under `-Wextra`. Run it after any change to
+`Database` or `StepHistory`.
 
 **Synthetic tests in place of recorded data** (decided 2026-10-14). Checked by
 breaking one rule of `StepDetector` at a time - 17 in all: each correction
@@ -369,8 +442,8 @@ else (see Lauscher's notes on what it misses).
   own 86-unit coordinates scaled by 2.6, so the two stay easy to keep in step.
   Its face is an outline rather than a disc, which in one colour would swallow
   the marks and the hand.
-- Content: the count (`fontSizeHuge`, shrinking to fit), "Steps", and a status
-  line only while not counting. No cover actions yet - there is nothing to act
+- Content: today's count (`fontSizeHuge`, shrinking to fit), "Steps", and a
+  status line only while not counting. No cover actions yet - there is nothing to act
   on. Add them the way Lauscher does (one `CoverActionList` per combination).
 
 ## The app icon
@@ -422,6 +495,11 @@ Inherited from Lauscher, where each one cost debugging time:
   a German phone reads 12.345.
 - "Steps" is a caption under the number, not a plural form, so no count ever
   reads "1 steps" and the catalogue needs no numerus forms.
+- Dates cross from C++ as `yyyy-MM-dd` strings, not `QDate`, whose conversion
+  to a JavaScript `Date` is known to shift days across time zones in Qt 5. QML
+  builds the `Date` from the parts (`OverviewPage.dayName()`):
+  `new Date("yyyy-MM-dd")` would be midnight UTC, the day before west of
+  Greenwich.
 
 German strings use the formal "Sie", as Lauscher's do.
 
@@ -430,6 +508,21 @@ German strings use the formal "Sie", as Lauscher's do.
 **Iteration 1 is done**: builds for 4.6 and 5.1, passes the host tests, runs
 sandboxed in the emulator (overview, cover, about page and the unavailable state
 checked on screen there) and on a phone.
+
+**Iteration 2 (0.2) is done**: builds for 4.6 and 5.1 with only the known
+Harbour error, passes both test suites, and in the emulator creates and
+migrates the database inside Sailjail. The overview was checked on screen there
+with rows put into the database and the unavailable state patched out of the
+installed QML for the screenshot; the emulator has no accelerometer to count
+with.
+
+Confirmed on the Jolla Phone (2026), 2026-10-15, with the 4.6 aarch64 build:
+
+- [x] Steps survive closing the app from the home screen and starting it again
+      the same day.
+- [x] The count starts over at midnight while the app runs, and yesterday's
+      appears among the previous days.
+- [x] What the detector counts, the page shows and the database stores agree.
 
 ### Confirmed on hardware, 2026-10-13
 
@@ -506,6 +599,7 @@ still fails.
 - [ ] The cover backdrop on a light ambience.
 
 Candidates for later iterations, each to be decided with the project owner:
-persisting the count and a daily history; a reset; daily goals; distance and
-calories from step length; and whether all-day tracking needs a background
-service or a hardware step counter instead of the running app.
+a longer history; a reset; daily goals; distance and calories from step
+length; saving on SIGTERM, should a shutdown while walking lose too much; and
+whether all-day tracking needs a background service or a hardware step counter
+instead of the running app.

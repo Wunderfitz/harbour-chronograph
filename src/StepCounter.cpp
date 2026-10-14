@@ -112,6 +112,7 @@ void StepCounter::handleReading()
     if (added > 0) {
         m_steps += added;
         emit stepsChanged();
+        emit stepsAdded(added);
     }
 
     if (m_recording)

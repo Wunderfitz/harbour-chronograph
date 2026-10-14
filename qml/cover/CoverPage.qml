@@ -63,7 +63,7 @@ CoverBackground {
             font.pixelSize: Theme.fontSizeHuge
             font.family: Theme.fontFamilyHeading
             color: Theme.primaryColor
-            text: Number(stepCounter.steps).toLocaleString(Qt.locale(), "f", 0)
+            text: Number(stepHistory.todaySteps).toLocaleString(Qt.locale(), "f", 0)
         }
 
         Label {

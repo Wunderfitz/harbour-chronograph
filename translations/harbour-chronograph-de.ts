@@ -36,10 +36,6 @@
         <translation>Gut zu wissen</translation>
     </message>
     <message>
-        <source>Steps are counted with the phone&apos;s accelerometer from the moment Chronograph starts, also while the display is off. Closing the app stops counting, and the count is not kept yet.</source>
-        <translation>Schritte werden mit dem Beschleunigungssensor des Telefons gezählt, sobald Chronograph gestartet ist, auch bei ausgeschaltetem Display. Wird die App geschlossen, endet die Zählung, und der Stand wird noch nicht gespeichert.</translation>
-    </message>
-    <message>
         <source>To keep counting with the display off, Chronograph keeps the phone from going to sleep while it runs. That costs battery, so close it when you do not need it.</source>
         <translation>Damit auch bei ausgeschaltetem Display gezählt wird, hält Chronograph das Telefon wach, solange es läuft. Das kostet Akku, schließen Sie es also, wenn Sie es nicht brauchen.</translation>
     </message>
@@ -62,6 +58,14 @@
     <message>
         <source>Open the Claude Code website</source>
         <translation>Website von Claude Code öffnen</translation>
+    </message>
+    <message>
+        <source>Steps are counted with the phone&apos;s accelerometer from the moment Chronograph starts, also while the display is off. Closing the app stops counting.</source>
+        <translation>Schritte werden mit dem Beschleunigungssensor des Telefons gezählt, sobald Chronograph gestartet ist, auch bei ausgeschaltetem Display. Wird die App geschlossen, endet die Zählung.</translation>
+    </message>
+    <message>
+        <source>The steps of each day are kept on the phone and nowhere else. The main page shows today&apos;s and those of the three days before; at midnight the count starts over.</source>
+        <translation>Die Schritte jedes Tages werden auf dem Telefon gespeichert und nirgendwo sonst. Die Hauptseite zeigt die von heute und die der drei Tage davor; um Mitternacht beginnt die Zählung von vorn.</translation>
     </message>
 </context>
 <context>
@@ -102,16 +106,24 @@
         <translation>Warte auf den Beschleunigungssensor…</translation>
     </message>
     <message>
-        <source>Since Chronograph was started</source>
-        <translation>Seit dem Start von Chronograph</translation>
-    </message>
-    <message>
         <source>No accelerometer</source>
         <translation>Kein Beschleunigungssensor</translation>
     </message>
     <message>
         <source>Chronograph counts steps with the accelerometer, which this device does not offer.</source>
         <translation>Chronograph zählt Schritte mit dem Beschleunigungssensor, den dieses Gerät nicht bietet.</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Heute</translation>
+    </message>
+    <message>
+        <source>Previous days</source>
+        <translation>Vorherige Tage</translation>
+    </message>
+    <message>
+        <source>Yesterday</source>
+        <translation>Gestern</translation>
     </message>
 </context>
 </TS>

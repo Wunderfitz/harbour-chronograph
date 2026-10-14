@@ -64,6 +64,8 @@ public:
 
 signals:
     void stepsChanged();
+    /* Steps just found, as many at once as a walk's confirmation releases. */
+    void stepsAdded(int count);
     void statusChanged();
 
 private slots:

@@ -60,7 +60,7 @@ Page {
             Label {
                 anchors.horizontalCenter: parent.horizontalCenter
                 // Bump together with rpm/harbour-chronograph.spec.
-                text: qsTr("Chronograph %1").arg("0.1")
+                text: qsTr("Chronograph %1").arg("0.2")
                 font.pixelSize: Theme.fontSizeExtraLarge
             }
 
@@ -102,7 +102,11 @@ Page {
             SectionHeader { text: qsTr("Good to know") }
 
             AboutParagraph {
-                text: qsTr("Steps are counted with the phone's accelerometer from the moment Chronograph starts, also while the display is off. Closing the app stops counting, and the count is not kept yet.")
+                text: qsTr("Steps are counted with the phone's accelerometer from the moment Chronograph starts, also while the display is off. Closing the app stops counting.")
+            }
+
+            AboutParagraph {
+                text: qsTr("The steps of each day are kept on the phone and nowhere else. The main page shows today's and those of the three days before; at midnight the count starts over.")
             }
 
             AboutParagraph {

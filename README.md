@@ -1,9 +1,10 @@
 # Chronograph
 
-An activity tracker for Sailfish OS, developed iteratively. The first version
-counts steps with the phone's accelerometer from the moment the app starts,
-also while the display is off, and shows the count on the main page and on the
-cover. Nothing is stored yet.
+An activity tracker for Sailfish OS, developed iteratively. It counts steps
+with the phone's accelerometer from the moment the app starts, also while the
+display is off, and keeps the steps of each day in a local database. The main
+page and the cover show today's steps, the main page also those of the three
+days before.
 
 Requires Sailfish OS 4.6 or newer. Licensed under the GNU GPLv3 or later.
 

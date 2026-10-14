@@ -1,3 +1,9 @@
+* Wed Oct 14 2026 Sebastian Wolf <sebastian@ygriega.de> 0.2-1
+- Keeps the steps of each day in a local SQLite database, so the count survives
+  closing the app. The main page and the cover show today's steps, the main
+  page also those of the three days before. Rhythm-aware step detection: fewer
+  double counts and misses, and slow walks are counted.
+
 * Tue Oct 13 2026 Sebastian Wolf <sebastian@ygriega.de> 0.1-1
 - First version: counts steps with the accelerometer from the moment the app
   starts, also while the display is off, and shows the count on the main page
