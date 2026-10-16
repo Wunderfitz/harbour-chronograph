@@ -26,6 +26,21 @@ import "pages"
 ApplicationWindow {
     id: app
 
+    // The activity types as Activity and the database name them, in the order
+    // the activity page offers them: running first, the default.
+    readonly property var activityTypes: ["running", "walking", "cycling"]
+
+    function activityTypeName(type) {
+        switch (type) {
+        case "walking":
+            return qsTr("Walking")
+        case "cycling":
+            return qsTr("Cycling")
+        default:
+            return qsTr("Running")
+        }
+    }
+
     initialPage: Component { OverviewPage {} }
     cover: Qt.resolvedUrl("cover/CoverPage.qml")
     allowedOrientations: defaultAllowedOrientations

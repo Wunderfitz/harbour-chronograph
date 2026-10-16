@@ -1,3 +1,13 @@
+* Sat Oct 17 2026 Sebastian Wolf <sebastian@ygriega.de> 0.3-1
+- Records runs, walks and rides with GPS: duration, distance, current and
+  average pace and speed, elevation and climb, with the position and the route
+  on an OpenStreetMap map. Pause with a tap, stop by holding the button. Each
+  activity is stored as a GPX file and listed on the main page, newest first,
+  where it can be replayed with a slider. The steps move to the lower third of
+  the main page.
+- Asks for the Location and Internet permissions; no longer for Sensors, which
+  Location includes.
+
 * Wed Oct 14 2026 Sebastian Wolf <sebastian@ygriega.de> 0.2-1
 - Keeps the steps of each day in a local SQLite database, so the count survives
   closing the app. The main page and the cover show today's steps, the main

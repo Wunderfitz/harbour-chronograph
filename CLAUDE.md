@@ -5,7 +5,9 @@ An activity tracker for Sailfish OS, built **iteratively**. Iteration 1 (version
 while the display is off, and shows the count on the main page and the cover.
 Iteration 2 (0.2) keeps the steps of each calendar day in a local SQLite
 database; the main page and the cover show today's, the main page also the
-three days before.
+three days before. Iteration 3 (0.3) records runs, walks and rides with GPS on
+an activity page with an OpenStreetMap map, stores each as a GPX file with a
+row in the database, lists them on the main page and replays them.
 
 ## Ground rules
 
@@ -43,16 +45,24 @@ Set by the project owner at the start; they apply to every iteration.
 
 ## Harbour exceptions
 
-| What | Why | Approved |
-|---|---|---|
-| `Permissions=Sensors` in `[X-Sailjail]` | Sailjail only lets an app talk to sensorfw (`com.nokia.SensorService` on the system bus) with this permission; without it there is no accelerometer and no step counting. The Harbour validator rejects it (`X-Sailjail permission not allowed: Sensors`, both 4.6 and 5.1 tooling). | 2026-10-13 |
+None. The app is Harbour-clean: `sfdk check` reports no error.
 
-That is the **only** error `sfdk check` reports, so the app ships through
-Chum/OpenRepos until Jolla allows the permission. Everything else stays
-Harbour-clean on purpose, so that dropping this one line is all it takes if
-they ever do. For the same reason the spec does not `Require`
-`qt5-qtsensors-plugin-sensorfw` or `sailjail-permissions`: neither is on
-Harbour's allowed list, and every device ships both anyway.
+Until 0.3 there was one, `Permissions=Sensors` in `[X-Sailjail]` (approved
+2026-10-13): Sailjail lets an app talk to sensorfw (`com.nokia.SensorService`
+on the system bus) only with it, and the Harbour validator rejects it (`X-Sailjail
+permission not allowed: Sensors`, 4.6 and 5.1 tooling alike). **Dropped
+2026-10-17**, at the project owner's decision: activities brought in
+`Location`, and Sailjail's `Location.permission` includes `Sensors.permission`
+(4.6, 5.1 and the phone's 5.2 alike), so the accelerometer stays reachable.
+`[X-Sailjail]` asks for `Location` and `Internet`, both on Harbour's allowed
+list, as are QtPositioning, QtNetwork and QtSensors. **Do not remove
+`Location`** without bringing `Sensors` back: step counting would silently
+stop. Should a later Sailfish OS take `Sensors` out of `Location`, the
+accelerometer turns `Unavailable` and the exception has to come back.
+
+The spec still does not `Require` `qt5-qtsensors-plugin-sensorfw`,
+`sailjail-permissions` or any other plugin: none is on Harbour's allowed list,
+and every device ships them.
 
 Harbour's allowed lists live in the build engine, not on the web. Ask them
 rather than guessing:
@@ -95,6 +105,129 @@ here needs that. Revisit if a library ever has to be built alongside.
 
 History, settings and anything else stateful belong in C++ classes next to
 `StepHistory`, not in QML.
+
+### Activities: computed in Qt-free C++, recorded by a QObject, kept by a model
+
+The same split as for steps:
+
+- `Track` (`src/Track.*`) is an activity as recorded, in plain C++11 without
+  Qt: segments (start or resume to pause or stop) and the fixes within them,
+  and what follows from those at every point - elapsed time with the pauses
+  left out, distance, current and average speed, smoothed altitude, climb.
+  `tests/tst_track.cpp` drives it on the host. **Live recording and replay go
+  through the same calls** (`begin()`, `addPoint()`, `end()`), so a stored
+  activity replays exactly as it was shown while recorded; `stateAt(elapsed)`
+  answers both. Its rules, none tuned on real activities yet:
+  - distance: straight lines between points at least 5 m apart, so a standing
+    receiver's wander adds nothing; a fix whose own speed says standing
+    (< 0.5 m/s) does not move it on; nothing counts across a pause. The last
+    step of under 5 m of each segment is not counted;
+  - current speed: the receiver's own (Doppler) speed averaged over 5 s, or
+    the distance over 10 s for fixes without one; 0 once the last point is
+    over 5 s old or its segment has ended;
+  - altitude smoothed with a 5 s time constant, climb counted with 3 m of
+    hysteresis.
+  The tests model the receiver's error as a slowly wandering offset rather
+  than fresh noise per fix: a phone's chipset filters its output, and fresh
+  noise would make any 5 m rule overcount by half.
+- `Activity` (`src/Activity.*`) is the QML-facing `QObject`, **created by
+  QML, one per activity page** (`de.ygriega.chronograph 1.0`, `Activity`) -
+  unlike `StepCounter`, as the receiver must run only while that page is
+  open. It implements `QQmlParserStatus`: at `componentComplete()` an empty
+  `fileName` means record, a set one means replay that file. It exposes the
+  status (`Ready`, `Recording`, `Paused`, `Finished`), the signal quality,
+  the position and all values, and `replayPosition` for the slider.
+- `ActivityHistory` (`src/ActivityHistory.*`) is the list on the main page, a
+  `QAbstractListModel` over the `activities` table, and owns the GPX
+  directory: `Activity` hands it a finished `Track`, it writes the file and
+  the row. Constructed in `main()` before the view like the others, so that
+  an activity page destroyed with the view still finds it.
+- `Gpx` (`src/Gpx.*`) reads and writes a `Track` as GPX 1.1.
+- `TrackLine` (`src/TrackLine.*`) paints the route on the map.
+
+### Positioning: QtPositioning in C++
+
+`QGeoPositionInfoSource::createDefaultSource()` (`QT += positioning`; geoclue
+with the hybris provider on a phone), satellite methods, a fix a second.
+Sailfish OS ships QtPositioning **5.4** beside Qt 5.6: nothing newer than 5.4
+in that module.
+
+- Started when the activity page is built, stopped at the stop, never for a
+  replay. While it runs `Activity` holds a `BackgroundActivity` of its own, so
+  a recording carries on with the display off even if `StepCounter` has given
+  its keepalive up.
+- **Fixes are timed by the phone's clock** on arrival, not by their own
+  timestamp: the segments begin and end by that clock, and a fix must not
+  seem to predate its segment. A fix whose own timestamp is over 10 s old is
+  a stale last-known position and is dropped.
+- **Signal quality** from the horizontal accuracy: good up to 10 m (green),
+  fair up to 30 m (yellow), poor beyond (red), as are no fix for 5 s, no
+  positioning plugin, and location switched off. Poor fixes are shown but not
+  recorded. A fix without an accuracy counts as fair.
+- Location switched off is read from `/etc/location/location.conf`
+  (`enabled` and `gps\enabled`), which the `Location` permission makes
+  visible in the sandbox; positioning just stays silent then.
+- The direction arrow shows only at 0.5 m/s or more: below that a receiver's
+  course is noise.
+- Altitude is whatever the receiver says. Whether the hybris provider gives
+  ellipsoid or sea-level height is unverified; in Europe they differ by about
+  50 m. The climb does not depend on it.
+- `CHRONOGRAPH_NMEA=<file>` replays an NMEA log in place of the receiver
+  (`QNmeaPositionInfoSource`, simulation mode) - see [The
+  emulator](#the-emulator). Off unless set; the stale-fix check is skipped then.
+
+### The map: OpenStreetMap tiles in plain QML, not QtLocation
+
+Decided 2026-10-17. QtLocation's `Map` was the obvious choice and was ruled
+out: on the phone only its C++ library is installed, not the QML module
+(`qt5-qtdeclarative-import-location`); its OSM plugin
+(`qt5-plugin-geoservices-osm`) is not on Harbour's allowed requires, which
+would make a second Harbour exception; and both are Qt 5.4. So `TileMap.qml`
+draws `tile.openstreetmap.org` tiles as plain `Image`s and needs nothing but
+QtQuick and the `Internet` permission.
+
+- **Web Mercator throughout**: centre and positions in 0-1 world coordinates,
+  `worldSize` pixels at the current (fractional) zoom. Tiles are drawn at
+  256 × `Theme.pixelRatio`, so labels stay legible on dense screens.
+- `TileLayer.qml`: a fixed grid of slots, each showing the tile at its place
+  modulo the grid, so a pan reloads one row or column, not all. **Two layers
+  take turns**: at a change of level the old one is frozen underneath until
+  the new one has loaded over it, so the map never goes blank while zooming.
+- Gestures: drag (with `preventStealing`, so the page's back swipe works only
+  above the map), pinch, double-tap. Dragging stops following the position; a
+  button in the corner resumes it. A finished activity is shown whole.
+- `TrackLine` is a `QQuickPaintedItem` painting the route per segment (no line
+  across a pause), in a replay full up to the current point and faint after.
+  Painting thousands of points is too slow per frame, so the map syncs its
+  view to it at most four times a second and moves and scales it in between.
+- **OSM's tile usage policy**: `TileNetworkFactory` gives the QML engine a
+  network access manager that sends a User-Agent naming the app and caches
+  tiles on disk (`~/.cache/de.ygriega/chronograph/tiles`, 50 MB), as the
+  servers' headers allow; the attribution sits on the map and in the about
+  page. No prefetching, only visible tiles. Heavy use would need a tile
+  provider of our own choosing.
+
+### The activity page
+
+- Pushed without `fileName` from the pulley menu (record), with one from the
+  list (replay). Type combo box (running is the default, as the first
+  entry), GPS row, eight values in the upper half, map in the lower half,
+  control at the bottom; in landscape the values on the left, the map right.
+- The control: Start; then `HoldButton` - a tap (under 800 ms) pauses or
+  resumes, **held for 3 s it stops**, counting the seconds down on itself
+  (shown from 250 ms on, so a tap does not flash it); letting go early or
+  sliding off gives up. After the stop a `Slider` through the activity, in
+  whole seconds, starting at the end.
+- **Leaving the page while recording or paused stops and stores the
+  activity**: `Activity`'s destructor does it, with its signals blocked, so it
+  also happens when the app is closed with the page open. A kill or a crash
+  loses the activity in progress: nothing is written before the stop.
+- **An activity without a single recorded point is not stored** - there is
+  nothing to replay - and the page says so.
+- The type can be changed until the stop; a stored activity's type is fixed.
+- Activity type keys are `running`, `walking`, `cycling` everywhere (C++,
+  database, GPX `<type>`); `app.activityTypes` and `app.activityTypeName()` in
+  `harbour-chronograph.qml` are the only place they are translated.
 
 ### Reading the accelerometer: QtSensors in C++
 
@@ -220,7 +353,8 @@ the OS; like the sensorfw plugin it is not `Require`d, as Harbour would refuse i
   is opened as it is. If the file cannot be opened or migrated, it stays closed
   and the app counts in memory only.
 - **The classes that use a table own its queries**: `daily_steps` belongs to
-  `StepHistory`. Further features get their own class and their own table.
+  `StepHistory`, `activities` to `ActivityHistory`. Further features get their
+  own class and their own table.
 - **`daily_steps`**: `day TEXT PRIMARY KEY` (the local date, `yyyy-MM-dd`, so
   text order is date order) and `steps INTEGER`, the whole day's count. Rows are
   written with `INSERT OR REPLACE`, which is fine while the count is the only
@@ -240,28 +374,58 @@ the OS; like the sensorfw plugin it is not `Require`d, as Harbour would refuse i
 - **The previous days** are the three before today, yesterday first, 0 where
   there is no row. Re-read from the database at start and at each change of day
   only; nothing else changes them.
+- **`activities`** (schema 2, its index 3): `id`, `type` (the key), `start`
+  (UTC, `yyyy-MM-ddTHH:mm:ssZ`, so text order is time order), `duration`
+  (seconds, pauses left out), `distance` (metres) and `file`, the GPX file's
+  name. Only what the list shows; everything else is in the file.
+- **The GPX files** live in `gpx/` beside the database, named after the start
+  in UTC in ISO 8601's basic format, `20261016T073000Z.gpx`: sorts by time,
+  means the same in every time zone, and has no colons, so it survives being
+  copied to any file system. A second activity in the same second gets `-2`.
+  Written whole with `QSaveFile` at the stop. GPX 1.1, one `trkseg` per
+  stretch between pauses; the receiver's speed and course go into Garmin's
+  `TrackPointExtension` v2, which sport sites read, and each point's accuracy
+  and each segment's begin and end into Chronograph's own namespace - the
+  segment times are what lets a replay leave the pauses out exactly. Files
+  from other apps read too (GPX 1.0's own `speed`, no extensions).
+- **The list is read 100 at a time**, newest first, by `(start, id)`: the first
+  page with the constructor, the next through `fetchMore()`, which the list
+  view calls as it nears the end of what it has. Paged by key rather than by
+  offset, so an activity added at the top meanwhile shifts nothing. A new
+  activity goes into the model at its place, normally the top.
 
 ## Layout
 
 ```
 harbour-chronograph.pro       CONFIG += sailfishapp, QT += sensors, PKGCONFIG += keepalive
-harbour-chronograph.desktop   Sailjail: Permissions=Sensors (the Harbour exception)
-src/main.cpp                  creates Database, StepHistory, StepCounter, then the view
+harbour-chronograph.desktop   Sailjail: Permissions=Location;Internet (Location brings Sensors)
+src/main.cpp                  creates Database, the histories, StepCounter, then the view
 src/Database.*                the SQLite connection and the schema's migrations
 src/StepHistory.*             steps per day: today's count, saving, the previous days
 src/StepCounter.*             QAccelerometer + keepalive, the QML facade
 src/StepDetector.*            the algorithm, Qt-free
+src/Track.*                   an activity's segments and fixes and their values, Qt-free
+src/Activity.*                positioning, recording and replay: the activity page's facade
+src/ActivityHistory.*         the activities table as a paged list model, and the GPX files
+src/Gpx.*                     Track to and from GPX 1.1
+src/TrackLine.*               the route, painted over the map
+src/TileNetworkFactory.*      the QML engine's network access: User-Agent and tile cache
 tests/tst_stepdetector.cpp    host-side checks for StepDetector (not packaged)
+tests/tst_track.cpp           host-side checks for Track
 tests/tst_stephistory.cpp     Database and StepHistory, run in the build engine
+tests/tst_activityhistory.cpp the migration, Gpx and ActivityHistory, in the build engine
 tests/replay_recording.cpp    replays a phone recording through StepDetector
 tests/raw-data/               personal data, git-ignored, local only: the recordings,
                               their ground truth (README), parts, FINDINGS.md
-qml/harbour-chronograph.qml   ApplicationWindow
-qml/pages/OverviewPage        today's count, the three days before; pulley menu with the about page
+qml/harbour-chronograph.qml   ApplicationWindow; the activity types and their names
+qml/pages/OverviewPage        the activities above, the steps in the lower third; pulley menu
+qml/pages/ActivityPage        record or replay one activity: values, map, Start/Pause/slider
 qml/pages/AboutPage           logo, version, what to know, credits
 qml/cover/CoverPage           today's count over the chronograph backdrop
-qml/components/               BackgroundImage, AboutLink, AboutParagraph (from Lauscher)
-images/                       icon master and cover backdrops (SVG), installed whole
+qml/components/               BackgroundImage, AboutLink, AboutParagraph (from Lauscher);
+                              TileMap, TileLayer, ActivityValue, HoldButton
+qml/js/Units.js               durations, distances, paces and speeds as shown
+images/                       icon master, cover backdrops, heading arrow (SVG), installed whole
 icons/<size>/                 the rendered launcher icon
 translations/                 German catalogue; the template is regenerated, untracked
 rpm/                          spec and changelog
@@ -283,9 +447,10 @@ cd ../build-harbour-chronograph-4.6.0.13-aarch64
 - Installed targets: 4.6.0.13 and 5.1.0.11, each for aarch64, armv7hl and i486.
   Iterations 1 and 2 were built for 4.6 aarch64 and armv7hl and for 5.1 aarch64
   and i486, with no compiler warnings under `-Wall`; iteration 2 for 4.6 i486
-  as well, which the persistence tests need.
-- `sfdk check` must show exactly one Harbour error, the Sensors permission. It
-  also warns that the binary is not stripped, which is how the SDK builds it,
+  as well, which the persistence tests need. Iteration 3 for all five of
+  those, without warnings.
+- `sfdk check` must show no Harbour error (one, the Sensors permission, up to
+  0.2; see [Harbour exceptions](#harbour-exceptions)). It also warns that the binary is not stripped, which is how the SDK builds it,
   not something the project controls.
 - The spec's `Version` is used as long as this is not a git repository. Once it
   is, sfdk derives the version from the latest tag (see Lauscher's CLAUDE.md):
@@ -324,6 +489,18 @@ Run it after any change to `StepDetector`, and add a case for any bug found on
 a device - synthetic, modelled on what went wrong. Also build once with `-O0`:
 it catches odr-uses of static members that `-O2` hides.
 
+**`tests/tst_track.cpp`** checks `Track` on the host the same way, with
+generated fixes once a second: a steady run, a walk without receiver speeds,
+standing still with and without them, a walk with the receiver's error
+wandering slowly and quickly, a pause with movement during it, a fix gone
+stale, climbs with and without noise, and fixes outside a segment. Run it after
+any change to `Track`, also with `-O0`:
+
+```sh
+g++ -std=c++11 -Wall -Wextra -O2 -Isrc tests/tst_track.cpp \
+    src/Track.cpp -o /tmp/tst_track && /tmp/tst_track
+```
+
 **`tests/tst_stephistory.cpp`** checks `Database` and `StepHistory` with a clock
 of its own: the schema and its migration, saving only when asked and on
 destruction, a restart the same day, midnight, the clock set back, the previous
@@ -348,6 +525,14 @@ cd ../build-harbour-chronograph-4.6.0.13-i486
 Qt 5.6's headers go in with `-isystem`: the engine's compiler is newer than
 they are and warns about them under `-Wextra`. Run it after any change to
 `Database` or `StepHistory`.
+
+**`tests/tst_activityhistory.cpp`** checks, the same way, the migration of a
+0.2 database, GPX files written and read back (pauses, speeds, accuracy, times
+to the millisecond) and from other apps, and `ActivityHistory`: file names,
+rows, newest first, paging across 250 activities with a page boundary among
+three of the same second, an activity added between pages, no database. The
+build command is at the top of the file. Run it after any change to
+`Database`, `Gpx`, `Track` or `ActivityHistory`.
 
 **Synthetic tests in place of recorded data** (decided 2026-10-14). Checked by
 breaking one rule of `StepDetector` at a time - 17 in all: each correction
@@ -424,6 +609,22 @@ else (see Lauscher's notes on what it misses).
   instead: `scp` the RPM over and `rpm -Uvh --force` it (`ssh -p 2223 -i
   ~/SailfishOS/vmshare/ssh/private_keys/sdk root@127.0.0.1`).
 - Qt's warnings go to the journal, not to stderr: `journalctl | grep chronograph`.
+- **New Sailjail permissions are asked for at launch**, in a dialog no one can
+  tap in a scripted run. Grant them as root instead: stop `sailjaild`, set
+  `Allowed=1`, `Agreed=1` and `Granted=Location;Internet;` in the
+  `[harbour-chronograph]` section of
+  `/home/.system/var/lib/sailjail/settings/user-100000.settings`, start it.
+- **It has no positioning plugin either**: the activity page shows "No
+  positioning on this device". Set `CHRONOGRAPH_NMEA` to an NMEA log in the
+  app's data directory (`chown` it to `defaultuser`) and launch through
+  `sailjail` as for recordings. Qt 5.4's simulation keeps only the **last
+  sentence of each second**: put `$GPRMC` last for speed and course, `$GPGGA`
+  last for altitude and accuracy - one or the other, not both. A generated
+  log (a loop at a few m/s) does; never a recorded one, which is personal
+  data like the walks.
+- Without touch input, the activity page was driven by a `Timer` patched into
+  the **installed** QML only (push the page, start, pause, resume, stop, move
+  the slider, pop the page, `Qt.quit()`), then the clean RPM reinstalled.
 - Screenshots need the `privileged` group:
   `su -g privileged defaultuser -c 'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/100000/dbus/user_bus_socket dbus-send --session --print-reply --dest=org.nemomobile.lipstick /org/nemomobile/lipstick/screenshot org.nemomobile.lipstick.saveScreenshot string:/home/defaultuser/Pictures/shot.png'`
   as root.
@@ -495,6 +696,19 @@ Inherited from Lauscher, where each one cost debugging time:
   a German phone reads 12.345.
 - "Steps" is a caption under the number, not a plural form, so no count ever
   reads "1 steps" and the catalogue needs no numerus forms.
+- **A page without a `PageHeader` keeps clear of a notch itself**: Silica's
+  `Screen.hasCutouts` and `Screen.topCutout` (a portrait rect; its height is
+  the notch's depth). Push content down by it in `Orientation.Portrait`, and
+  in landscape - where the notch sits halfway down whichever side the phone
+  was turned to - keep that much margin from the side edge, as Silica's pulley
+  menu and the launcher do. `ActivityPage` does; the emulator has no notch, so
+  check it by faking one in the installed QML.
+- **Never `id: layer`** (or any other id that is also a property of `Item`):
+  inside an `Image`, `layer.foo` finds the image's own `layer` group, not the
+  id - silently, with a TypeError at runtime only. That cost the map its tiles.
+- A `Slider` whose `value` and `maximumValue` are both bound may get the value
+  first, be clamped to the old maximum, and stay there. Set the value in
+  `onMaximumValueChanged` instead.
 - Dates cross from C++ as `yyyy-MM-dd` strings, not `QDate`, whose conversion
   to a JavaScript `Date` is known to shift days across time zones in Qt 5. QML
   builds the `Date` from the parts (`OverviewPage.dayName()`):
@@ -504,6 +718,30 @@ Inherited from Lauscher, where each one cost debugging time:
 German strings use the formal "Sie", as Lauscher's do.
 
 ## Status / next steps
+
+**Iteration 3 (0.3) is done in the emulator**: builds for 4.6 (aarch64,
+armv7hl, i486) and 5.1 (aarch64, i486), Harbour-clean since `Sensors` went,
+passes all four test suites, and in the emulator, sandboxed, with a generated
+NMEA log: tiles load through the custom User-Agent and cache; the values,
+route and heading update every second; pause leaves the time and the distance
+out; hold-to-stop shows its countdown; stopping stores the GPX file and the row
+and switches to the slider; the list shows the new activity at once and
+replays it with the same values; leaving the page and quitting the app while
+recording both store it. German, portrait and landscape checked on screen.
+
+Still to confirm on the Jolla Phone (2026):
+
+- [ ] Steps are still counted with only `Location` and `Internet` granted -
+      the accelerometer must not report `Unavailable`.
+
+- [ ] A fix inside Sailjail with `Location`, and how fast it comes.
+- [ ] Recording with the display off, the page in the background.
+- [ ] Whether 10 m / 30 m suit the phone's accuracy figures, and whether its
+      altitude is ellipsoid or sea level.
+- [ ] Distance against a known course; the 5 m rule and receiver speeds.
+- [ ] Pinch-zoom, dragging, the back swipe above the map, holding to stop -
+      all touch, which the emulator cannot do.
+- [ ] Tiles on mobile data, and the cache across restarts.
 
 **Iteration 1 is done**: builds for 4.6 and 5.1, passes the host tests, runs
 sandboxed in the emulator (overview, cover, about page and the unavailable state
@@ -602,4 +840,7 @@ Candidates for later iterations, each to be decided with the project owner:
 a longer history; a reset; daily goals; distance and calories from step
 length; saving on SIGTERM, should a shutdown while walking lose too much; and
 whether all-day tracking needs a background service or a hardware step counter
-instead of the running app.
+instead of the running app. For activities: deleting one; changing a stored
+one's type; writing the track as it goes, so a crash loses nothing; the
+activity on the cover while recording; steps during an activity; laps and
+splits; imperial units; sharing or exporting the GPX file.

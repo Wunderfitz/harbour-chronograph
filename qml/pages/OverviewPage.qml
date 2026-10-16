@@ -20,7 +20,11 @@
 import QtQuick 2.2
 import Sailfish.Silica 1.0
 import de.ygriega.chronograph 1.0
+import "../js/Units.js" as Units
 
+// The recorded activities, newest first, over the steps: today's count and the
+// three days before in the lower third - in landscape the right third. The
+// pulley starts a new activity; tapping one in the list replays it.
 Page {
     id: overviewPage
 
@@ -33,95 +37,236 @@ Page {
     function dayName(day) {
         var parts = day.split("-")
         var date = new Date(parts[0], parts[1] - 1, parts[2])
-        return Qt.locale().dayName(date.getDay(), Locale.LongFormat)
+        return Qt.locale().dayName(date.getDay(), Locale.ShortFormat)
     }
 
-    SilicaFlickable {
-        anchors.fill: parent
-        contentHeight: Math.max(height, content.y + content.height + Theme.paddingLarge)
+    // The activity history reads a page of activities at a time; the list
+    // asks it for the next as it scrolls towards the end of what it has.
+    SilicaListView {
+        id: activityList
+
+        anchors {
+            left: parent.left
+            top: parent.top
+            right: overviewPage.isPortrait ? parent.right : stepsPanel.left
+            bottom: overviewPage.isPortrait ? stepsPanel.top : parent.bottom
+        }
+        clip: true
+        model: activityHistory
 
         PullDownMenu {
             MenuItem {
                 text: qsTr("About Chronograph")
                 onClicked: pageStack.push(Qt.resolvedUrl("AboutPage.qml"))
             }
+            MenuItem {
+                text: qsTr("Start activity")
+                onClicked: pageStack.push(Qt.resolvedUrl("ActivityPage.qml"))
+            }
         }
 
-        PageHeader {
-            id: header
+        header: PageHeader {
             title: qsTr("Chronograph")
         }
 
-        // Today's count with the previous days right below it, centred
-        // together in what the header leaves of the page; in landscape the
-        // page scrolls instead.
-        Column {
-            id: content
+        delegate: ListItem {
+            id: delegate
 
-            visible: !overviewPage.unavailable
-            y: Math.max(header.height, (overviewPage.height + header.height - height) / 2)
-            width: parent.width
+            contentHeight: Theme.itemSizeMedium
+            onClicked: pageStack.push(Qt.resolvedUrl("ActivityPage.qml"),
+                                      { fileName: model.fileName })
 
             Column {
-                id: counter
-
-                width: parent.width
-                spacing: Theme.paddingSmall
-
-                Label {
-                    x: Theme.horizontalPageMargin
-                    width: parent.width - 2 * Theme.horizontalPageMargin
-                    horizontalAlignment: Text.AlignHCenter
-                    // Shrinks rather than truncates should the number ever
-                    // outgrow the width.
-                    fontSizeMode: Text.HorizontalFit
-                    minimumPixelSize: Theme.fontSizeExtraLarge
-                    font.pixelSize: 2 * Theme.fontSizeHuge
-                    font.family: Theme.fontFamilyHeading
-                    color: Theme.highlightColor
-                    text: Number(stepHistory.todaySteps).toLocaleString(Qt.locale(), "f", 0)
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    leftMargin: Theme.horizontalPageMargin
+                    rightMargin: Theme.horizontalPageMargin
+                    verticalCenter: parent.verticalCenter
                 }
 
-                Label {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    font.pixelSize: Theme.fontSizeLarge
-                    color: Theme.highlightColor
-                    text: qsTr("Steps")
+                Item {
+                    width: parent.width
+                    height: typeLabel.height
+
+                    Label {
+                        id: typeLabel
+                        width: parent.width - distanceLabel.width - Theme.paddingMedium
+                        truncationMode: TruncationMode.Fade
+                        color: delegate.highlighted ? Theme.highlightColor : Theme.primaryColor
+                        text: app.activityTypeName(model.type)
+                    }
+
+                    Label {
+                        id: distanceLabel
+                        anchors.right: parent.right
+                        color: delegate.highlighted ? Theme.highlightColor : Theme.primaryColor
+                        text: Units.distance(model.distance) + " km"
+                    }
                 }
 
-                Label {
-                    x: Theme.horizontalPageMargin
-                    width: parent.width - 2 * Theme.horizontalPageMargin
-                    horizontalAlignment: Text.AlignHCenter
-                    wrapMode: Text.WordWrap
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: Theme.secondaryHighlightColor
-                    text: stepCounter.status === StepCounter.Starting
-                          ? qsTr("Waiting for the accelerometer…")
-                          : qsTr("Today")
-                }
-            }
+                Item {
+                    width: parent.width
+                    height: startLabel.height
 
-            SectionHeader { text: qsTr("Previous days") }
+                    Label {
+                        id: startLabel
+                        width: parent.width - durationLabel.width - Theme.paddingMedium
+                        truncationMode: TruncationMode.Fade
+                        font.pixelSize: Theme.fontSizeExtraSmall
+                        color: delegate.highlighted ? Theme.secondaryHighlightColor : Theme.secondaryColor
+                        text: Format.formatDate(model.start, Formatter.DateMedium) + ", "
+                              + Format.formatDate(model.start, Formatter.TimeValue)
+                    }
 
-            // Yesterday first; a day without any steps reads 0.
-            Repeater {
-                model: stepHistory.recentDays
-
-                DetailItem {
-                    label: index === 0 ? qsTr("Yesterday")
-                                       : overviewPage.dayName(modelData.day)
-                    value: Number(modelData.steps).toLocaleString(Qt.locale(), "f", 0)
+                    Label {
+                        id: durationLabel
+                        anchors.right: parent.right
+                        font.pixelSize: Theme.fontSizeExtraSmall
+                        color: delegate.highlighted ? Theme.secondaryHighlightColor : Theme.secondaryColor
+                        text: Units.duration(model.duration)
+                    }
                 }
             }
         }
 
         ViewPlaceholder {
-            enabled: overviewPage.unavailable
-            text: qsTr("No accelerometer")
-            hintText: qsTr("Chronograph counts steps with the accelerometer, which this device does not offer.")
+            enabled: activityList.count === 0
+            text: qsTr("No activities yet")
+            hintText: qsTr("Pull down to start one")
         }
 
         VerticalScrollDecorator {}
+    }
+
+    // Today's steps with the three days before them, centred in their third.
+    Item {
+        id: stepsPanel
+
+        anchors {
+            left: overviewPage.isPortrait ? parent.left : undefined
+            right: parent.right
+            top: overviewPage.isPortrait ? undefined : parent.top
+            bottom: parent.bottom
+        }
+        width: overviewPage.isPortrait ? overviewPage.width : overviewPage.width / 3
+        height: overviewPage.isPortrait ? overviewPage.height / 3 : overviewPage.height
+
+        Separator {
+            anchors.top: parent.top
+            width: parent.width
+            visible: overviewPage.isPortrait
+            color: Theme.primaryColor
+            horizontalAlignment: Qt.AlignHCenter
+        }
+
+        Column {
+            id: steps
+
+            visible: !overviewPage.unavailable
+            anchors.verticalCenter: parent.verticalCenter
+            width: parent.width
+            spacing: Theme.paddingSmall
+
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                horizontalAlignment: Text.AlignHCenter
+                // Shrinks rather than truncates should the number ever
+                // outgrow the width.
+                fontSizeMode: Text.HorizontalFit
+                minimumPixelSize: Theme.fontSizeLarge
+                font.pixelSize: Theme.fontSizeHuge
+                font.family: Theme.fontFamilyHeading
+                color: Theme.highlightColor
+                text: Number(stepHistory.todaySteps).toLocaleString(Qt.locale(), "f", 0)
+            }
+
+            Label {
+                anchors.horizontalCenter: parent.horizontalCenter
+                font.pixelSize: Theme.fontSizeMedium
+                color: Theme.highlightColor
+                text: qsTr("Steps")
+            }
+
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                horizontalAlignment: Text.AlignHCenter
+                wrapMode: Text.WordWrap
+                font.pixelSize: Theme.fontSizeExtraSmall
+                color: Theme.secondaryHighlightColor
+                text: stepCounter.status === StepCounter.Starting
+                      ? qsTr("Waiting for the accelerometer…")
+                      : qsTr("Today")
+            }
+
+            Item { width: 1; height: Theme.paddingMedium }
+
+            // Yesterday first; a day without any steps reads 0. Side by side
+            // under the count in portrait, one below the other in landscape.
+            Grid {
+                id: previousDays
+
+                anchors.horizontalCenter: parent.horizontalCenter
+                columns: overviewPage.isPortrait ? 3 : 1
+                columnSpacing: Theme.paddingLarge
+                rowSpacing: Theme.paddingSmall
+
+                Repeater {
+                    model: stepHistory.recentDays
+
+                    Column {
+                        width: overviewPage.isPortrait
+                               ? (steps.width - 2 * Theme.horizontalPageMargin - 2 * previousDays.columnSpacing) / 3
+                               : steps.width - 2 * Theme.horizontalPageMargin
+
+                        Label {
+                            width: parent.width
+                            horizontalAlignment: Text.AlignHCenter
+                            font.pixelSize: Theme.fontSizeMedium
+                            color: Theme.primaryColor
+                            text: Number(modelData.steps).toLocaleString(Qt.locale(), "f", 0)
+                        }
+
+                        Label {
+                            width: parent.width
+                            horizontalAlignment: Text.AlignHCenter
+                            truncationMode: TruncationMode.Fade
+                            font.pixelSize: Theme.fontSizeExtraSmall
+                            color: Theme.secondaryColor
+                            text: index === 0 ? qsTr("Yesterday")
+                                              : overviewPage.dayName(modelData.day)
+                        }
+                    }
+                }
+            }
+        }
+
+        Column {
+            visible: overviewPage.unavailable
+            anchors.verticalCenter: parent.verticalCenter
+            x: Theme.horizontalPageMargin
+            width: parent.width - 2 * Theme.horizontalPageMargin
+            spacing: Theme.paddingSmall
+
+            Label {
+                width: parent.width
+                horizontalAlignment: Text.AlignHCenter
+                wrapMode: Text.WordWrap
+                font.pixelSize: Theme.fontSizeLarge
+                color: Theme.highlightColor
+                text: qsTr("No accelerometer")
+            }
+
+            Label {
+                width: parent.width
+                horizontalAlignment: Text.AlignHCenter
+                wrapMode: Text.WordWrap
+                font.pixelSize: Theme.fontSizeExtraSmall
+                color: Theme.secondaryHighlightColor
+                text: qsTr("Chronograph counts steps with the accelerometer, which this device does not offer.")
+            }
+        }
     }
 }

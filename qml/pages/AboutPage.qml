@@ -60,7 +60,7 @@ Page {
             Label {
                 anchors.horizontalCenter: parent.horizontalCenter
                 // Bump together with rpm/harbour-chronograph.spec.
-                text: qsTr("Chronograph %1").arg("0.2")
+                text: qsTr("Chronograph %1").arg("0.3")
                 font.pixelSize: Theme.fontSizeExtraLarge
             }
 
@@ -102,6 +102,18 @@ Page {
             SectionHeader { text: qsTr("Good to know") }
 
             AboutParagraph {
+                text: qsTr("Runs, walks and rides are recorded with GPS on the activity page, which the pulley menu opens. Tap Pause to pause, and hold it for three seconds to stop. Leaving the page stops the activity as well; either way it is stored, and the list on the main page replays it.")
+            }
+
+            AboutParagraph {
+                text: qsTr("Each activity is kept on the phone as a GPX file, which other apps and sport sites read, in .local/share/de.ygriega/chronograph/gpx of your home directory.")
+            }
+
+            AboutParagraph {
+                text: qsTr("The map's tiles are downloaded from OpenStreetMap while the activity page is open, which uses mobile data; tiles already seen are kept on the phone for a while. GPS costs battery for as long as the activity page is open.")
+            }
+
+            AboutParagraph {
                 text: qsTr("Steps are counted with the phone's accelerometer from the moment Chronograph starts, also while the display is off. Closing the app stops counting.")
             }
 
@@ -121,6 +133,15 @@ Page {
 
             AboutParagraph {
                 text: qsTr("The app icon follows Jolla's apps icon story for Sailfish OS.")
+            }
+
+            AboutParagraph {
+                text: qsTr("Map data © OpenStreetMap contributors, available under the Open Database License. Map tiles by the OpenStreetMap Foundation.")
+            }
+
+            AboutLink {
+                url: "https://www.openstreetmap.org/copyright"
+                label: qsTr("Open OpenStreetMap's copyright page")
             }
 
             AboutParagraph {

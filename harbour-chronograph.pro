@@ -6,30 +6,48 @@
 TARGET = harbour-chronograph
 
 CONFIG += sailfishapp
-QT += sensors sql
+QT += sensors sql positioning network
 # BackgroundActivity, which keeps the phone awake while steps are counted
 PKGCONFIG += keepalive
 
 SOURCES += \
     src/main.cpp \
+    src/Activity.cpp \
+    src/ActivityHistory.cpp \
     src/Database.cpp \
+    src/Gpx.cpp \
     src/StepCounter.cpp \
     src/StepDetector.cpp \
-    src/StepHistory.cpp
+    src/StepHistory.cpp \
+    src/TileNetworkFactory.cpp \
+    src/Track.cpp \
+    src/TrackLine.cpp
 
 HEADERS += \
+    src/Activity.h \
+    src/ActivityHistory.h \
     src/Database.h \
+    src/Gpx.h \
     src/StepCounter.h \
     src/StepDetector.h \
-    src/StepHistory.h
+    src/StepHistory.h \
+    src/TileNetworkFactory.h \
+    src/Track.h \
+    src/TrackLine.h
 
 DISTFILES += \
     qml/harbour-chronograph.qml \
     qml/cover/CoverPage.qml \
     qml/components/AboutLink.qml \
     qml/components/AboutParagraph.qml \
+    qml/components/ActivityValue.qml \
     qml/components/BackgroundImage.qml \
+    qml/components/HoldButton.qml \
+    qml/components/TileLayer.qml \
+    qml/components/TileMap.qml \
+    qml/js/Units.js \
     qml/pages/AboutPage.qml \
+    qml/pages/ActivityPage.qml \
     qml/pages/OverviewPage.qml \
     harbour-chronograph.desktop \
     $$files(images/*.svg) \
@@ -38,6 +56,8 @@ DISTFILES += \
     translations/*.ts \
     tests/tst_stepdetector.cpp \
     tests/tst_stephistory.cpp \
+    tests/tst_track.cpp \
+    tests/tst_activityhistory.cpp \
     tests/replay_recording.cpp \
     README.md \
     CLAUDE.md

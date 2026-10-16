@@ -1,0 +1,341 @@
+/*
+    Copyright (C) 2026 Sebastian J. Wolf and other contributors
+
+    This file is part of Chronograph.
+
+    Chronograph is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Chronograph is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Chronograph. If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/*
+ * Checks for what keeps the activities: the migration that adds their table,
+ * GPX files written and read back - pauses, the receiver's speeds and all - and
+ * read from other apps, and ActivityHistory's list, which is read a page at a
+ * time, newest first, and takes new activities at the top. Every track here is
+ * generated.
+ *
+ * Like tst_stephistory this needs Qt with QtSql and its SQLite driver, so it
+ * runs in the build engine against the i486 target, from that target's build
+ * directory after one sfdk build there:
+ *
+ *   cd ../build-harbour-chronograph-4.6.0.13-i486
+ *   sfdk -c target=SailfishOS-4.6.0.13-i486 build-shell sh -c '
+ *       S=../harbour-chronograph B=../build-tst_activityhistory && mkdir -p $B &&
+ *       moc $S/src/ActivityHistory.h -o $B/moc_ActivityHistory.cpp &&
+ *       g++ -std=c++11 -Wall -Wextra -fPIC -I$S/src \
+ *           $(pkg-config --cflags Qt5Sql | sed "s/-I/-isystem /g") \
+ *           $S/tests/tst_activityhistory.cpp $S/src/ActivityHistory.cpp \
+ *           $S/src/Database.cpp $S/src/Gpx.cpp $S/src/Track.cpp \
+ *           $B/moc_ActivityHistory.cpp $(pkg-config --libs Qt5Sql) \
+ *           -o $B/tst_activityhistory &&
+ *       $B/tst_activityhistory'
+ */
+
+#include "ActivityHistory.h"
+#include "Database.h"
+#include "Gpx.h"
+#include "Track.h"
+
+#include <QCoreApplication>
+#include <QDateTime>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QSqlQuery>
+#include <QTemporaryDir>
+#include <QVariant>
+
+#include <cmath>
+#include <cstdio>
+
+namespace {
+
+int g_failures = 0;
+
+/* 2026-10-16 07:30:00 UTC. */
+const double kStartTime = 1792135800.0;
+
+void expect(const char *name, bool ok)
+{
+    std::printf("%s %s\n", ok ? "PASS" : "FAIL", name);
+    if (!ok)
+        ++g_failures;
+}
+
+void expectEqual(const char *name, double actual, double expected, double tolerance = 0)
+{
+    const bool ok = std::fabs(actual - expected) <= tolerance;
+    std::printf("%s %-60s %10.3f (expected %.3f)\n", ok ? "PASS" : "FAIL", name, actual, expected);
+    if (!ok)
+        ++g_failures;
+}
+
+void expectText(const char *name, const QString &actual, const QString &expected)
+{
+    const bool ok = actual == expected;
+    std::printf("%s %-60s %s (expected %s)\n", ok ? "PASS" : "FAIL", name,
+                qPrintable(actual), qPrintable(expected));
+    if (!ok)
+        ++g_failures;
+}
+
+int scalar(const Database &database, const QString &sql)
+{
+    QSqlQuery query(database.connection());
+    if (!query.exec(sql) || !query.next())
+        return -1;
+    return query.value(0).toInt();
+}
+
+/* A run north at 3 m/s from `start`, one fix a second, with a pause of
+ * `pause` seconds after the first half if it is not 0. */
+Track makeTrack(double start, int seconds, double pause = 0)
+{
+    Track track;
+    double time = start;
+    track.begin(time);
+    for (int i = 0; i < seconds; ++i) {
+        if (pause > 0 && i == seconds / 2) {
+            track.end(time);
+            time += pause;
+            track.begin(time);
+        }
+        time += 1.0;
+        TrackPoint point;
+        point.time = time;
+        point.latitude = 52.5 + 3.0 * i / 111195.08;
+        point.longitude = 13.4;
+        point.altitude = 40.0 + 0.1 * i;
+        point.accuracy = 4.0;
+        point.speed = 3.0;
+        point.course = 0.5;
+        track.addPoint(point);
+    }
+    track.end(time + 0.5);
+    return track;
+}
+
+/* An activity's row put straight into the table. */
+void store(const Database &database, const QString &start, double distance)
+{
+    QSqlQuery query(database.connection());
+    query.prepare(QStringLiteral("INSERT INTO activities (type, start, duration, distance, file) "
+                                 "VALUES ('walking', :start, 60, :distance, 'none.gpx')"));
+    query.bindValue(QStringLiteral(":start"), start);
+    query.bindValue(QStringLiteral(":distance"), distance);
+    query.exec();
+}
+
+double distanceAt(const ActivityHistory &history, int row)
+{
+    return history.data(history.index(row), ActivityHistory::DistanceRole).toDouble();
+}
+
+void testMigration(const QString &directory)
+{
+    const QString file = QDir(directory).filePath(QStringLiteral("old.db"));
+    {
+        // A file as 0.2 left it.
+        QSqlDatabase old = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), QStringLiteral("old"));
+        old.setDatabaseName(file);
+        old.open();
+        QSqlQuery query(old);
+        query.exec(QStringLiteral("CREATE TABLE daily_steps (day TEXT PRIMARY KEY NOT NULL, steps INTEGER NOT NULL)"));
+        query.exec(QStringLiteral("INSERT INTO daily_steps VALUES ('2026-10-14', 5000)"));
+        query.exec(QStringLiteral("PRAGMA user_version = 1"));
+        query.finish();
+        old.close();
+    }
+    QSqlDatabase::removeDatabase(QStringLiteral("old"));
+
+    Database database(file);
+    expect("a database from 0.2 opens", database.isOpen());
+    expectEqual("and is migrated to schema version 3", scalar(database, QStringLiteral("PRAGMA user_version")), 3);
+    expectEqual("its steps are kept", scalar(database, QStringLiteral("SELECT steps FROM daily_steps")), 5000);
+    expectEqual("and it has an empty activities table",
+                scalar(database, QStringLiteral("SELECT COUNT(*) FROM activities")), 0);
+}
+
+void testGpxRoundTrip(const QString &directory)
+{
+    const Track written = makeTrack(kStartTime, 120, 45);
+    const QString file = QDir(directory).filePath(QStringLiteral("round.gpx"));
+    expect("a GPX file is written", Gpx::write(file, written, QStringLiteral("cycling")));
+
+    Track read;
+    QString type;
+    expect("and read back", Gpx::read(file, &read, &type));
+    expectText("with its type", type, QStringLiteral("cycling"));
+    expectEqual("all points", double(read.size()), double(written.size()));
+    expectEqual("both segments", double(read.segments().size()), 2);
+    expectEqual("the same duration, pause left out", read.duration(), written.duration(), 0.002);
+    expectEqual("the same distance", read.stateAt(read.duration()).distance,
+                written.stateAt(written.duration()).distance, 0.05);
+    expectEqual("the same climb", read.stateAt(read.duration()).elevationGain,
+                written.stateAt(written.duration()).elevationGain, 0.2);
+    expectEqual("the same start", read.startTime(), kStartTime, 0.0005);
+    expectEqual("a point's speed", read.point(10).speed, 3.0, 0.005);
+    expectEqual("its course", read.point(10).course, 0.5, 0.05);
+    expectEqual("its accuracy", read.point(10).accuracy, 4.0, 0.05);
+    expectEqual("its altitude", read.point(10).altitude, 41.0, 0.05);
+    expectEqual("its time, to the millisecond", read.point(10).time, written.point(10).time, 0.0005);
+
+    QFile in(file);
+    in.open(QIODevice::ReadOnly);
+    const QString text = QString::fromUtf8(in.readAll());
+    expect("the file is GPX 1.1", text.contains(QStringLiteral("xmlns=\"http://www.topografix.com/GPX/1/1\""))
+                                  && text.contains(QStringLiteral("version=\"1.1\"")));
+    expect("with the speed in Garmin's extension", text.contains(QStringLiteral("<gpxtpx:speed>3.00</gpxtpx:speed>")));
+}
+
+void testForeignGpx(const QString &directory)
+{
+    const QString file = QDir(directory).filePath(QStringLiteral("foreign.gpx"));
+    QFile out(file);
+    out.open(QIODevice::WriteOnly);
+    out.write("<?xml version=\"1.0\"?>\n"
+              "<gpx version=\"1.0\" xmlns=\"http://www.topografix.com/GPX/1/0\">\n"
+              " <trk><name>Morning</name><type>walking</type><trkseg>\n"
+              "  <trkpt lat=\"52.5\" lon=\"13.4\"><time>2026-10-16T07:30:01Z</time><speed>1.4</speed></trkpt>\n"
+              "  <trkpt lat=\"52.50005\" lon=\"13.4\"><time>2026-10-16T07:30:05Z</time><speed>1.4</speed></trkpt>\n"
+              "  <trkpt lat=\"52.5001\" lon=\"13.4\"></trkpt>\n"
+              "  <trkpt lat=\"52.5001\" lon=\"13.4\"><time>2026-10-16T07:30:09.500+00:00</time></trkpt>\n"
+              " </trkseg></trk>\n"
+              "</gpx>\n");
+    out.close();
+
+    Track track;
+    QString type;
+    expect("a GPX 1.0 file from elsewhere reads", Gpx::read(file, &track, &type));
+    expectText("its type, after a name", type, QStringLiteral("walking"));
+    expectEqual("a point without a time is left out", double(track.size()), 3);
+    expectEqual("the segment runs from its first point to its last", track.duration(), 8.5, 0.001);
+    expectEqual("GPX 1.0's own speed is read", track.point(0).speed, 1.4, 0.001);
+    expectEqual("the distance", track.stateAt(track.duration()).distance, 11.1, 0.2);
+
+    Track none;
+    expect("a missing file does not read", !Gpx::read(QDir(directory).filePath(QStringLiteral("missing.gpx")), &none, &type));
+}
+
+void testAdding(const QString &directory)
+{
+    const QString gpx = QDir(directory).filePath(QStringLiteral("gpx-adding"));
+    Database database(QDir(directory).filePath(QStringLiteral("adding.db")));
+    ActivityHistory history(&database, gpx);
+    expectEqual("a new history is empty", history.rowCount(), 0);
+    expect("and has nothing more to fetch", !history.canFetchMore(QModelIndex()));
+
+    expectText("an empty track is not stored", history.add(QStringLiteral("running"), Track()), QString());
+
+    const Track first = makeTrack(kStartTime, 60);
+    const QString name = history.add(QStringLiteral("running"), first);
+    expectText("the file is named after the start, in UTC", name, QStringLiteral("20261016T073000Z.gpx"));
+    expect("and is in the gpx directory", QFileInfo::exists(QDir(gpx).filePath(name)));
+    expectEqual("the activity is listed", history.rowCount(), 1);
+    expectEqual("its row is stored", scalar(database, QStringLiteral("SELECT COUNT(*) FROM activities")), 1);
+
+    const QModelIndex row = history.index(0);
+    expectText("its type", history.data(row, ActivityHistory::TypeRole).toString(), QStringLiteral("running"));
+    expectEqual("its duration", history.data(row, ActivityHistory::DurationRole).toDouble(), 60.5, 0.001);
+    expectEqual("its distance", history.data(row, ActivityHistory::DistanceRole).toDouble(),
+                first.stateAt(first.duration()).distance, 0.001);
+    expect("its start, in local time",
+           history.data(row, ActivityHistory::StartRole).toDateTime()
+           == QDateTime::fromMSecsSinceEpoch(qint64(kStartTime) * 1000).toLocalTime());
+
+    const QString again = history.add(QStringLiteral("walking"), makeTrack(kStartTime + 0.4, 30));
+    expectText("one started in the same second gets a suffix", again, QStringLiteral("20261016T073000Z-2.gpx"));
+
+    history.add(QStringLiteral("cycling"), makeTrack(kStartTime + 3600, 30));
+    expectText("the newest goes to the top",
+               history.data(history.index(0), ActivityHistory::TypeRole).toString(), QStringLiteral("cycling"));
+
+    ActivityHistory reopened(&database, gpx);
+    expectEqual("a restart lists them all", reopened.rowCount(), 3);
+    expectText("newest first", reopened.data(reopened.index(0), ActivityHistory::TypeRole).toString(),
+               QStringLiteral("cycling"));
+    expectText("and the same second by the order they were stored",
+               reopened.data(reopened.index(1), ActivityHistory::FileNameRole).toString(), again);
+}
+
+void testPaging(const QString &directory)
+{
+    Database database(QDir(directory).filePath(QStringLiteral("paging.db")));
+    // 250 activities a day apart, distance = the day, and two more on the
+    // same second as day 150.
+    const QDateTime first(QDate(2025, 1, 1), QTime(8, 0), Qt::UTC);
+    database.connection().transaction();
+    for (int day = 0; day < 250; ++day)
+        store(database, first.addDays(day).toString(Qt::ISODate), day);
+    store(database, first.addDays(150).toString(Qt::ISODate), 1150);
+    store(database, first.addDays(150).toString(Qt::ISODate), 2150);
+    database.connection().commit();
+
+    ActivityHistory history(&database, QDir(directory).filePath(QStringLiteral("gpx-paging")));
+    expectEqual("the first page holds 100", history.rowCount(), 100);
+    expectEqual("the newest first", distanceAt(history, 0), 249);
+    expect("there is more to fetch", history.canFetchMore(QModelIndex()));
+
+    history.fetchMore(QModelIndex());
+    expectEqual("the second page adds 100", history.rowCount(), 200);
+    // Days 249 to 151 and the first of the three on day 150 make the first
+    // page, so the page ends among them.
+    expectEqual("same second: the last stored first", distanceAt(history, 99), 2150);
+    expectEqual("the next page carries on with the one before", distanceAt(history, 100), 1150);
+    expectEqual("then the first", distanceAt(history, 101), 150);
+    expectEqual("then the day before", distanceAt(history, 102), 149);
+
+    history.add(QStringLiteral("running"), makeTrack(kStartTime, 10));
+    expectEqual("an activity added meanwhile goes to the top", history.rowCount(), 201);
+
+    history.fetchMore(QModelIndex());
+    expectEqual("the last page brings the rest, none twice", history.rowCount(), 253);
+    expectEqual("down to the oldest", distanceAt(history, 252), 0);
+    expect("and then there is nothing more", !history.canFetchMore(QModelIndex()));
+}
+
+void testNoDatabase(const QString &directory)
+{
+    const QString file = QDir(directory).filePath(QStringLiteral("blocked.db"));
+    QDir().mkpath(file);
+    Database database(file);
+    const QString gpx = QDir(directory).filePath(QStringLiteral("gpx-blocked"));
+    ActivityHistory history(&database, gpx);
+    const QString name = history.add(QStringLiteral("running"), makeTrack(kStartTime, 10));
+    expect("without a database the GPX file is still written", QFileInfo::exists(QDir(gpx).filePath(name)));
+    expectEqual("and the activity listed while the app runs", history.rowCount(), 1);
+}
+
+} // namespace
+
+int main(int argc, char *argv[])
+{
+    // QtSql finds its SQLite driver through the application's plugin paths.
+    QCoreApplication app(argc, argv);
+
+    QTemporaryDir directory;
+    if (!directory.isValid()) {
+        std::printf("FAIL cannot create a temporary directory\n");
+        return 1;
+    }
+
+    testMigration(directory.path());
+    testGpxRoundTrip(directory.path());
+    testForeignGpx(directory.path());
+    testAdding(directory.path());
+    testPaging(directory.path());
+    testNoDatabase(directory.path());
+
+    std::printf("%s\n", g_failures ? "FAILED" : "All passed");
+    return g_failures ? 1 : 0;
+}

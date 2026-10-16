@@ -1,0 +1,333 @@
+/*
+    Copyright (C) 2026 Sebastian J. Wolf and other contributors
+
+    This file is part of Chronograph.
+
+    Chronograph is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Chronograph is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Chronograph. If not, see <http://www.gnu.org/licenses/>.
+*/
+
+import QtQuick 2.2
+import Sailfish.Silica 1.0
+import de.ygriega.chronograph 1.0
+import "../components"
+import "../js/Units.js" as Units
+
+// Records an activity, or replays one. Pushed without a fileName it starts the
+// receiver and waits for Start; with one it shows that stored activity. The
+// values take the upper half, the map the lower, and the control at the
+// bottom follows the activity: Start, then Pause or Resume - held to stop -
+// and once it is over a slider through it.
+//
+// Leaving the page while recording stops the activity and stores it: Activity
+// does that as it goes with the page.
+Page {
+    id: page
+
+    // A stored activity's GPX file, to replay it.
+    property string fileName
+
+    readonly property bool finished: activity.status === Activity.Finished
+    readonly property bool running: activity.status === Activity.Recording
+                                    || activity.status === Activity.Paused
+
+    // The page has no header to keep clear of a notch for it, so the values
+    // keep clear themselves, the way Silica's own pulley menu does: below it
+    // in upright portrait; in landscape, where it sits halfway down whichever
+    // side the phone was turned to, away from the left edge as well.
+    readonly property real topInset: Screen.hasCutouts && orientation === Orientation.Portrait
+                                     ? Screen.topCutout.height : 0
+    readonly property real sideInset: Screen.hasCutouts && !isPortrait
+                                      ? Math.max(0, Screen.topCutout.height + Theme.paddingSmall
+                                                    - Theme.horizontalPageMargin)
+                                      : 0
+
+    allowedOrientations: Orientation.All
+
+    function signalColor(quality) {
+        switch (quality) {
+        case Activity.Good:
+            return "#43a047"
+        case Activity.Fair:
+            return "#fdd835"
+        default:
+            return "#e53935"
+        }
+    }
+
+    function signalText(quality) {
+        switch (quality) {
+        case Activity.NoPositioning:
+            return qsTr("No positioning on this device")
+        case Activity.LocationOff:
+            return qsTr("Location is switched off")
+        case Activity.NoSignal:
+            return page.finished ? qsTr("No position") : qsTr("Searching for GPS…")
+        case Activity.Poor:
+            return qsTr("Poor GPS signal")
+        case Activity.Fair:
+            return qsTr("Fair GPS signal")
+        default:
+            return qsTr("Good GPS signal")
+        }
+    }
+
+    function showWholeTrack() {
+        var bounds = activity.bounds()
+        if (bounds.width >= 0 && bounds.height >= 0)
+            map.fit(bounds.y, bounds.x, bounds.y + bounds.height, bounds.x + bounds.width)
+    }
+
+    Activity {
+        id: activity
+        history: activityHistory
+        fileName: page.fileName
+
+        // A finished activity is shown whole, for the slider to go through.
+        onStatusChanged: if (status === Activity.Finished) page.showWholeTrack()
+    }
+
+    Column {
+        id: values
+
+        x: page.sideInset
+        y: page.topInset
+        width: (page.isPortrait ? page.width : page.width / 2) - page.sideInset
+
+        ComboBox {
+            id: typeBox
+            label: qsTr("Activity")
+            // Settled once the activity is over: it is stored as it was.
+            enabled: !page.finished
+            currentIndex: Math.max(0, app.activityTypes.indexOf(activity.type))
+            menu: ContextMenu {
+                Repeater {
+                    model: app.activityTypes
+                    MenuItem { text: app.activityTypeName(modelData) }
+                }
+            }
+            onCurrentIndexChanged: activity.type = app.activityTypes[currentIndex]
+        }
+
+        Item {
+            width: parent.width
+            height: Theme.itemSizeExtraSmall
+
+            Row {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: Theme.paddingMedium
+
+                Rectangle {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: Theme.paddingLarge
+                    height: width
+                    radius: width / 2
+                    color: page.signalColor(activity.signalQuality)
+                }
+
+                Label {
+                    anchors.verticalCenter: parent.verticalCenter
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.highlightColor
+                    text: page.signalText(activity.signalQuality)
+                }
+
+                Label {
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: activity.signalQuality > Activity.NoSignal && !isNaN(activity.accuracy)
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.secondaryHighlightColor
+                    text: qsTr("± %1 m").arg(Units.metres(activity.accuracy))
+                }
+            }
+        }
+
+        // The values sit in the middle of what the half page leaves them.
+        Item {
+            width: parent.width
+            height: Math.max(grid.height + Theme.paddingLarge,
+                             (page.isPortrait ? page.height / 2 : page.height)
+                             - page.topInset - typeBox.height - Theme.itemSizeExtraSmall)
+
+            Grid {
+                id: grid
+
+                readonly property real cellWidth: (width - columnSpacing) / 2
+
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                anchors.verticalCenter: parent.verticalCenter
+                columns: 2
+                columnSpacing: Theme.paddingLarge
+                rowSpacing: Theme.paddingMedium
+
+                ActivityValue {
+                    width: grid.cellWidth
+                    label: qsTr("Duration")
+                    value: Units.duration(activity.elapsed)
+                }
+                ActivityValue {
+                    width: grid.cellWidth
+                    label: qsTr("Distance")
+                    value: Units.distance(activity.distance)
+                    unit: "km"
+                }
+                ActivityValue {
+                    width: grid.cellWidth
+                    label: qsTr("Pace")
+                    value: Units.pace(activity.speed)
+                    unit: "min/km"
+                }
+                ActivityValue {
+                    width: grid.cellWidth
+                    label: qsTr("Speed")
+                    value: Units.speed(activity.speed)
+                    unit: "km/h"
+                }
+                ActivityValue {
+                    width: grid.cellWidth
+                    label: qsTr("Average pace")
+                    value: Units.pace(activity.averageSpeed)
+                    unit: "min/km"
+                }
+                ActivityValue {
+                    width: grid.cellWidth
+                    label: qsTr("Average speed")
+                    value: Units.speed(activity.averageSpeed)
+                    unit: "km/h"
+                }
+                ActivityValue {
+                    width: grid.cellWidth
+                    label: qsTr("Elevation")
+                    value: Units.metres(activity.altitude)
+                    unit: "m"
+                }
+                ActivityValue {
+                    width: grid.cellWidth
+                    label: qsTr("Elevation gain")
+                    value: Units.metres(activity.elevationGain)
+                    unit: "m"
+                }
+            }
+        }
+    }
+
+    TileMap {
+        id: map
+
+        anchors {
+            left: page.isPortrait ? parent.left : values.right
+            right: parent.right
+            top: page.isPortrait ? values.bottom : parent.top
+            bottom: controls.top
+        }
+        activity: activity
+        hasPosition: activity.hasPosition
+        latitude: activity.latitude
+        longitude: activity.longitude
+        accuracy: activity.accuracy
+        direction: activity.direction
+        progress: page.finished ? activity.currentPoint : -1
+
+        // A stored activity is finished before the map has its size, and a
+        // turn of the phone changes it.
+        onWidthChanged: if (page.finished) page.showWholeTrack()
+        onHeightChanged: if (page.finished) page.showWholeTrack()
+    }
+
+    Item {
+        id: controls
+
+        anchors {
+            left: map.left
+            right: parent.right
+            bottom: parent.bottom
+        }
+        height: page.finished ? replaySlider.height + Theme.paddingSmall
+                              : startButton.height + hint.height + 2 * Theme.paddingLarge
+
+        Button {
+            id: startButton
+            visible: activity.status === Activity.Ready
+            anchors {
+                horizontalCenter: parent.horizontalCenter
+                top: parent.top
+                topMargin: Theme.paddingLarge
+            }
+            preferredWidth: Theme.buttonWidthMedium
+            text: qsTr("Start")
+            onClicked: activity.start()
+        }
+
+        HoldButton {
+            visible: page.running
+            anchors {
+                horizontalCenter: parent.horizontalCenter
+                top: parent.top
+                topMargin: Theme.paddingLarge
+            }
+            preferredWidth: Theme.buttonWidthMedium
+            idleText: activity.status === Activity.Paused ? qsTr("Resume") : qsTr("Pause")
+            //: The countdown on the pause button while it is held; %1 is the seconds left
+            holdText: qsTr("Stop in %1")
+            onTapped: activity.status === Activity.Paused ? activity.resume() : activity.pause()
+            onHeld: activity.stop()
+        }
+
+        Label {
+            id: hint
+            visible: !page.finished
+            anchors {
+                horizontalCenter: parent.horizontalCenter
+                top: startButton.bottom
+                topMargin: Theme.paddingSmall
+            }
+            font.pixelSize: Theme.fontSizeExtraSmall
+            color: Theme.secondaryColor
+            text: activity.status === Activity.Ready ? qsTr("Best started once the signal is green")
+                                                     : qsTr("Hold for 3 seconds to stop")
+        }
+
+        Slider {
+            id: replaySlider
+            visible: page.finished && activity.duration > 0
+            anchors.bottom: parent.bottom
+            width: parent.width
+            minimumValue: 0
+            // At least a second, which Silica's slider needs to draw itself.
+            maximumValue: Math.max(1, activity.duration)
+            stepSize: 1
+            valueText: Units.duration(value)
+            label: qsTr("Replay")
+            onValueChanged: if (page.finished) activity.replayPosition = value
+
+            // From the end. Set rather than bound: a value bound alongside the
+            // maximum may be clamped to the old one first, and stay there.
+            Component.onCompleted: value = maximumValue
+            onMaximumValueChanged: value = maximumValue
+        }
+
+        Label {
+            visible: page.finished && activity.duration <= 0
+            anchors.centerIn: parent
+            width: parent.width - 2 * Theme.horizontalPageMargin
+            horizontalAlignment: Text.AlignHCenter
+            wrapMode: Text.WordWrap
+            font.pixelSize: Theme.fontSizeSmall
+            color: Theme.secondaryHighlightColor
+            text: qsTr("No position was good enough to record, so nothing was stored.")
+        }
+    }
+}

@@ -39,6 +39,19 @@ const char *const kSchema[] = {
     "CREATE TABLE daily_steps ("
         "day TEXT PRIMARY KEY NOT NULL, "
         "steps INTEGER NOT NULL)",
+    /* 2: the recorded activities, one row each - what the list on the main page
+     * shows. The track itself is in a GPX file of its own. The start is UTC as
+     * yyyy-MM-ddTHH:mm:ssZ, so text order is time order; the duration leaves the
+     * pauses out, in seconds; the distance is in metres. */
+    "CREATE TABLE activities ("
+        "id INTEGER PRIMARY KEY, "
+        "type TEXT NOT NULL, "
+        "start TEXT NOT NULL, "
+        "duration REAL NOT NULL, "
+        "distance REAL NOT NULL, "
+        "file TEXT NOT NULL)",
+    /* 3: the list is read newest first, a page at a time. */
+    "CREATE INDEX activities_by_start ON activities (start, id)",
 };
 const int kSchemaVersion = int(sizeof(kSchema) / sizeof(kSchema[0]));
 

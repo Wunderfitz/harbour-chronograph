@@ -25,9 +25,13 @@
 
 #include <sailfishapp.h>
 
+#include "Activity.h"
+#include "ActivityHistory.h"
 #include "Database.h"
 #include "StepCounter.h"
 #include "StepHistory.h"
+#include "TileNetworkFactory.h"
+#include "TrackLine.h"
 
 int main(int argc, char *argv[])
 {
@@ -43,20 +47,32 @@ int main(int argc, char *argv[])
     qmlRegisterUncreatableType<StepCounter>(
         "de.ygriega.chronograph", 1, 0, "StepCounter",
         QStringLiteral("StepCounter is exposed as the 'stepCounter' context property"));
+    qmlRegisterUncreatableType<ActivityHistory>(
+        "de.ygriega.chronograph", 1, 0, "ActivityHistory",
+        QStringLiteral("ActivityHistory is exposed as the 'activityHistory' context property"));
+    // One per activity page, which decides whether it records or replays.
+    qmlRegisterType<Activity>("de.ygriega.chronograph", 1, 0, "Activity");
+    qmlRegisterType<TrackLine>("de.ygriega.chronograph", 1, 0, "TrackLine");
 
-    /* All three constructed before the view, so counting starts with the app
-     * rather than with whichever page first looks at it - and destroyed after
-     * the event loop ends, in reverse, which is when StepHistory makes its last
-     * save. */
+    /* All constructed before the view, so counting starts with the app rather
+     * than with whichever page first looks at it - and destroyed after the view,
+     * in reverse: the view takes an activity page with it, whose Activity
+     * stores a recording still going in activityHistory, and StepHistory makes
+     * its last save after that. */
     Database database(Database::defaultFilePath());
     StepHistory stepHistory(&database);
     StepCounter stepCounter;
     QObject::connect(&stepCounter, &StepCounter::stepsAdded,
                      &stepHistory, &StepHistory::addSteps);
+    ActivityHistory activityHistory(&database, ActivityHistory::defaultDirectory());
+    TileNetworkFactory tileNetworkFactory;
 
     QScopedPointer<QQuickView> view(SailfishApp::createView());
+    // Before anything is loaded: the engine asks for it once, on first use.
+    view->engine()->setNetworkAccessManagerFactory(&tileNetworkFactory);
     view->rootContext()->setContextProperty(QStringLiteral("stepCounter"), &stepCounter);
     view->rootContext()->setContextProperty(QStringLiteral("stepHistory"), &stepHistory);
+    view->rootContext()->setContextProperty(QStringLiteral("activityHistory"), &activityHistory);
     view->setSource(SailfishApp::pathToMainQml());
     view->show();
 

@@ -67,6 +67,130 @@
         <source>The steps of each day are kept on the phone and nowhere else. The main page shows today&apos;s and those of the three days before; at midnight the count starts over.</source>
         <translation>Die Schritte jedes Tages werden auf dem Telefon gespeichert und nirgendwo sonst. Die Hauptseite zeigt die von heute und die der drei Tage davor; um Mitternacht beginnt die Zählung von vorn.</translation>
     </message>
+    <message>
+        <source>Runs, walks and rides are recorded with GPS on the activity page, which the pulley menu opens. Tap Pause to pause, and hold it for three seconds to stop. Leaving the page stops the activity as well; either way it is stored, and the list on the main page replays it.</source>
+        <translation>Läufe, Spaziergänge und Radtouren werden auf der Aktivitätsseite mit GPS aufgezeichnet, die Sie über das Zugmenü öffnen. Tippen Sie auf Pause, um zu pausieren, und halten Sie die Taste drei Sekunden lang, um zu beenden. Auch das Verlassen der Seite beendet die Aktivität; so oder so wird sie gespeichert, und die Liste auf der Hauptseite spielt sie wieder ab.</translation>
+    </message>
+    <message>
+        <source>Each activity is kept on the phone as a GPX file, which other apps and sport sites read, in .local/share/de.ygriega/chronograph/gpx of your home directory.</source>
+        <translation>Jede Aktivität wird auf dem Telefon als GPX-Datei gespeichert, die andere Apps und Sportportale lesen können, und zwar in .local/share/de.ygriega/chronograph/gpx in Ihrem Benutzerverzeichnis.</translation>
+    </message>
+    <message>
+        <source>The map&apos;s tiles are downloaded from OpenStreetMap while the activity page is open, which uses mobile data; tiles already seen are kept on the phone for a while. GPS costs battery for as long as the activity page is open.</source>
+        <translation>Die Kartenkacheln werden von OpenStreetMap geladen, solange die Aktivitätsseite geöffnet ist, was mobile Daten verbraucht; bereits geladene Kacheln bleiben eine Weile auf dem Telefon. GPS kostet Akku, solange die Aktivitätsseite geöffnet ist.</translation>
+    </message>
+    <message>
+        <source>Map data © OpenStreetMap contributors, available under the Open Database License. Map tiles by the OpenStreetMap Foundation.</source>
+        <translation>Kartendaten © OpenStreetMap-Mitwirkende, verfügbar unter der Open Database License. Kartenkacheln von der OpenStreetMap Foundation.</translation>
+    </message>
+    <message>
+        <source>Open OpenStreetMap&apos;s copyright page</source>
+        <translation>Urheberrechtsseite von OpenStreetMap öffnen</translation>
+    </message>
+</context>
+<context>
+    <name>ActivityPage</name>
+    <message>
+        <source>Location is switched off</source>
+        <translation>Ortung ist ausgeschaltet</translation>
+    </message>
+    <message>
+        <source>No position</source>
+        <translation>Keine Position</translation>
+    </message>
+    <message>
+        <source>Searching for GPS…</source>
+        <translation>GPS wird gesucht…</translation>
+    </message>
+    <message>
+        <source>Poor GPS signal</source>
+        <translation>Schwaches GPS-Signal</translation>
+    </message>
+    <message>
+        <source>Fair GPS signal</source>
+        <translation>Mittleres GPS-Signal</translation>
+    </message>
+    <message>
+        <source>Good GPS signal</source>
+        <translation>Gutes GPS-Signal</translation>
+    </message>
+    <message>
+        <source>Activity</source>
+        <translation>Aktivität</translation>
+    </message>
+    <message>
+        <source>± %1 m</source>
+        <translation>± %1 m</translation>
+    </message>
+    <message>
+        <source>Duration</source>
+        <translation>Dauer</translation>
+    </message>
+    <message>
+        <source>Distance</source>
+        <translation>Strecke</translation>
+    </message>
+    <message>
+        <source>Pace</source>
+        <translation>Pace</translation>
+    </message>
+    <message>
+        <source>Speed</source>
+        <translation>Geschwindigkeit</translation>
+    </message>
+    <message>
+        <source>Average pace</source>
+        <translation>Durchschnittliche Pace</translation>
+    </message>
+    <message>
+        <source>Average speed</source>
+        <translation>Durchschnittsgeschwindigkeit</translation>
+    </message>
+    <message>
+        <source>Elevation</source>
+        <translation>Höhe</translation>
+    </message>
+    <message>
+        <source>Elevation gain</source>
+        <translation>Anstieg</translation>
+    </message>
+    <message>
+        <source>Start</source>
+        <translation>Start</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Fortsetzen</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Pause</translation>
+    </message>
+    <message>
+        <source>Stop in %1</source>
+        <extracomment>The countdown on the pause button while it is held; %1 is the seconds left</extracomment>
+        <translation>Ende in %1</translation>
+    </message>
+    <message>
+        <source>Best started once the signal is green</source>
+        <translation>Am besten starten, sobald das Signal grün ist</translation>
+    </message>
+    <message>
+        <source>Hold for 3 seconds to stop</source>
+        <translation>3 Sekunden halten zum Beenden</translation>
+    </message>
+    <message>
+        <source>Replay</source>
+        <translation>Wiedergabe</translation>
+    </message>
+    <message>
+        <source>No position was good enough to record, so nothing was stored.</source>
+        <translation>Keine Position war genau genug für die Aufzeichnung, daher wurde nichts gespeichert.</translation>
+    </message>
+    <message>
+        <source>No positioning on this device</source>
+        <translation>Keine Ortung auf diesem Gerät</translation>
+    </message>
 </context>
 <context>
     <name>CoverPage</name>
@@ -118,12 +242,42 @@
         <translation>Heute</translation>
     </message>
     <message>
-        <source>Previous days</source>
-        <translation>Vorherige Tage</translation>
-    </message>
-    <message>
         <source>Yesterday</source>
         <translation>Gestern</translation>
+    </message>
+    <message>
+        <source>Start activity</source>
+        <translation>Aktivität starten</translation>
+    </message>
+    <message>
+        <source>No activities yet</source>
+        <translation>Noch keine Aktivitäten</translation>
+    </message>
+    <message>
+        <source>Pull down to start one</source>
+        <translation>Ziehen Sie nach unten, um eine zu starten</translation>
+    </message>
+</context>
+<context>
+    <name>TileMap</name>
+    <message>
+        <source>© OpenStreetMap contributors</source>
+        <translation>© OpenStreetMap-Mitwirkende</translation>
+    </message>
+</context>
+<context>
+    <name>harbour-chronograph</name>
+    <message>
+        <source>Walking</source>
+        <translation>Gehen</translation>
+    </message>
+    <message>
+        <source>Cycling</source>
+        <translation>Radfahren</translation>
+    </message>
+    <message>
+        <source>Running</source>
+        <translation>Laufen</translation>
     </message>
 </context>
 </TS>

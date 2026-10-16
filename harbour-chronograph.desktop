@@ -4,9 +4,9 @@ X-Nemo-Application-Type=silica-qt5
 Icon=harbour-chronograph
 Exec=harbour-chronograph
 Name=Chronograph
-Comment=Count your steps
+Comment=Count your steps and record your activities
 
 [X-Sailjail]
-Permissions=Sensors
+Permissions=Location;Internet
 OrganizationName=de.ygriega
 ApplicationName=chronograph
