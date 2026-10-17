@@ -61,7 +61,7 @@ class Activity : public QObject, public QQmlParserStatus
     /* The GPX file to replay, relative to the history's directory. Set it at
      * creation to replay; after a recording it names the file just stored. */
     Q_PROPERTY(QString fileName READ fileName WRITE setFileName NOTIFY fileNameChanged)
-    /* "running", "walking" or "cycling". */
+    /* "running", "walking", "cycling", "rowing" or "driving". */
     Q_PROPERTY(QString type READ type WRITE setType NOTIFY typeChanged)
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
 

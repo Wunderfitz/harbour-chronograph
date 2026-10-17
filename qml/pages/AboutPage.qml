@@ -102,7 +102,7 @@ Page {
             SectionHeader { text: qsTr("Good to know") }
 
             AboutParagraph {
-                text: qsTr("Runs, walks and rides are recorded with GPS on the activity page, which the pulley menu opens. Tap Pause to pause, and hold it for three seconds to stop. Leaving the page stops the activity as well; either way it is stored, and the list on the main page replays it.")
+                text: qsTr("Running, walking, cycling, rowing and driving are recorded with GPS on the activity page, which the pulley menu opens. Tap Pause to pause, and hold it for three seconds to stop. Leaving the page stops the activity as well; either way it is stored, and the list on the main page replays it.")
             }
 
             AboutParagraph {

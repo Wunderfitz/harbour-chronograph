@@ -29,7 +29,8 @@ BuildRequires:  desktop-file-utils
 
 %description
 Chronograph is an activity tracker for Sailfish OS. It records your runs,
-walks and rides with GPS, on an OpenStreetMap map, and replays them. It also
+walks, bike rides, rowing and drives with GPS, on an OpenStreetMap map, and
+replays them. It also
 counts your steps with the phone's accelerometer, also while the display is
 off, keeps the count of each day, and shows today's on its main page and its
 cover.

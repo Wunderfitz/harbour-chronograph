@@ -69,7 +69,8 @@ const char kDefaultType[] = "running";
 bool isType(const QString &type)
 {
     return type == QLatin1String("running") || type == QLatin1String("walking")
-            || type == QLatin1String("cycling");
+            || type == QLatin1String("cycling") || type == QLatin1String("rowing")
+            || type == QLatin1String("driving");
 }
 
 } // namespace

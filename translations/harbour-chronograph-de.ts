@@ -68,8 +68,8 @@
         <translation>Die Schritte jedes Tages werden auf dem Telefon gespeichert und nirgendwo sonst. Die Hauptseite zeigt die von heute und die der drei Tage davor; um Mitternacht beginnt die Zählung von vorn.</translation>
     </message>
     <message>
-        <source>Runs, walks and rides are recorded with GPS on the activity page, which the pulley menu opens. Tap Pause to pause, and hold it for three seconds to stop. Leaving the page stops the activity as well; either way it is stored, and the list on the main page replays it.</source>
-        <translation>Läufe, Spaziergänge und Radtouren werden auf der Aktivitätsseite mit GPS aufgezeichnet, die Sie über das Zugmenü öffnen. Tippen Sie auf Pause, um zu pausieren, und halten Sie die Taste drei Sekunden lang, um zu beenden. Auch das Verlassen der Seite beendet die Aktivität; so oder so wird sie gespeichert, und die Liste auf der Hauptseite spielt sie wieder ab.</translation>
+        <source>Running, walking, cycling, rowing and driving are recorded with GPS on the activity page, which the pulley menu opens. Tap Pause to pause, and hold it for three seconds to stop. Leaving the page stops the activity as well; either way it is stored, and the list on the main page replays it.</source>
+        <translation>Laufen, Gehen, Radfahren, Rudern und Autofahren werden auf der Aktivitätsseite mit GPS aufgezeichnet, die Sie über das Zugmenü öffnen. Tippen Sie auf Pause, um zu pausieren, und halten Sie die Taste drei Sekunden lang, um zu beenden. Auch das Verlassen der Seite beendet die Aktivität; so oder so wird sie gespeichert, und die Liste auf der Hauptseite spielt sie wieder ab.</translation>
     </message>
     <message>
         <source>Each activity is kept on the phone as a GPX file, which other apps and sport sites read, in .local/share/de.ygriega/chronograph/gpx of your home directory.</source>
@@ -274,6 +274,14 @@
     <message>
         <source>Cycling</source>
         <translation>Radfahren</translation>
+    </message>
+    <message>
+        <source>Rowing</source>
+        <translation>Rudern</translation>
+    </message>
+    <message>
+        <source>Driving</source>
+        <translation>Autofahren</translation>
     </message>
     <message>
         <source>Running</source>

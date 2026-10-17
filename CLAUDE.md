@@ -5,9 +5,10 @@ An activity tracker for Sailfish OS, built **iteratively**. Iteration 1 (version
 while the display is off, and shows the count on the main page and the cover.
 Iteration 2 (0.2) keeps the steps of each calendar day in a local SQLite
 database; the main page and the cover show today's, the main page also the
-three days before. Iteration 3 (0.3) records runs, walks and rides with GPS on
-an activity page with an OpenStreetMap map, stores each as a GPX file with a
-row in the database, lists them on the main page and replays them.
+three days before. Iteration 3 (0.3) records runs, walks, bike rides, rowing
+and drives with GPS on an activity page with an OpenStreetMap map, stores each
+as a GPX file with a row in the database, lists them on the main page and
+replays them.
 
 ## Ground rules
 
@@ -225,9 +226,12 @@ QtQuick and the `Internet` permission.
 - **An activity without a single recorded point is not stored** - there is
   nothing to replay - and the page says so.
 - The type can be changed until the stop; a stored activity's type is fixed.
-- Activity type keys are `running`, `walking`, `cycling` everywhere (C++,
-  database, GPX `<type>`); `app.activityTypes` and `app.activityTypeName()` in
-  `harbour-chronograph.qml` are the only place they are translated.
+- Activity type keys are `running`, `walking`, `cycling`, `rowing` and
+  `driving` everywhere (C++, database, GPX `<type>`); `app.activityTypes` and
+  `app.activityTypeName()` in `harbour-chronograph.qml` are the only place they
+  are translated, and `isType()` in `Activity.cpp` the only place they are
+  checked. A new type goes into both. Every type shows the same values, pace
+  included, and `Track` applies the same rules to all of them.
 
 ### Reading the accelerometer: QtSensors in C++
 

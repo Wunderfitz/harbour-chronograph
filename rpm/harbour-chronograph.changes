@@ -1,7 +1,7 @@
 * Sat Oct 17 2026 Sebastian Wolf <sebastian@ygriega.de> 0.3-1
-- Records runs, walks and rides with GPS: duration, distance, current and
-  average pace and speed, elevation and climb, with the position and the route
-  on an OpenStreetMap map. Pause with a tap, stop by holding the button. Each
+- Records runs, walks, bike rides, rowing and drives with GPS: duration,
+  distance, current and average pace and speed, elevation and climb, with the
+  position and the route on an OpenStreetMap map. Pause with a tap, stop by holding the button. Each
   activity is stored as a GPX file and listed on the main page, newest first,
   where it can be replayed with a slider. The steps move to the lower third of
   the main page.

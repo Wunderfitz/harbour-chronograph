@@ -46,7 +46,8 @@ class ActivityHistory : public QAbstractListModel
 
 public:
     enum Role {
-        /* The activity type's key: "running", "walking" or "cycling". */
+        /* The activity type's key: "running", "walking", "cycling", "rowing" or
+         * "driving". */
         TypeRole = Qt::UserRole + 1,
         /* Local time, which reaches QML as a Date. */
         StartRole,

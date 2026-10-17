@@ -28,7 +28,7 @@ ApplicationWindow {
 
     // The activity types as Activity and the database name them, in the order
     // the activity page offers them: running first, the default.
-    readonly property var activityTypes: ["running", "walking", "cycling"]
+    readonly property var activityTypes: ["running", "walking", "cycling", "rowing", "driving"]
 
     function activityTypeName(type) {
         switch (type) {
@@ -36,6 +36,10 @@ ApplicationWindow {
             return qsTr("Walking")
         case "cycling":
             return qsTr("Cycling")
+        case "rowing":
+            return qsTr("Rowing")
+        case "driving":
+            return qsTr("Driving")
         default:
             return qsTr("Running")
         }
