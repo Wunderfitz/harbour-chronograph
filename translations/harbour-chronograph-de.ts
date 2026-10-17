@@ -191,6 +191,14 @@
         <source>No positioning on this device</source>
         <translation>Keine Ortung auf diesem Gerät</translation>
     </message>
+    <message>
+        <source>Not recorded</source>
+        <translation>Nicht aufgezeichnet</translation>
+    </message>
+    <message>
+        <source>Shown as the activity goes on</source>
+        <translation>Erscheint im Lauf der Aktivität</translation>
+    </message>
 </context>
 <context>
     <name>CoverPage</name>

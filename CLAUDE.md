@@ -8,7 +8,8 @@ database; the main page and the cover show today's, the main page also the
 three days before. Iteration 3 (0.3) records runs, walks, bike rides, rowing
 and drives with GPS on an activity page with an OpenStreetMap map, stores each
 as a GPX file with a row in the database, lists them on the main page and
-replays them.
+replays them; swiped to from the values, charts show the pace and the
+elevation over the activity's time.
 
 ## Ground rules
 
@@ -151,6 +152,10 @@ The same split as for steps:
   an activity page destroyed with the view still finds it.
 - `Gpx` (`src/Gpx.*`) reads and writes a `Track` as GPX 1.1.
 - `TrackLine` (`src/TrackLine.*`) paints the route on the map.
+- `TrackChart` (`src/TrackChart.*`) is a `Track`'s pace or elevation per
+  point and the axes for them, in plain C++11 without Qt;
+  `tests/tst_trackchart.cpp` drives it on the host. `ChartLine`
+  (`src/ChartLine.*`) paints it. See [The charts](#the-charts-painted-in-c-like-the-route).
 
 ### Positioning: QtPositioning in C++
 
@@ -224,8 +229,14 @@ QtQuick and the `Internet` permission.
 
 - Pushed without `fileName` from the pulley menu (record), with one from the
   list (replay). Type combo box (running is the default, as the first
-  entry), GPS row, eight values in the upper half, map in the lower half,
-  control at the bottom; in landscape the values on the left, the map right.
+  entry), GPS row, then the rest of the upper half a Silica `SlideshowView`
+  (Piepmatz's idiom, over a `VisualItemModel`): the eight values, and swiped
+  to, the charts; a dot for each below it, the one shown highlighted. Map in
+  the lower half, control at the bottom; in landscape the values or charts
+  on the left, the map right.
+- The slideshow takes horizontal drags, as the map does, so the page's back
+  swipe now works only over the type, the GPS row and the control - and the
+  page indicator still goes back.
 - The control: Start; then `HoldButton` - a tap (under 800 ms) pauses or
   resumes, **held for 3 s it stops**, counting the seconds down on itself
   (shown from 250 ms on, so a tap does not flash it); letting go early or
@@ -246,6 +257,43 @@ QtQuick and the `Internet` permission.
   `TrackFilter::Mode`. A new type goes into all three. Every type shows the
   same values, pace included, and `Track` applies the same rules to all of
   them; only the filter treats them differently.
+
+### The charts: painted in C++, like the route
+
+Decided 2026-10-18, at the project owner's request: the pace and the
+elevation over the activity's time, one above the other, swiped to from the
+values. QtCharts is not on Harbour's allowed lists (none of the three
+mentions it), and a QML `Canvas` would walk thousands of points in JavaScript
+on every repaint. So the numbers come from Qt-free `TrackChart` and a
+`QQuickPaintedItem`, `ChartLine`, draws them; `ActivityChart.qml` adds the
+caption and the axis labels in Silica's fonts, placed by `ChartLine`'s
+`topValue`, `bottomValue`, `valueTicks`, `length` and `timeTicks`.
+
+- **The same values as the page**: `Track`'s smoothed speed per point as pace
+  (none below 0.5556 m/s, i.e. slower than 30:00/km, as `Units.js`), its
+  smoothed altitude, against the elapsed time with the pauses left out. The
+  line breaks where there is no value and at each pause.
+- **Pace upside down** - faster is higher, as sports sites draw it - with a
+  dotted line at the whole activity's average pace (distance over duration,
+  i.e. what the average shows at the end of a replay; while recording, as of
+  the last point).
+- **Pace axis from the 5th to the 95th percentile**, plus the average: setting
+  off and stopping pass through every pace there is, and min to max would
+  squash the rest flat. The extremes run off the edge. At least a minute per
+  km tall, never below 0:00.
+- **Elevation axis from min to max**, at least 20 m tall, so a receiver's
+  wander on the flat does not look like hills.
+- **Ticks on whole steps**: at most 3 intervals up (pace in 10 s to 15 min,
+  elevation 1-2-5), at most 4 across (15 s to a day); the time axis ends at
+  the activity's end, over a minute at least, not on a step. Only the lower
+  chart labels the time; both share it.
+- **Replay**: full up to the current point, faint after, with a dot at it -
+  as the map does.
+- **Cost**: each new point is taken over once; the axes are refitted at each
+  (a copy and two `nth_element`s - linear), and QML is told only when they
+  changed, so the label repeaters are not rebuilt every second. Painting
+  draws per column of pixels only the first, highest, lowest and last point,
+  so a long activity costs no more than a column's worth each.
 
 ### Smoothing the fixes: a Kalman filter per activity type
 
@@ -497,10 +545,13 @@ src/Activity.*                positioning, recording and replay: the activity pa
 src/ActivityHistory.*         the activities table as a paged list model, and the GPX files
 src/Gpx.*                     Track to and from GPX 1.1
 src/TrackLine.*               the route, painted over the map
+src/TrackChart.*              a Track's pace or elevation per point and the axes, Qt-free
+src/ChartLine.*               one chart's grid, line and average, painted
 src/TileNetworkFactory.*      the QML engine's network access: User-Agent and tile cache
 tests/tst_stepdetector.cpp    host-side checks for StepDetector (not packaged)
 tests/tst_track.cpp           host-side checks for Track
 tests/tst_trackfilter.cpp     host-side checks for TrackFilter, raw against filtered
+tests/tst_trackchart.cpp      host-side checks for TrackChart
 tests/tst_stephistory.cpp     Database and StepHistory, run in the build engine
 tests/tst_activityhistory.cpp the migration, Gpx and ActivityHistory, in the build engine
 tests/replay_recording.cpp    replays a phone recording through StepDetector
@@ -508,11 +559,11 @@ tests/raw-data/               personal data, git-ignored, local only: the record
                               their ground truth (README), parts, FINDINGS.md
 qml/harbour-chronograph.qml   ApplicationWindow; the activity types and their names
 qml/pages/OverviewPage        the activities above, the steps in the lower third; pulley menu
-qml/pages/ActivityPage        record or replay one activity: values, map, Start/Pause/slider
+qml/pages/ActivityPage        record or replay one activity: values or charts, map, control
 qml/pages/AboutPage           logo, version, what to know, credits
 qml/cover/CoverPage           today's count over the chronograph backdrop
 qml/components/               BackgroundImage, AboutLink, AboutParagraph (from Lauscher);
-                              TileMap, TileLayer, ActivityValue, HoldButton
+                              TileMap, TileLayer, ActivityValue, ActivityChart, HoldButton
 qml/js/Units.js               durations, distances, paces and speeds as shown
 images/                       icon master, cover backdrops, heading arrow (SVG), installed whole
 icons/<size>/                 the rendered launcher icon
@@ -604,6 +655,19 @@ after any change to `TrackFilter` or `Track`, also with `-O0`:
 ```sh
 g++ -std=c++11 -Wall -Wextra -O2 -Isrc tests/tst_trackfilter.cpp \
     src/TrackFilter.cpp src/Track.cpp -o /tmp/tst_trackfilter && /tmp/tst_trackfilter
+```
+
+**`tests/tst_trackchart.cpp`** checks `TrackChart` on the host: an empty
+track, a steady run (pace, average, the axis upside down and its ticks), a
+run with stops whose slowing down must not stretch the axis, standing still,
+a fast drive (the axis not below 0:00), a flat walk and a climb, no
+altitude, a pause, points taken one by one against all at once, another
+track, and fitting an axis. Run it after any change to `TrackChart`, and to
+`Track`'s speed or altitude, also with `-O0`:
+
+```sh
+g++ -std=c++11 -Wall -Wextra -O2 -Isrc tests/tst_trackchart.cpp \
+    src/TrackChart.cpp src/Track.cpp -o /tmp/tst_trackchart && /tmp/tst_trackchart
 ```
 
 **`tests/tst_stephistory.cpp`** checks `Database` and `StepHistory` with a clock
@@ -841,6 +905,13 @@ spikes and no receiver speeds: the stored points stay within 8 m of the loop
 (the fixes strayed 56 m), the distance came to 0.91 km of 0.90, the speeds to
 2.5-3.5 m/s, and the map showed a smooth loop live and in the replay.
 
+The charts (2026-10-18) build for all five targets without warnings, stay
+Harbour-clean, pass all six test suites, and in the emulator, sandboxed:
+the stored generated loop replays with both charts, the slider leaving them
+faint after its point; a recording from a generated NMEA log grows them every
+second, breaks them at a pause and shows the dotted average; the dots follow
+the slideshow. Portrait and landscape, German, checked on screen.
+
 Still to confirm on the Jolla Phone (2026):
 
 - [ ] Steps are still counted with only `Location` and `Internet` granted -
@@ -851,8 +922,9 @@ Still to confirm on the Jolla Phone (2026):
 - [ ] Whether 15 m / 40 m suit the phone's accuracy figures, and whether its
       altitude is ellipsoid or sea level.
 - [ ] Distance against a known course; the 5 m rule and receiver speeds.
-- [ ] Pinch-zoom, dragging, the back swipe above the map, holding to stop -
-      all touch, which the emulator cannot do.
+- [ ] Pinch-zoom, dragging, the back swipe above the map, holding to stop,
+      swiping between the values and the charts - all touch, which the
+      emulator cannot do.
 - [ ] Tiles on mobile data, and the cache across restarts.
 - [ ] The filter against real fixes: whether the route still cuts no corner
       worth speaking of, whether 5 sigma leaves out the phone's real jumps and

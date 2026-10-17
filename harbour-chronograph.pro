@@ -14,6 +14,7 @@ SOURCES += \
     src/main.cpp \
     src/Activity.cpp \
     src/ActivityHistory.cpp \
+    src/ChartLine.cpp \
     src/Database.cpp \
     src/Gpx.cpp \
     src/StepCounter.cpp \
@@ -21,12 +22,14 @@ SOURCES += \
     src/StepHistory.cpp \
     src/TileNetworkFactory.cpp \
     src/Track.cpp \
+    src/TrackChart.cpp \
     src/TrackFilter.cpp \
     src/TrackLine.cpp
 
 HEADERS += \
     src/Activity.h \
     src/ActivityHistory.h \
+    src/ChartLine.h \
     src/Database.h \
     src/Gpx.h \
     src/StepCounter.h \
@@ -34,6 +37,7 @@ HEADERS += \
     src/StepHistory.h \
     src/TileNetworkFactory.h \
     src/Track.h \
+    src/TrackChart.h \
     src/TrackFilter.h \
     src/TrackLine.h
 
@@ -42,6 +46,7 @@ DISTFILES += \
     qml/cover/CoverPage.qml \
     qml/components/AboutLink.qml \
     qml/components/AboutParagraph.qml \
+    qml/components/ActivityChart.qml \
     qml/components/ActivityValue.qml \
     qml/components/BackgroundImage.qml \
     qml/components/HoldButton.qml \
@@ -60,6 +65,7 @@ DISTFILES += \
     tests/tst_stephistory.cpp \
     tests/tst_track.cpp \
     tests/tst_trackfilter.cpp \
+    tests/tst_trackchart.cpp \
     tests/tst_activityhistory.cpp \
     tests/replay_recording.cpp \
     README.md \

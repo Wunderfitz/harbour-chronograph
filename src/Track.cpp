@@ -228,6 +228,11 @@ double Track::speedAtPoint(std::size_t index) const
     return m_derived[index].speed;
 }
 
+double Track::altitudeAtPoint(std::size_t index) const
+{
+    return m_derived[index].altitude;
+}
+
 const std::vector<TrackSegment> &Track::segments() const
 {
     return m_segments;

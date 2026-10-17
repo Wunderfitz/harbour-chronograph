@@ -25,9 +25,10 @@ import "../js/Units.js" as Units
 
 // Records an activity, or replays one. Pushed without a fileName it starts the
 // receiver and waits for Start; with one it shows that stored activity. The
-// values take the upper half, the map the lower, and the control at the
-// bottom follows the activity: Start, then Pause or Resume - held to stop -
-// and once it is over a slider through it.
+// values take the upper half - or, swiped to, charts of the pace and the
+// elevation - the map the lower, and the control at the bottom follows the
+// activity: Start, then Pause or Resume - held to stop - and once it is over
+// a slider through it.
 //
 // Leaving the page while recording stops the activity and stores it: Activity
 // does that as it goes with the page.
@@ -40,6 +41,10 @@ Page {
     readonly property bool finished: activity.status === Activity.Finished
     readonly property bool running: activity.status === Activity.Recording
                                     || activity.status === Activity.Paused
+
+    // What a chart says while it has nothing to draw.
+    readonly property string chartEmptyText: finished ? qsTr("Not recorded")
+                                                      : qsTr("Shown as the activity goes on")
 
     // The page has no header to keep clear of a notch for it, so the values
     // keep clear themselves, the way Silica's own pulley menu does: below it
@@ -154,71 +159,160 @@ Page {
             }
         }
 
-        // The values sit in the middle of what the half page leaves them.
+        // What the half page leaves: the values, or swiped to, the charts of
+        // the pace and the elevation over the activity's time - with a dot
+        // for each below, the one shown highlighted.
         Item {
             width: parent.width
-            height: Math.max(grid.height + Theme.paddingLarge,
+            height: Math.max(grid.height + Theme.paddingLarge + dots.height,
                              (page.isPortrait ? page.height / 2 : page.height)
                              - page.topInset - typeBox.height - Theme.itemSizeExtraSmall)
 
-            Grid {
-                id: grid
+            SlideshowView {
+                id: views
 
-                readonly property real cellWidth: (width - columnSpacing) / 2
+                anchors {
+                    top: parent.top
+                    bottom: dots.top
+                }
+                width: parent.width
+                itemWidth: width
+                itemHeight: height
+                clip: true
 
-                x: Theme.horizontalPageMargin
-                width: parent.width - 2 * Theme.horizontalPageMargin
-                anchors.verticalCenter: parent.verticalCenter
-                columns: 2
-                columnSpacing: Theme.paddingLarge
-                rowSpacing: Theme.paddingMedium
+                model: VisualItemModel {
+                    // The values sit in the middle.
+                    Item {
+                        width: views.itemWidth
+                        height: views.itemHeight
 
-                ActivityValue {
-                    width: grid.cellWidth
-                    label: qsTr("Duration")
-                    value: Units.duration(activity.elapsed)
+                        Grid {
+                            id: grid
+
+                            readonly property real cellWidth: (width - columnSpacing) / 2
+
+                            x: Theme.horizontalPageMargin
+                            width: parent.width - 2 * Theme.horizontalPageMargin
+                            anchors.verticalCenter: parent.verticalCenter
+                            columns: 2
+                            columnSpacing: Theme.paddingLarge
+                            rowSpacing: Theme.paddingMedium
+
+                            ActivityValue {
+                                width: grid.cellWidth
+                                label: qsTr("Duration")
+                                value: Units.duration(activity.elapsed)
+                            }
+                            ActivityValue {
+                                width: grid.cellWidth
+                                label: qsTr("Distance")
+                                value: Units.distance(activity.distance)
+                                unit: "km"
+                            }
+                            ActivityValue {
+                                width: grid.cellWidth
+                                label: qsTr("Pace")
+                                value: Units.pace(activity.speed)
+                                unit: "min/km"
+                            }
+                            ActivityValue {
+                                width: grid.cellWidth
+                                label: qsTr("Speed")
+                                value: Units.speed(activity.speed)
+                                unit: "km/h"
+                            }
+                            ActivityValue {
+                                width: grid.cellWidth
+                                label: qsTr("Average pace")
+                                value: Units.pace(activity.averageSpeed)
+                                unit: "min/km"
+                            }
+                            ActivityValue {
+                                width: grid.cellWidth
+                                label: qsTr("Average speed")
+                                value: Units.speed(activity.averageSpeed)
+                                unit: "km/h"
+                            }
+                            ActivityValue {
+                                width: grid.cellWidth
+                                label: qsTr("Elevation")
+                                value: Units.metres(activity.altitude)
+                                unit: "m"
+                            }
+                            ActivityValue {
+                                width: grid.cellWidth
+                                label: qsTr("Elevation gain")
+                                value: Units.metres(activity.elevationGain)
+                                unit: "m"
+                            }
+                        }
+                    }
+
+                    // One above the other, the time along the bottom for both;
+                    // their lines the same height.
+                    Item {
+                        id: charts
+
+                        readonly property real chartHeight:
+                            (height - Theme.paddingSmall - Theme.paddingLarge
+                             - elevationChart.labelHeight) / 2
+
+                        width: views.itemWidth
+                        height: views.itemHeight
+
+                        ActivityChart {
+                            id: paceChart
+                            x: Theme.horizontalPageMargin
+                            y: Theme.paddingSmall
+                            width: parent.width - 2 * Theme.horizontalPageMargin
+                            height: charts.chartHeight
+                            activity: activity
+                            quantity: ChartLine.Pace
+                            progress: page.finished ? activity.currentPoint : -1
+                            showTime: false
+                            label: qsTr("Pace")
+                            unit: "min/km"
+                            emptyText: page.chartEmptyText
+                        }
+
+                        ActivityChart {
+                            id: elevationChart
+                            x: paceChart.x
+                            y: paceChart.y + paceChart.height + Theme.paddingLarge
+                            width: paceChart.width
+                            height: charts.chartHeight + labelHeight
+                            activity: activity
+                            quantity: ChartLine.Elevation
+                            progress: paceChart.progress
+                            label: qsTr("Elevation")
+                            unit: "m"
+                            emptyText: page.chartEmptyText
+                        }
+                    }
                 }
-                ActivityValue {
-                    width: grid.cellWidth
-                    label: qsTr("Distance")
-                    value: Units.distance(activity.distance)
-                    unit: "km"
+            }
+
+            Row {
+                id: dots
+
+                anchors {
+                    horizontalCenter: parent.horizontalCenter
+                    bottom: parent.bottom
                 }
-                ActivityValue {
-                    width: grid.cellWidth
-                    label: qsTr("Pace")
-                    value: Units.pace(activity.speed)
-                    unit: "min/km"
-                }
-                ActivityValue {
-                    width: grid.cellWidth
-                    label: qsTr("Speed")
-                    value: Units.speed(activity.speed)
-                    unit: "km/h"
-                }
-                ActivityValue {
-                    width: grid.cellWidth
-                    label: qsTr("Average pace")
-                    value: Units.pace(activity.averageSpeed)
-                    unit: "min/km"
-                }
-                ActivityValue {
-                    width: grid.cellWidth
-                    label: qsTr("Average speed")
-                    value: Units.speed(activity.averageSpeed)
-                    unit: "km/h"
-                }
-                ActivityValue {
-                    width: grid.cellWidth
-                    label: qsTr("Elevation")
-                    value: Units.metres(activity.altitude)
-                    unit: "m"
-                }
-                ActivityValue {
-                    width: grid.cellWidth
-                    label: qsTr("Elevation gain")
-                    value: Units.metres(activity.elevationGain)
-                    unit: "m"
+                height: Theme.paddingLarge
+                spacing: Theme.paddingMedium
+
+                Repeater {
+                    model: views.count
+
+                    Rectangle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: Math.round(1.5 * Theme.paddingSmall)
+                        height: width
+                        radius: width / 2
+                        color: index === views.currentIndex ? Theme.highlightColor
+                                                            : Theme.secondaryColor
+                    }
                 }
             }
         }

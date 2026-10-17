@@ -52,8 +52,13 @@ function distance(metres) {
 function pace(speed) {
     if (!(speed >= slowestPace))
         return none
-    var seconds = Math.round(1000 / speed)
-    return Math.floor(seconds / 60) + ":" + pad(seconds % 60)
+    return paceOf(1000 / speed)
+}
+
+// The same from seconds per kilometre, as the pace chart's axis has them.
+function paceOf(seconds) {
+    var whole = Math.round(seconds)
+    return Math.floor(whole / 60) + ":" + pad(whole % 60)
 }
 
 // Kilometres per hour, to a tenth.

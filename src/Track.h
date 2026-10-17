@@ -121,6 +121,8 @@ public:
     double elapsedAtPoint(std::size_t index) const;
     double distanceAtPoint(std::size_t index) const;
     double speedAtPoint(std::size_t index) const;
+    /* Smoothed, as stateAt() gives it; NaN until a fix brought one. */
+    double altitudeAtPoint(std::size_t index) const;
     const std::vector<TrackSegment> &segments() const;
 
     /* Metres between two positions on the WGS 84 mean sphere. */

@@ -27,6 +27,7 @@
 
 #include "Activity.h"
 #include "ActivityHistory.h"
+#include "ChartLine.h"
 #include "Database.h"
 #include "StepCounter.h"
 #include "StepHistory.h"
@@ -53,6 +54,7 @@ int main(int argc, char *argv[])
     // One per activity page, which decides whether it records or replays.
     qmlRegisterType<Activity>("de.ygriega.chronograph", 1, 0, "Activity");
     qmlRegisterType<TrackLine>("de.ygriega.chronograph", 1, 0, "TrackLine");
+    qmlRegisterType<ChartLine>("de.ygriega.chronograph", 1, 0, "ChartLine");
 
     /* All constructed before the view, so counting starts with the app rather
      * than with whichever page first looks at it - and destroyed after the view,
