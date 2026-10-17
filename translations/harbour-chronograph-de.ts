@@ -132,7 +132,7 @@
     </message>
     <message>
         <source>Pace</source>
-        <translation>Pace</translation>
+        <translation>Tempo</translation>
     </message>
     <message>
         <source>Speed</source>
@@ -140,7 +140,7 @@
     </message>
     <message>
         <source>Average pace</source>
-        <translation>Durchschnittliche Pace</translation>
+        <translation>Durchschnittliches Tempo</translation>
     </message>
     <message>
         <source>Average speed</source>
@@ -152,7 +152,7 @@
     </message>
     <message>
         <source>Elevation gain</source>
-        <translation>Anstieg</translation>
+        <translation>Höhenmeter</translation>
     </message>
     <message>
         <source>Start</source>
