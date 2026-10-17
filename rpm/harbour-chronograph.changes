@@ -14,6 +14,8 @@
   below say which is shown.
 - Deletes an activity from its context menu in the list or from the pulley
   menu of its page, after a ten-second countdown that a tap undoes.
+- While an activity is recorded, the cover shows its type, duration, distance
+  and pace, and a cover action pauses and resumes it.
 - Asks for the Location and Internet permissions; no longer for Sensors, which
   Location includes.
 

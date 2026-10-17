@@ -226,6 +226,10 @@
         <source>Waiting for the accelerometer…</source>
         <translation>Warte auf den Beschleunigungssensor…</translation>
     </message>
+    <message>
+        <source>Paused</source>
+        <translation>Pausiert</translation>
+    </message>
 </context>
 <context>
     <name>OverviewPage</name>

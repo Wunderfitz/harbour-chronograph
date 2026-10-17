@@ -47,6 +47,8 @@ class QGeoPositionInfoSource;
  * Either way the values - time, distance, speeds, altitude, climb, position -
  * are the Track's at one moment: now while recording, replayPosition after.
  * While recording they are refreshed with every fix and at least once a second.
+ * From start to stop the history names it as the activity being recorded, so
+ * that the cover can show it and pause or resume it.
  *
  * The receiver's fixes are never shown or recorded as they come: they go
  * through a TrackFilter first, set to the activity's type, and only its

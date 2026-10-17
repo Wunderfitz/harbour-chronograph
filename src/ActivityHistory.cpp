@@ -233,6 +233,19 @@ bool ActivityHistory::remove(const QString &fileName)
     return true;
 }
 
+QObject *ActivityHistory::recording() const
+{
+    return m_recording;
+}
+
+void ActivityHistory::setRecording(QObject *activity)
+{
+    if (m_recording == activity)
+        return;
+    m_recording = activity;
+    emit recordingChanged();
+}
+
 QString ActivityHistory::defaultDirectory()
 {
     return QDir(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation))

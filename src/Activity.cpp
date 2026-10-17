@@ -495,6 +495,14 @@ void Activity::setStatus(Status status)
     if (m_status == status)
         return;
     m_status = status;
+    // For the cover, which shows the activity while it is recorded. Cleared
+    // in the destructor too, which stops a recording.
+    if (m_history) {
+        if (status == Recording || status == Paused)
+            m_history->setRecording(this);
+        else if (m_history->recording() == this)
+            m_history->setRecording(nullptr);
+    }
     emit statusChanged();
 }
 

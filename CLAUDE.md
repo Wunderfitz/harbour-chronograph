@@ -10,7 +10,8 @@ and drives with GPS on an activity page with an OpenStreetMap map, stores each
 as a GPX file with a row in the database, lists them on the main page and
 replays them; swiped to from the values, charts show the pace and the
 elevation over the activity's time. An activity is deleted from the list's
-context menu or its page's pulley, after a ten-second remorse timer.
+context menu or its page's pulley, after a ten-second remorse timer. While
+one is recorded, the cover shows it and pauses or resumes it.
 
 ## Ground rules
 
@@ -150,7 +151,8 @@ The same split as for steps:
   `QAbstractListModel` over the `activities` table, and owns the GPX
   directory: `Activity` hands it a finished `Track`, it writes the file and
   the row; `remove()` deletes both again. Constructed in `main()` before the view like the others, so that
-  an activity page destroyed with the view still finds it.
+  an activity page destroyed with the view still finds it. It also names
+  the activity being recorded, for the cover - see [The cover](#the-cover).
 - `Gpx` (`src/Gpx.*`) reads and writes a `Track` as GPX 1.1.
 - `TrackLine` (`src/TrackLine.*`) paints the route on the map.
 - `TrackChart` (`src/TrackChart.*`) is a `Track`'s pace or elevation per
@@ -581,7 +583,8 @@ qml/pages/OverviewPage        the activities above, the steps in the lower third
 qml/pages/ActivityPage        record or replay one activity: values or charts, map, control;
                               pulley to delete a stored one
 qml/pages/AboutPage           logo, version, what to know, credits
-qml/cover/CoverPage           today's count over the chronograph backdrop
+qml/cover/CoverPage           today's count over the chronograph backdrop, or the activity
+                              being recorded, with an action to pause or resume it
 qml/components/               BackgroundImage, AboutLink, AboutParagraph (from Lauscher);
                               TileMap, TileLayer, ActivityValue, ActivityChart, HoldButton
 qml/js/Units.js               durations, distances, paces and speeds as shown
@@ -836,8 +839,24 @@ else (see Lauscher's notes on what it misses).
   Its face is an outline rather than a disc, which in one colour would swallow
   the marks and the hand.
 - Content: today's count (`fontSizeHuge`, shrinking to fit), "Steps", and a
-  status line only while not counting. No cover actions yet - there is nothing to act
-  on. Add them the way Lauscher does (one `CoverActionList` per combination).
+  status line only while not counting. No action.
+- **While an activity is recorded or paused** (decided 2026-10-18, at the
+  project owner's request) the cover shows it instead: its type, the elapsed
+  time large, the distance and the current pace - the activity page's values,
+  through `Units.js` - and "Paused" while paused. One action pauses it, and
+  once paused resumes it, with the theme's `icon-cover-pause` and
+  `icon-cover-play`. Before the start and after the stop it is the steps
+  again, without an action.
+- **How the cover finds the activity**: the `Activity` is the activity page's
+  own, made by QML, and the cover cannot see into the page. So
+  `ActivityHistory`, a context property everything can see, has a
+  `recording` property, which `Activity::setStatus()` sets at the start and
+  clears at the stop - the destructor stops a recording, so it is cleared
+  then too. Typed `QObject *` rather than `Activity *`, so that
+  `ActivityHistory` and its test do not depend on `Activity`, positioning
+  and libkeepalive.
+- Actions the way Lauscher has them: **one `CoverActionList` per state**,
+  as lipstick takes an enabled list wholesale; none enabled means none shown.
 
 ## The app icon
 
@@ -942,6 +961,14 @@ the list item and the popup on the activity page show; each deletes the row
 and the file once it runs out, the list loses the item, and the page goes
 back; pushing a page during the list's countdown deletes at once.
 
+The activity on the cover (2026-10-18) builds for all five targets without
+warnings, stays Harbour-clean, passes the activity history's tests, and in
+the emulator, sandboxed, with a generated NMEA log and a patched-in timer:
+the steps cover without an action while the page waits for Start; the type,
+time, distance and pace with a pause action while recording; "Paused", no
+pace and a play action after the cover's pause action fired; recording
+again after its resume action; the steps without an action after the stop.
+
 Still to confirm on the Jolla Phone (2026):
 
 - [ ] Steps are still counted with only `Location` and `Internet` granted -
@@ -953,9 +980,9 @@ Still to confirm on the Jolla Phone (2026):
       altitude is ellipsoid or sea level.
 - [ ] Distance against a known course; the 5 m rule and receiver speeds.
 - [ ] Pinch-zoom, dragging, the back swipe above the map, holding to stop,
-      swiping between the values and the charts, the activity page's pulley
-      and tapping a countdown to keep the activity - all touch, which the
-      emulator cannot do.
+      swiping between the values and the charts, the activity page's pulley,
+      tapping a countdown to keep the activity and tapping the cover's pause
+      and resume action - all touch, which the emulator cannot do.
 - [ ] Tiles on mobile data, and the cache across restarts.
 - [ ] The filter against real fixes: whether the route still cuts no corner
       worth speaking of, whether 5 sigma leaves out the phone's real jumps and
@@ -1062,6 +1089,6 @@ a longer history; a reset; daily goals; distance and calories from step
 length; saving on SIGTERM, should a shutdown while walking lose too much; and
 whether all-day tracking needs a background service or a hardware step counter
 instead of the running app. For activities: changing a stored
-one's type; writing the track as it goes, so a crash loses nothing; the
-activity on the cover while recording; steps during an activity; laps and
+one's type; writing the track as it goes, so a crash loses nothing; steps
+during an activity; laps and
 splits; imperial units; sharing or exporting the GPX file.

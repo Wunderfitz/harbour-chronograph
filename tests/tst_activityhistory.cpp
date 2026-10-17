@@ -22,7 +22,7 @@
  * GPX files written and read back - pauses, the receiver's speeds and all - and
  * read from other apps, and ActivityHistory's list, which is read a page at a
  * time, newest first, takes new activities at the top and lets them be deleted
- * again. Every track here is generated.
+ * again - and names the activity being recorded. Every track here is generated.
  *
  * Like tst_stephistory this needs Qt with QtSql and its SQLite driver, so it
  * runs in the build engine against the i486 target, from that target's build
@@ -356,6 +356,29 @@ void testNoDatabase(const QString &directory)
     expect("file and all", history.rowCount() == 0 && !QFileInfo::exists(QDir(gpx).filePath(name)));
 }
 
+/* The activity being recorded, as the cover asks for it: any QObject will do
+ * here, as the history knows nothing more of it. */
+void testRecording(const QString &directory)
+{
+    Database database(QDir(directory).filePath(QStringLiteral("recording.db")));
+    ActivityHistory history(&database, QDir(directory).filePath(QStringLiteral("gpx-recording")));
+    int changes = 0;
+    QObject::connect(&history, &ActivityHistory::recordingChanged, [&changes]() { ++changes; });
+    expect("nothing recorded at first", history.recording() == nullptr);
+
+    QObject *activity = new QObject;
+    history.setRecording(activity);
+    expect("an activity recording is named", history.recording() == activity && changes == 1);
+    history.setRecording(activity);
+    expectEqual("named again, it changes nothing", changes, 1);
+    history.setRecording(nullptr);
+    expect("cleared at its stop", history.recording() == nullptr && changes == 2);
+
+    history.setRecording(activity);
+    delete activity;
+    expect("never left pointing at an activity gone", history.recording() == nullptr);
+}
+
 } // namespace
 
 int main(int argc, char *argv[])
@@ -376,6 +399,7 @@ int main(int argc, char *argv[])
     testRemoving(directory.path());
     testPaging(directory.path());
     testNoDatabase(directory.path());
+    testRecording(directory.path());
 
     std::printf("%s\n", g_failures ? "FAILED" : "All passed");
     return g_failures ? 1 : 0;

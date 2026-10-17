@@ -23,6 +23,7 @@
 #include <QAbstractListModel>
 #include <QDateTime>
 #include <QList>
+#include <QPointer>
 #include <QString>
 
 class Database;
@@ -42,10 +43,17 @@ class Track;
  *
  * remove() deletes an activity again, row and file; the pages ask for it only
  * once their remorse timer has run out.
+ *
+ * It also knows the activity being recorded, if any, for the cover: the
+ * activity page's Activity is QML's, and the cover cannot see into the page.
  */
 class ActivityHistory : public QAbstractListModel
 {
     Q_OBJECT
+
+    /* The Activity recording or paused now, null while none is. A QObject, so
+     * that the history does not depend on what records. */
+    Q_PROPERTY(QObject *recording READ recording NOTIFY recordingChanged)
 
 public:
     enum Role {
@@ -86,8 +94,16 @@ public:
      * could not be deleted or the name is not a file of this directory. */
     Q_INVOKABLE bool remove(const QString &fileName);
 
+    QObject *recording() const;
+    /* Set by the Activity as it starts recording, cleared as it stops - also
+     * when it goes, as it stops then. Null clears it. */
+    void setRecording(QObject *activity);
+
     /* gpx/ below the app's data directory. */
     static QString defaultDirectory();
+
+signals:
+    void recordingChanged();
 
 private:
     struct Entry {
@@ -106,6 +122,7 @@ private:
     QList<Entry> m_entries;
     /* Every row has been read. */
     bool m_complete = false;
+    QPointer<QObject> m_recording;
 };
 
 #endif // ACTIVITYHISTORY_H
