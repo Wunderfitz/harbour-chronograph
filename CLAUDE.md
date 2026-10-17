@@ -111,8 +111,11 @@ History, settings and anything else stateful belong in C++ classes next to
 
 The same split as for steps:
 
+- `TrackFilter` (`src/TrackFilter.*`) smooths the receiver's fixes before
+  anything else sees them, in plain C++11 without Qt; `tests/tst_trackfilter.cpp`
+  drives it on the host. See [Smoothing the fixes](#smoothing-the-fixes-a-kalman-filter-per-activity-type).
 - `Track` (`src/Track.*`) is an activity as recorded, in plain C++11 without
-  Qt: segments (start or resume to pause or stop) and the fixes within them,
+  Qt: segments (start or resume to pause or stop) and the points within them,
   and what follows from those at every point - elapsed time with the pauses
   left out, distance, current and average speed, smoothed altitude, climb.
   `tests/tst_track.cpp` drives it on the host. **Live recording and replay go
@@ -120,17 +123,20 @@ The same split as for steps:
   activity replays exactly as it was shown while recorded; `stateAt(elapsed)`
   answers both. Its rules, none tuned on real activities yet:
   - distance: straight lines between points at least 5 m apart, so a standing
-    receiver's wander adds nothing; a fix whose own speed says standing
+    receiver's wander adds nothing; a point whose own speed says standing
     (< 0.5 m/s) does not move it on; nothing counts across a pause. The last
     step of under 5 m of each segment is not counted;
-  - current speed: the receiver's own (Doppler) speed averaged over 5 s, or
-    the distance over 10 s for fixes without one; 0 once the last point is
-    over 5 s old or its segment has ended;
+  - current speed: the points' own speed - the filter's, or in a file from
+    elsewhere the receiver's - averaged over 5 s, or the distance over 10 s
+    for points without one; 0 once the last point is over 5 s old or its
+    segment has ended;
   - altitude smoothed with a 5 s time constant, climb counted with 3 m of
     hysteresis.
   The tests model the receiver's error as a slowly wandering offset rather
   than fresh noise per fix: a phone's chipset filters its output, and fresh
-  noise would make any 5 m rule overcount by half.
+  noise would make any 5 m rule overcount by half. `Track` itself does not
+  care whether its points are filtered: it treats the filter's estimates
+  and the raw fixes of a 0.3 file alike.
 - `Activity` (`src/Activity.*`) is the QML-facing `QObject`, **created by
   QML, one per activity page** (`de.ygriega.chronograph 1.0`, `Activity`) -
   unlike `StepCounter`, as the receiver must run only while that page is
@@ -161,16 +167,22 @@ in that module.
   timestamp: the segments begin and end by that clock, and a fix must not
   seem to predate its segment. A fix whose own timestamp is over 10 s old is
   a stale last-known position and is dropped.
-- **Signal quality** from the horizontal accuracy: good up to 10 m (green),
-  fair up to 30 m (yellow), poor beyond (red), as are no fix for 5 s, no
-  positioning plugin, and location switched off. Poor fixes are shown but not
-  recorded. A fix without an accuracy counts as fair.
+- **Signal quality** from the horizontal accuracy: good up to 15 m (green),
+  fair up to 40 m (yellow), poor beyond (red), as are no fix for 5 s, no
+  positioning plugin, and location switched off. Poor fixes go nowhere - not
+  into the filter, the map or the track - but are what the GPS row shows. A
+  fix without an accuracy counts as fair.
 - Location switched off is read from `/etc/location/location.conf`
   (`enabled` and `gps\enabled`), which the `Location` permission makes
   visible in the sandbox; positioning just stays silent then.
-- The direction arrow shows only at 0.5 m/s or more: below that a receiver's
-  course is noise.
-- Altitude is whatever the receiver says. Whether the hybris provider gives
+- **Only the filter's estimates are shown or recorded**: the map's position
+  and direction, the values, the route, the GPX file. Until the filter has
+  settled (five fixes that agree) there is no position on the map at all. The
+  accuracy circle is the receiver's latest accuracy around the estimate,
+  matching the GPS row.
+- The direction arrow shows only at 0.5 m/s or more: below that a course is
+  noise.
+- The altitude is the filter's, from the receiver's. Whether the hybris provider gives
   ellipsoid or sea-level height is unverified; in Europe they differ by about
   50 m. The climb does not depend on it.
 - `CHRONOGRAPH_NMEA=<file>` replays an NMEA log in place of the receiver
@@ -229,9 +241,78 @@ QtQuick and the `Internet` permission.
 - Activity type keys are `running`, `walking`, `cycling`, `rowing` and
   `driving` everywhere (C++, database, GPX `<type>`); `app.activityTypes` and
   `app.activityTypeName()` in `harbour-chronograph.qml` are the only place they
-  are translated, and `isType()` in `Activity.cpp` the only place they are
-  checked. A new type goes into both. Every type shows the same values, pace
-  included, and `Track` applies the same rules to all of them.
+  are translated, `isType()` in `Activity.cpp` the only place they are
+  checked, and `filterMode()` beside it the only place they are mapped to a
+  `TrackFilter::Mode`. A new type goes into all three. Every type shows the
+  same values, pace included, and `Track` applies the same rules to all of
+  them; only the filter treats them differently.
+
+### Smoothing the fixes: a Kalman filter per activity type
+
+Decided 2026-10-17. A phone's fixes jump by tens of metres now and then, its
+speeds spike - worst at a walking pace - and its altitude spikes too; recorded
+as they came, they made the route jagged, the distance far too long and the
+pace and climb jumpy. So `TrackFilter` stands between the receiver and
+everything else, and **nothing from the receiver is shown or recorded without
+going through it** - except the accuracies, which describe the signal rather
+than the movement and stay the receiver's.
+
+- **A Kalman filter with a constant-velocity model**, in metres east and north
+  of an origin that follows the estimate (moved once 1 km away), so a flat
+  projection is exact enough. Each fix weighs by its own horizontal accuracy
+  (taken as the error per axis, never under 3 m; 15 m without one) against
+  what the earlier fixes predict. The receiver's speed and course, where it
+  gives both, go in as a measured velocity, good to 0.3 m/s or 5 % of the
+  accuracy per second. The altitude has a filter of its own, with the
+  vertical accuracy (1.5 × the horizontal without one), fed only from fixes
+  whose position was taken.
+- **The activity type sets how the movement may change**, as the spectral
+  density of the acceleration: **along the direction of travel and across it
+  apart**. Speed changes slowly, but a corner turns the velocity round within
+  a second, so a sudden change of speed is an outlier long before a sudden
+  change of direction is. Below 0.5 m/s there is no direction, and only the
+  slower rule holds. Walking 0.1 along, 1 across; running 0.3 / 4; cycling
+  0.5 / 4 (bikes brake hard); rowing 0.3 / 1, with next to no climb; driving
+  4 / 10. Each is about the least that still follows setting off and stopping
+  within a second or two of the truth. Changing the type while recording
+  changes the filter at once.
+- **Outliers**: a position or velocity more than 5 sigma off what the filter
+  expects is left out (a velocity alone, keeping its fix's position); one
+  beyond 2 sigma counts as if its noise were larger by the cube of how much
+  further off it is - a linear inflation let spikes through at half strength.
+  A fix whose position is left out is not recorded at all; the track bridges
+  the gap with a straight line.
+- **Recovery**: the filter gives no estimate until five fixes in a row agree,
+  starting over at any that does not, so a run of bad fixes at the start
+  cannot become the start. Later, the fixes it does not clearly agree with
+  feed a second guess; after 10 s with no fix within 2 sigma of the
+  estimate, the second guess takes over if five fixes agree with it. The
+  altitude starts over from the receiver after 10 s of disagreement.
+- **Stored as filtered**: the GPX file holds the estimates, and a replay reads
+  them back without filtering again, so it shows what was shown live. The raw
+  fixes are not kept: an activity cannot be filtered anew later. Files from
+  0.3 hold raw fixes and replay as they are.
+- Poor fixes (over 40 m) still go nowhere, as before: under a sky that bad the
+  filter would only drift with them. The limits were 10 m and 30 m until the
+  filter came (raised 2026-10-17 at the project owner's decision): it weighs
+  each fix by its accuracy anyway, and the tighter limits made it likelier
+  never to settle - and so to show and record nothing - under a fair sky.
+- **What it cannot do**: the receiver's slow wander - metres over a minute -
+  looks exactly like real movement or a real hill, and passes. On the
+  generated tracks a flat walk of 20 minutes still climbs 15-25 m through
+  wander alone, against 75-100 m raw; spikes alone it reduces to 0. Only
+  `Track`'s 3 m climb hysteresis keeps it out of the climb (5 m would halve
+  it, at the cost of small real hills - not changed, as it applies to every
+  file). The distance is not hurt by it: `Track`'s 5 m rule and the filtered
+  speed keep standing still at 0 m.
+- **Tuned on generated tracks only** (`tests/tst_trackfilter.cpp`), with a
+  receiver that wanders by 3 m over 30 s, jumps 20-80 m for 1-3 fixes 1 % of
+  the time, spikes its speed by 1-4 m/s and its altitude by 10-40 m 2 % of the
+  time. Against that, over 20 seeds, the worst distance error of a walk falls
+  from 124 % raw to under 2 %, of a run from 60 % to under 2 %; positions stay
+  within about 10 m, against 80 m raw; the largest speed error of a walk falls
+  from about 4 m/s to 0.6. None of it has been checked against a phone's real
+  fixes yet.
 
 ### Reading the accelerometer: QtSensors in C++
 
@@ -386,10 +467,12 @@ the OS; like the sensorfw plugin it is not `Require`d, as Harbour would refuse i
   in UTC in ISO 8601's basic format, `20261016T073000Z.gpx`: sorts by time,
   means the same in every time zone, and has no colons, so it survives being
   copied to any file system. A second activity in the same second gets `-2`.
-  Written whole with `QSaveFile` at the stop. GPX 1.1, one `trkseg` per
-  stretch between pauses; the receiver's speed and course go into Garmin's
-  `TrackPointExtension` v2, which sport sites read, and each point's accuracy
-  and each segment's begin and end into Chronograph's own namespace - the
+  Written whole with `QSaveFile` at the stop, with the filter's estimates
+  as its points. GPX 1.1, one `trkseg` per stretch between pauses; the
+  speed and course go into Garmin's `TrackPointExtension` v2, which sport
+  sites read, and each point's horizontal and vertical accuracy (the
+  receiver's) and each segment's begin and end into Chronograph's own
+  namespace - the
   segment times are what lets a replay leave the pauses out exactly. Files
   from other apps read too (GPX 1.0's own `speed`, no extensions).
 - **The list is read 100 at a time**, newest first, by `(start, id)`: the first
@@ -408,7 +491,8 @@ src/Database.*                the SQLite connection and the schema's migrations
 src/StepHistory.*             steps per day: today's count, saving, the previous days
 src/StepCounter.*             QAccelerometer + keepalive, the QML facade
 src/StepDetector.*            the algorithm, Qt-free
-src/Track.*                   an activity's segments and fixes and their values, Qt-free
+src/TrackFilter.*             the Kalman filter the fixes go through first, Qt-free
+src/Track.*                   an activity's segments and points and their values, Qt-free
 src/Activity.*                positioning, recording and replay: the activity page's facade
 src/ActivityHistory.*         the activities table as a paged list model, and the GPX files
 src/Gpx.*                     Track to and from GPX 1.1
@@ -416,6 +500,7 @@ src/TrackLine.*               the route, painted over the map
 src/TileNetworkFactory.*      the QML engine's network access: User-Agent and tile cache
 tests/tst_stepdetector.cpp    host-side checks for StepDetector (not packaged)
 tests/tst_track.cpp           host-side checks for Track
+tests/tst_trackfilter.cpp     host-side checks for TrackFilter, raw against filtered
 tests/tst_stephistory.cpp     Database and StepHistory, run in the build engine
 tests/tst_activityhistory.cpp the migration, Gpx and ActivityHistory, in the build engine
 tests/replay_recording.cpp    replays a phone recording through StepDetector
@@ -503,6 +588,22 @@ any change to `Track`, also with `-O0`:
 ```sh
 g++ -std=c++11 -Wall -Wextra -O2 -Isrc tests/tst_track.cpp \
     src/Track.cpp -o /tmp/tst_track && /tmp/tst_track
+```
+
+**`tests/tst_trackfilter.cpp`** checks `TrackFilter` on the host: generated
+activities of every type - routes whose speed and direction change no faster
+than a body or a vehicle can - recorded by a generated receiver with wander,
+noise, position jumps, speed spikes and altitude spikes, each replayed into a
+`Track` raw and filtered and both held against the truth: distance, position,
+speed and climb, the filtered ones better than raw and within limits. Also a
+fair signal and one at the edge of fair (settling within 10 s), no receiver speeds, standing still, setting off and stopping per
+type, altitude spikes alone, a bad start, half a minute 40 m off, a minute in
+a tunnel, a drive filtered as a walk, and 20 seeds of walks and runs. Run it
+after any change to `TrackFilter` or `Track`, also with `-O0`:
+
+```sh
+g++ -std=c++11 -Wall -Wextra -O2 -Isrc tests/tst_trackfilter.cpp \
+    src/TrackFilter.cpp src/Track.cpp -o /tmp/tst_trackfilter && /tmp/tst_trackfilter
 ```
 
 **`tests/tst_stephistory.cpp`** checks `Database` and `StepHistory` with a clock
@@ -725,13 +826,20 @@ German strings use the formal "Sie", as Lauscher's do.
 
 **Iteration 3 (0.3) is done in the emulator**: builds for 4.6 (aarch64,
 armv7hl, i486) and 5.1 (aarch64, i486), Harbour-clean since `Sensors` went,
-passes all four test suites, and in the emulator, sandboxed, with a generated
+passes all four test suites (five with the filter's), and in the emulator, sandboxed, with a generated
 NMEA log: tiles load through the custom User-Agent and cache; the values,
 route and heading update every second; pause leaves the time and the distance
 out; hold-to-stop shows its countdown; stopping stores the GPX file and the row
 and switches to the slider; the list shows the new activity at once and
 replays it with the same values; leaving the page and quitting the app while
 recording both store it. German, portrait and landscape checked on screen.
+
+The smoothing filter (same day) builds for all five targets without
+warnings, stays Harbour-clean, passes five test suites, and in the emulator,
+sandboxed, recorded a generated 3 m/s loop with 40-70 m jumps and altitude
+spikes and no receiver speeds: the stored points stay within 8 m of the loop
+(the fixes strayed 56 m), the distance came to 0.91 km of 0.90, the speeds to
+2.5-3.5 m/s, and the map showed a smooth loop live and in the replay.
 
 Still to confirm on the Jolla Phone (2026):
 
@@ -740,12 +848,18 @@ Still to confirm on the Jolla Phone (2026):
 
 - [ ] A fix inside Sailjail with `Location`, and how fast it comes.
 - [ ] Recording with the display off, the page in the background.
-- [ ] Whether 10 m / 30 m suit the phone's accuracy figures, and whether its
+- [ ] Whether 15 m / 40 m suit the phone's accuracy figures, and whether its
       altitude is ellipsoid or sea level.
 - [ ] Distance against a known course; the 5 m rule and receiver speeds.
 - [ ] Pinch-zoom, dragging, the back swipe above the map, holding to stop -
       all touch, which the emulator cannot do.
 - [ ] Tiles on mobile data, and the cache across restarts.
+- [ ] The filter against real fixes: whether the route still cuts no corner
+      worth speaking of, whether 5 sigma leaves out the phone's real jumps and
+      nothing else, how often the second guess takes over (it should be rare),
+      and whether the phone's altitude wanders more than the 3 m assumed.
+      Real fixes are personal data like the walks: any log of them stays in
+      `tests/raw-data/`, and what is learnt goes into the generated receiver.
 
 **Iteration 1 is done**: builds for 4.6 and 5.1, passes the host tests, runs
 sandboxed in the emulator (overview, cover, about page and the unavailable state

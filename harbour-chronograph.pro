@@ -21,6 +21,7 @@ SOURCES += \
     src/StepHistory.cpp \
     src/TileNetworkFactory.cpp \
     src/Track.cpp \
+    src/TrackFilter.cpp \
     src/TrackLine.cpp
 
 HEADERS += \
@@ -33,6 +34,7 @@ HEADERS += \
     src/StepHistory.h \
     src/TileNetworkFactory.h \
     src/Track.h \
+    src/TrackFilter.h \
     src/TrackLine.h
 
 DISTFILES += \
@@ -57,6 +59,7 @@ DISTFILES += \
     tests/tst_stepdetector.cpp \
     tests/tst_stephistory.cpp \
     tests/tst_track.cpp \
+    tests/tst_trackfilter.cpp \
     tests/tst_activityhistory.cpp \
     tests/replay_recording.cpp \
     README.md \

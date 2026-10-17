@@ -117,6 +117,7 @@ Track makeTrack(double start, int seconds, double pause = 0)
         point.longitude = 13.4;
         point.altitude = 40.0 + 0.1 * i;
         point.accuracy = 4.0;
+        point.verticalAccuracy = 6.0;
         point.speed = 3.0;
         point.course = 0.5;
         track.addPoint(point);
@@ -187,6 +188,7 @@ void testGpxRoundTrip(const QString &directory)
     expectEqual("a point's speed", read.point(10).speed, 3.0, 0.005);
     expectEqual("its course", read.point(10).course, 0.5, 0.05);
     expectEqual("its accuracy", read.point(10).accuracy, 4.0, 0.05);
+    expectEqual("its vertical accuracy", read.point(10).verticalAccuracy, 6.0, 0.05);
     expectEqual("its altitude", read.point(10).altitude, 41.0, 0.05);
     expectEqual("its time, to the millisecond", read.point(10).time, written.point(10).time, 0.0005);
 

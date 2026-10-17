@@ -5,6 +5,10 @@
   activity is stored as a GPX file and listed on the main page, newest first,
   where it can be replayed with a slider. The steps move to the lower third of
   the main page.
+- GPS positions, speed and altitude go through a smoothing filter tuned to the
+  activity type before they are shown or stored: it weighs each fix by its
+  accuracy, leaves out jumps and spikes, and keeps the route, the distance,
+  the pace and the climb steady.
 - Asks for the Location and Internet permissions; no longer for Sensors, which
   Location includes.
 

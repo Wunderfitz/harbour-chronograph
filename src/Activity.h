@@ -27,6 +27,7 @@
 #include <QTimer>
 
 #include "Track.h"
+#include "TrackFilter.h"
 
 class ActivityHistory;
 class BackgroundActivity;
@@ -47,6 +48,11 @@ class QGeoPositionInfoSource;
  * are the Track's at one moment: now while recording, replayPosition after.
  * While recording they are refreshed with every fix and at least once a second.
  *
+ * The receiver's fixes are never shown or recorded as they come: they go
+ * through a TrackFilter first, set to the activity's type, and only its
+ * estimates reach the map, the values and the track - so the GPX file holds
+ * them too, and a replay shows what was shown while recording.
+ *
  * While the receiver runs, a keepalive of its own stops the phone from
  * suspending, so a recording carries on with the display off - whatever
  * StepCounter's keepalive does.
@@ -65,7 +71,8 @@ class Activity : public QObject, public QQmlParserStatus
     Q_PROPERTY(QString type READ type WRITE setType NOTIFY typeChanged)
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
 
-    /* The receiver now; in a replay, what it said at that moment. */
+    /* The receiver now; in a replay, what it said at that moment. The
+     * position is the filter's estimate, the accuracy the receiver's. */
     Q_PROPERTY(SignalQuality signalQuality READ signalQuality NOTIFY positionChanged)
     Q_PROPERTY(bool hasPosition READ hasPosition NOTIFY positionChanged)
     Q_PROPERTY(double latitude READ latitude NOTIFY positionChanged)
@@ -181,7 +188,7 @@ private:
     void stopPositioning();
     void load();
     void save();
-    void addCurrentFix(double now);
+    void addEstimate(double now);
     void setStatus(Status status);
     void showLive();
     void showReplay();
@@ -209,6 +216,8 @@ private:
     /* The latest fix, and when it came; time is 0 before the first. */
     TrackPoint m_fix;
     bool m_hasFix = false;
+    /* What the fixes come to: the only positions shown or recorded. */
+    TrackFilter m_filter;
 
     Track m_track;
     double m_replayPosition = 0;

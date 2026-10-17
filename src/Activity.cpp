@@ -48,9 +48,10 @@ const double kSignalLostAfter = 5.0;
 const double kStaleFixAfter = 10.0;
 
 /* Horizontal accuracy, in metres, up to which a fix is good, and fair. Fixes
- * worse than fair are shown but not recorded. */
-const double kGoodAccuracy = 10.0;
-const double kFairAccuracy = 30.0;
+ * worse than fair go nowhere: not into the filter, the map or the track. Set
+ * generously, so that the filter settles even under a fair sky. */
+const double kGoodAccuracy = 15.0;
+const double kFairAccuracy = 40.0;
 
 /* Set this to an NMEA log to have the activity page replay it in place of the
  * receiver - for the emulator, which has none, and for trying the page indoors.
@@ -73,6 +74,20 @@ bool isType(const QString &type)
             || type == QLatin1String("driving");
 }
 
+/* How the filter expects each type to move. */
+TrackFilter::Mode filterMode(const QString &type)
+{
+    if (type == QLatin1String("walking"))
+        return TrackFilter::Walking;
+    if (type == QLatin1String("cycling"))
+        return TrackFilter::Cycling;
+    if (type == QLatin1String("rowing"))
+        return TrackFilter::Rowing;
+    if (type == QLatin1String("driving"))
+        return TrackFilter::Driving;
+    return TrackFilter::Running;
+}
+
 } // namespace
 
 Activity::Activity(QObject *parent)
@@ -82,6 +97,7 @@ Activity::Activity(QObject *parent)
 {
     m_tick.setInterval(1000);
     connect(&m_tick, &QTimer::timeout, this, &Activity::tick);
+    m_filter.setMode(filterMode(m_type));
 }
 
 /* The page left or the app closed while recording: the activity is stored all
@@ -146,6 +162,7 @@ void Activity::setType(const QString &type)
     if (m_status == Finished || m_type == type || !isType(type))
         return;
     m_type = type;
+    m_filter.setMode(filterMode(type));
     emit typeChanged();
 }
 
@@ -271,7 +288,7 @@ void Activity::start()
     const double time = now();
     m_track.begin(time);
     setStatus(Recording);
-    addCurrentFix(time);
+    addEstimate(time);
     showLive();
 }
 
@@ -291,7 +308,7 @@ void Activity::resume()
     const double time = now();
     m_track.begin(time);
     setStatus(Recording);
-    addCurrentFix(time);
+    addEstimate(time);
     showLive();
 }
 
@@ -330,6 +347,8 @@ void Activity::handlePosition(const QGeoPositionInfo &info)
         fix.altitude = info.coordinate().altitude();
     if (info.hasAttribute(QGeoPositionInfo::HorizontalAccuracy))
         fix.accuracy = info.attribute(QGeoPositionInfo::HorizontalAccuracy);
+    if (info.hasAttribute(QGeoPositionInfo::VerticalAccuracy))
+        fix.verticalAccuracy = info.attribute(QGeoPositionInfo::VerticalAccuracy);
     if (info.hasAttribute(QGeoPositionInfo::GroundSpeed))
         fix.speed = info.attribute(QGeoPositionInfo::GroundSpeed);
     if (info.hasAttribute(QGeoPositionInfo::Direction))
@@ -337,8 +356,10 @@ void Activity::handlePosition(const QGeoPositionInfo &info)
     m_fix = fix;
     m_hasFix = true;
 
-    if (m_status == Recording)
-        addCurrentFix(time);
+    // Poor fixes are left out altogether; the filter weighs the others.
+    const bool estimated = qualityOf(fix.accuracy) >= Fair && m_filter.add(fix);
+    if (estimated && m_status == Recording)
+        addEstimate(time);
     showLive();
 }
 
@@ -454,14 +475,16 @@ void Activity::save()
     emit fileNameChanged();
 }
 
-/* The latest fix becomes a track point, if it is fresh and good enough. Called
- * for every fix while recording, and on start and resume with the one in hand,
- * so the track does not wait a second for its first point. */
-void Activity::addCurrentFix(double time)
+/* The filter's latest estimate becomes a track point, if it is fresh. Called
+ * for every fix the filter takes while recording, and on start and resume
+ * with the estimate in hand, so the track does not wait a second for its first
+ * point. Outliers and poor fixes leave a gap of a second or so, which the
+ * track bridges with a straight line. */
+void Activity::addEstimate(double time)
 {
-    if (!m_hasFix || qualityOf(m_fix.accuracy) < Fair)
+    if (!m_filter.hasEstimate() || time - m_filter.estimate().time > kSignalLostAfter)
         return;
-    TrackPoint point = m_fix;
+    TrackPoint point = m_filter.estimate();
     point.time = time;
     if (m_track.addPoint(point))
         emit trackChanged();
@@ -476,18 +499,22 @@ void Activity::setStatus(Status status)
 }
 
 /* While the receiver runs: the values as of now, the position as of the
- * latest fix. */
+ * latest estimate. Until the filter has one, there is no position, however
+ * many fixes have come. */
 void Activity::showLive()
 {
     if (m_status == Finished)
         return;
-    const double elapsed = m_status == Recording ? m_track.elapsedAt(now()) : m_track.duration();
+    const double time = now();
+    const double elapsed = m_status == Recording ? m_track.elapsedAt(time) : m_track.duration();
     TrackState state = m_track.stateAt(elapsed);
     if (m_status != Recording)
         state.speed = 0;
-    // Before the track has an altitude, the receiver's own.
-    if (std::isnan(state.altitude) && m_hasFix)
-        state.altitude = m_fix.altitude;
+    const bool hasEstimate = m_filter.hasEstimate();
+    const TrackPoint &estimate = m_filter.estimate();
+    // Before the track has an altitude, the filter's.
+    if (std::isnan(state.altitude) && hasEstimate)
+        state.altitude = estimate.altitude;
     showState(state);
 
     // Fixes coming in settle it, whatever the switches say: an NMEA log, say.
@@ -498,10 +525,17 @@ void Activity::showLive()
         quality = NoPositioning;
     else if (!locationEnabled())
         quality = LocationOff;
+    if (!hasEstimate) {
+        showPoint(m_position, 0, quality);
+        return;
+    }
+    // The last position stays on the map when the signal goes, at a standstill.
+    m_hasPosition = true;
+    TrackPoint point = estimate;
     if (m_hasFix)
-        m_hasPosition = true;
-    // The last position stays on the map when the signal goes.
-    showPoint(m_hasFix ? m_fix : m_position, m_hasFix ? m_fix.speed : 0, quality);
+        point.accuracy = m_fix.accuracy;
+    const bool fresh = time - estimate.time <= kSignalLostAfter;
+    showPoint(point, fresh ? estimate.speed : 0, quality);
 }
 
 /* Everything as it was at replayPosition. Before the first point, the map

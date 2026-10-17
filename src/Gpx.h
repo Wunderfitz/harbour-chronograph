@@ -26,12 +26,14 @@ class Track;
 
 /**
  * A Track as a GPX 1.1 file: one track, one track segment per stretch between
- * pauses, one point per fix - so other apps read it as it is.
+ * pauses, one point per track point - so other apps read it as it is. What
+ * Chronograph records are TrackFilter's estimates, not the receiver's fixes:
+ * the file holds them as they were shown.
  *
- * What GPX itself has no place for goes into extensions: the receiver's speed
- * and course as Garmin's TrackPointExtension, which most sport sites read, and
- * in Chronograph's own namespace each point's accuracy and each segment's begin
- * and end. The last pair is what lets a replay leave the pauses out exactly as
+ * What GPX itself has no place for goes into extensions: the speed and course
+ * as Garmin's TrackPointExtension, which most sport sites read, and in
+ * Chronograph's own namespace the receiver's horizontal and vertical accuracy
+ * at each point and each segment's begin and end. The last pair is what lets a replay leave the pauses out exactly as
  * the recording did. A file without them still reads, with the segments taken
  * to run from their first point to their last.
  */

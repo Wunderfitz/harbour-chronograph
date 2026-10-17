@@ -24,7 +24,8 @@
 #include <limits>
 #include <vector>
 
-/* One position fix, as the receiver gave it. Whatever it did not say is NaN. */
+/* One position fix: as the receiver gave it, or as TrackFilter smoothed it.
+ * Whatever it did not say is NaN. */
 struct TrackPoint {
     /* Seconds since the epoch, UTC. */
     double time = 0;
@@ -33,8 +34,9 @@ struct TrackPoint {
     double longitude = 0;
     /* Metres. */
     double altitude = std::numeric_limits<double>::quiet_NaN();
-    /* Horizontal, metres. */
+    /* Horizontal and vertical, metres. */
     double accuracy = std::numeric_limits<double>::quiet_NaN();
+    double verticalAccuracy = std::numeric_limits<double>::quiet_NaN();
     /* Over ground, metres per second - the receiver's own, which is far steadier
      * than one worked out from the positions. */
     double speed = std::numeric_limits<double>::quiet_NaN();
