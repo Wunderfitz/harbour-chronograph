@@ -21,8 +21,8 @@
  * Checks for what keeps the activities: the migration that adds their table,
  * GPX files written and read back - pauses, the receiver's speeds and all - and
  * read from other apps, and ActivityHistory's list, which is read a page at a
- * time, newest first, and takes new activities at the top. Every track here is
- * generated.
+ * time, newest first, takes new activities at the top and lets them be deleted
+ * again. Every track here is generated.
  *
  * Like tst_stephistory this needs Qt with QtSql and its SQLite driver, so it
  * runs in the build engine against the i486 target, from that target's build
@@ -270,6 +270,42 @@ void testAdding(const QString &directory)
                reopened.data(reopened.index(1), ActivityHistory::FileNameRole).toString(), again);
 }
 
+void testRemoving(const QString &directory)
+{
+    const QString gpx = QDir(directory).filePath(QStringLiteral("gpx-removing"));
+    Database database(QDir(directory).filePath(QStringLiteral("removing.db")));
+    ActivityHistory history(&database, gpx);
+    const QString older = history.add(QStringLiteral("walking"), makeTrack(kStartTime, 30));
+    const QString middle = history.add(QStringLiteral("running"), makeTrack(kStartTime + 3600, 30));
+    const QString newer = history.add(QStringLiteral("cycling"), makeTrack(kStartTime + 7200, 30));
+
+    expect("an activity in the middle is deleted", history.remove(middle));
+    expectEqual("it leaves the list", history.rowCount(), 2);
+    expectText("the newer stays above", history.data(history.index(0), ActivityHistory::FileNameRole).toString(), newer);
+    expectText("the older below", history.data(history.index(1), ActivityHistory::FileNameRole).toString(), older);
+    expectEqual("its row is gone", scalar(database, QStringLiteral("SELECT COUNT(*) FROM activities")), 2);
+    expect("and its file", !QFileInfo::exists(QDir(gpx).filePath(middle)));
+    expect("the others' files stay", QFileInfo::exists(QDir(gpx).filePath(older))
+                                      && QFileInfo::exists(QDir(gpx).filePath(newer)));
+
+    ActivityHistory reopened(&database, gpx);
+    expectEqual("a restart lists only those left", reopened.rowCount(), 2);
+
+    // Its file gone already, the row still goes.
+    QFile::remove(QDir(gpx).filePath(older));
+    expect("an activity whose file is missing is deleted", history.remove(older));
+    expectEqual("and leaves the list", history.rowCount(), 1);
+
+    expect("a name with a path is refused", !history.remove(QStringLiteral("../removing.db")));
+    expect("and the file it names stays", QFileInfo::exists(QDir(directory).filePath(QStringLiteral("removing.db"))));
+    expect("an empty name is refused", !history.remove(QString()));
+    expectEqual("and nothing else is deleted", history.rowCount(), 1);
+
+    // A new one in the same second as a deleted one may take its name again.
+    expectText("the name of a deleted activity is free again",
+               history.add(QStringLiteral("running"), makeTrack(kStartTime + 3600, 30)), middle);
+}
+
 void testPaging(const QString &directory)
 {
     Database database(QDir(directory).filePath(QStringLiteral("paging.db")));
@@ -316,6 +352,8 @@ void testNoDatabase(const QString &directory)
     const QString name = history.add(QStringLiteral("running"), makeTrack(kStartTime, 10));
     expect("without a database the GPX file is still written", QFileInfo::exists(QDir(gpx).filePath(name)));
     expectEqual("and the activity listed while the app runs", history.rowCount(), 1);
+    expect("and deleted again", history.remove(name));
+    expect("file and all", history.rowCount() == 0 && !QFileInfo::exists(QDir(gpx).filePath(name)));
 }
 
 } // namespace
@@ -335,6 +373,7 @@ int main(int argc, char *argv[])
     testGpxRoundTrip(directory.path());
     testForeignGpx(directory.path());
     testAdding(directory.path());
+    testRemoving(directory.path());
     testPaging(directory.path());
     testNoDatabase(directory.path());
 

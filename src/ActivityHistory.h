@@ -39,6 +39,9 @@ class Track;
  * The list is read a page at a time. The first page comes with the
  * constructor; the view asks for the next ones through fetchMore() as it
  * scrolls towards the end of what it has.
+ *
+ * remove() deletes an activity again, row and file; the pages ask for it only
+ * once their remorse timer has run out.
  */
 class ActivityHistory : public QAbstractListModel
 {
@@ -75,6 +78,13 @@ public:
      * empty string if there was nothing to store or the file could not be
      * written. */
     QString add(const QString &type, const Track &track);
+
+    /* Deletes a stored activity, named by its GPX file: its row, the file,
+     * and its place in the list. The row goes first, so that should the file
+     * not go, what is left is a file nothing lists rather than an activity
+     * that cannot be replayed. Returns false, changing nothing, if the row
+     * could not be deleted or the name is not a file of this directory. */
+    Q_INVOKABLE bool remove(const QString &fileName);
 
     /* gpx/ below the app's data directory. */
     static QString defaultDirectory();

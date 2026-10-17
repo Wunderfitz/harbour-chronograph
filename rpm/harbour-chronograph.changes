@@ -12,6 +12,8 @@
 - Swiping the values aside shows charts of the pace and the elevation over
   the activity's time, with the average pace as a dotted line; two dots
   below say which is shown.
+- Deletes an activity from its context menu in the list or from the pulley
+  menu of its page, after a ten-second countdown that a tap undoes.
 - Asks for the Location and Internet permissions; no longer for Sensors, which
   Location includes.
 

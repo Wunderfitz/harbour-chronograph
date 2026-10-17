@@ -9,7 +9,8 @@ three days before. Iteration 3 (0.3) records runs, walks, bike rides, rowing
 and drives with GPS on an activity page with an OpenStreetMap map, stores each
 as a GPX file with a row in the database, lists them on the main page and
 replays them; swiped to from the values, charts show the pace and the
-elevation over the activity's time.
+elevation over the activity's time. An activity is deleted from the list's
+context menu or its page's pulley, after a ten-second remorse timer.
 
 ## Ground rules
 
@@ -148,7 +149,7 @@ The same split as for steps:
 - `ActivityHistory` (`src/ActivityHistory.*`) is the list on the main page, a
   `QAbstractListModel` over the `activities` table, and owns the GPX
   directory: `Activity` hands it a finished `Track`, it writes the file and
-  the row. Constructed in `main()` before the view like the others, so that
+  the row; `remove()` deletes both again. Constructed in `main()` before the view like the others, so that
   an activity page destroyed with the view still finds it.
 - `Gpx` (`src/Gpx.*`) reads and writes a `Track` as GPX 1.1.
 - `TrackLine` (`src/TrackLine.*`) paints the route on the map.
@@ -249,6 +250,19 @@ QtQuick and the `Internet` permission.
 - **An activity without a single recorded point is not stored** - there is
   nothing to replay - and the page says so.
 - The type can be changed until the stop; a stored activity's type is fixed.
+- **Deleting** (decided 2026-10-18): from the list's context menu, or from
+  the page's pulley once the activity is stored - in a replay, or after the
+  stop. The page's content sits in a `SilicaFlickable` for that pulley alone,
+  as tall as the page and not interactive before then, so it takes no drag
+  from the control while recording; the map and the slideshow keep their own
+  drags, so the pulley is pulled over the type, the GPS row or the slider.
+  Both go through Silica's remorse, **10 s** rather than its 4 s
+  (`app.deleteRemorseTimeout`), as a recording cannot be made again; tapping
+  the countdown keeps the activity. Silica deletes at once when the page is
+  left during the countdown - `ListItem.remorseAction()` on the list,
+  `Remorse.popupAction()` on the activity page, which then goes back to the
+  list. Nothing is deleted before the countdown ends, so a kill during it
+  keeps the activity.
 - Activity type keys are `running`, `walking`, `cycling`, `rowing` and
   `driving` everywhere (C++, database, GPX `<type>`); `app.activityTypes` and
   `app.activityTypeName()` in `harbour-chronograph.qml` are the only place they
@@ -523,6 +537,11 @@ the OS; like the sensorfw plugin it is not `Require`d, as Harbour would refuse i
   namespace - the
   segment times are what lets a replay leave the pauses out exactly. Files
   from other apps read too (GPX 1.0's own `speed`, no extensions).
+- **Deleting an activity** removes its row first, then its file, then its
+  place in the list, by the file's name: a file left behind is harmless,
+  a row whose file is gone would list an activity that cannot be replayed. If
+  the row cannot be deleted, nothing is. A name freed this way may be taken
+  again by a later activity started in the same second.
 - **The list is read 100 at a time**, newest first, by `(start, id)`: the first
   page with the constructor, the next through `fetchMore()`, which the list
   view calls as it nears the end of what it has. Paged by key rather than by
@@ -559,7 +578,8 @@ tests/raw-data/               personal data, git-ignored, local only: the record
                               their ground truth (README), parts, FINDINGS.md
 qml/harbour-chronograph.qml   ApplicationWindow; the activity types and their names
 qml/pages/OverviewPage        the activities above, the steps in the lower third; pulley menu
-qml/pages/ActivityPage        record or replay one activity: values or charts, map, control
+qml/pages/ActivityPage        record or replay one activity: values or charts, map, control;
+                              pulley to delete a stored one
 qml/pages/AboutPage           logo, version, what to know, credits
 qml/cover/CoverPage           today's count over the chronograph backdrop
 qml/components/               BackgroundImage, AboutLink, AboutParagraph (from Lauscher);
@@ -699,8 +719,9 @@ they are and warns about them under `-Wextra`. Run it after any change to
 0.2 database, GPX files written and read back (pauses, speeds, accuracy, times
 to the millisecond) and from other apps, and `ActivityHistory`: file names,
 rows, newest first, paging across 250 activities with a page boundary among
-three of the same second, an activity added between pages, no database. The
-build command is at the top of the file. Run it after any change to
+three of the same second, an activity added between pages, deleting one
+(row, file and list; its file already gone; names with a path refused), no
+database. The build command is at the top of the file. Run it after any change to
 `Database`, `Gpx`, `Track` or `ActivityHistory`.
 
 **Synthetic tests in place of recorded data** (decided 2026-10-14). Checked by
@@ -791,6 +812,8 @@ else (see Lauscher's notes on what it misses).
   last for altitude and accuracy - one or the other, not both. A generated
   log (a loop at a few m/s) does; never a recorded one, which is personal
   data like the walks.
+- **Its animations run slow** - at about half speed under load - and Silica's
+  remorse countdown is an animation: a 10 s countdown took up to 20 s there.
 - Without touch input, the activity page was driven by a `Timer` patched into
   the **installed** QML only (push the page, start, pause, resume, stop, move
   the slider, pop the page, `Qt.quit()`), then the clean RPM reinstalled.
@@ -912,6 +935,13 @@ faint after its point; a recording from a generated NMEA log grows them every
 second, breaks them at a pause and shows the dotted average; the dots follow
 the slideshow. Portrait and landscape, German, checked on screen.
 
+Deleting (2026-10-18) builds for all five targets without warnings, stays
+Harbour-clean, passes the activity history's tests, and in the emulator,
+sandboxed, driven by a patched-in timer: the context menu, the countdown on
+the list item and the popup on the activity page show; each deletes the row
+and the file once it runs out, the list loses the item, and the page goes
+back; pushing a page during the list's countdown deletes at once.
+
 Still to confirm on the Jolla Phone (2026):
 
 - [ ] Steps are still counted with only `Location` and `Internet` granted -
@@ -923,7 +953,8 @@ Still to confirm on the Jolla Phone (2026):
       altitude is ellipsoid or sea level.
 - [ ] Distance against a known course; the 5 m rule and receiver speeds.
 - [ ] Pinch-zoom, dragging, the back swipe above the map, holding to stop,
-      swiping between the values and the charts - all touch, which the
+      swiping between the values and the charts, the activity page's pulley
+      and tapping a countdown to keep the activity - all touch, which the
       emulator cannot do.
 - [ ] Tiles on mobile data, and the cache across restarts.
 - [ ] The filter against real fixes: whether the route still cuts no corner
@@ -1030,7 +1061,7 @@ Candidates for later iterations, each to be decided with the project owner:
 a longer history; a reset; daily goals; distance and calories from step
 length; saving on SIGTERM, should a shutdown while walking lose too much; and
 whether all-day tracking needs a background service or a hardware step counter
-instead of the running app. For activities: deleting one; changing a stored
+instead of the running app. For activities: changing a stored
 one's type; writing the track as it goes, so a crash loses nothing; the
 activity on the cover while recording; steps during an activity; laps and
 splits; imperial units; sharing or exporting the GPX file.

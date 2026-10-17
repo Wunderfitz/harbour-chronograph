@@ -3,8 +3,8 @@
 An activity tracker for Sailfish OS, developed iteratively. It records runs,
 walks, bike rides, rowing and drives with GPS - duration, distance, pace and
 speed, elevation and climb, with the route on an OpenStreetMap map and
-charts of the pace and the elevation - stores each as a GPX file and replays
-it. It also counts steps with the phone's accelerometer from the
+charts of the pace and the elevation - stores each as a GPX file, replays
+it and deletes it again. It also counts steps with the phone's accelerometer from the
 moment the app starts, also while the display is off, and keeps the steps of
 each day in a local database. The main page lists the activities, newest
 first, above today's steps and those of the three days before; the cover shows

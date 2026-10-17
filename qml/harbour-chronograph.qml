@@ -30,6 +30,10 @@ ApplicationWindow {
     // the activity page offers them: running first, the default.
     readonly property var activityTypes: ["running", "walking", "cycling", "rowing", "driving"]
 
+    // How long a deleted activity can be kept, on the list and on its page:
+    // longer than Silica's 4 s, as a recording cannot be made again.
+    readonly property int deleteRemorseTimeout: 10000
+
     function activityTypeName(type) {
         switch (type) {
         case "walking":

@@ -199,6 +199,14 @@
         <source>Shown as the activity goes on</source>
         <translation>Erscheint im Lauf der Aktivität</translation>
     </message>
+    <message>
+        <source>Activity deleted</source>
+        <translation>Aktivität gelöscht</translation>
+    </message>
+    <message>
+        <source>Delete activity</source>
+        <translation>Aktivität löschen</translation>
+    </message>
 </context>
 <context>
     <name>CoverPage</name>
@@ -264,6 +272,14 @@
     <message>
         <source>Pull down to start one</source>
         <translation>Ziehen Sie nach unten, um eine zu starten</translation>
+    </message>
+    <message>
+        <source>Activity deleted</source>
+        <translation>Aktivität gelöscht</translation>
+    </message>
+    <message>
+        <source>Delete activity</source>
+        <translation>Aktivität löschen</translation>
     </message>
 </context>
 <context>

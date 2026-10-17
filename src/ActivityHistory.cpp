@@ -25,6 +25,7 @@
 
 #include <QDebug>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -199,6 +200,37 @@ QString ActivityHistory::add(const QString &type, const Track &track)
         endInsertRows();
     }
     return entry.fileName;
+}
+
+bool ActivityHistory::remove(const QString &fileName)
+{
+    // Names come from the table; none of them leads out of the directory.
+    if (fileName.isEmpty() || QFileInfo(fileName).fileName() != fileName)
+        return false;
+
+    if (m_database->isOpen()) {
+        QSqlQuery query(m_database->connection());
+        query.prepare(QStringLiteral("DELETE FROM activities WHERE file = :file"));
+        query.bindValue(QStringLiteral(":file"), fileName);
+        if (!query.exec()) {
+            qWarning() << "Cannot delete the activity" << fileName << query.lastError().text();
+            return false;
+        }
+    }
+
+    const QString path = filePath(fileName);
+    if (!QFile::remove(path) && QFileInfo::exists(path))
+        qWarning() << "Cannot delete the GPX file" << path;
+
+    for (int row = 0; row < m_entries.size(); ++row) {
+        if (m_entries.at(row).fileName == fileName) {
+            beginRemoveRows(QModelIndex(), row, row);
+            m_entries.removeAt(row);
+            endRemoveRows();
+            break;
+        }
+    }
+    return true;
 }
 
 QString ActivityHistory::defaultDirectory()

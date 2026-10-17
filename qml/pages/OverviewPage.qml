@@ -72,9 +72,27 @@ Page {
         delegate: ListItem {
             id: delegate
 
+            // Deleted only once the remorse timer has run out; tapping the
+            // countdown keeps the activity. The file name is taken now, as
+            // the delegate may be gone by then.
+            function deleteActivity() {
+                var fileName = model.fileName
+                remorseAction(qsTr("Activity deleted"), function() {
+                    activityHistory.remove(fileName)
+                }, app.deleteRemorseTimeout)
+            }
+
             contentHeight: Theme.itemSizeMedium
             onClicked: pageStack.push(Qt.resolvedUrl("ActivityPage.qml"),
                                       { fileName: model.fileName })
+            ListView.onRemove: animateRemoval(delegate)
+
+            menu: ContextMenu {
+                MenuItem {
+                    text: qsTr("Delete activity")
+                    onClicked: delegate.deleteActivity()
+                }
+            }
 
             Column {
                 anchors {
