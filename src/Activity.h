@@ -20,6 +20,7 @@
 #ifndef ACTIVITY_H
 #define ACTIVITY_H
 
+#include <QDateTime>
 #include <QObject>
 #include <QPointer>
 #include <QQmlParserStatus>
@@ -72,6 +73,8 @@ class Activity : public QObject, public QQmlParserStatus
     /* "running", "walking", "cycling", "rowing" or "driving". */
     Q_PROPERTY(QString type READ type WRITE setType NOTIFY typeChanged)
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
+    /* When it was started, local time, to the second; invalid before. */
+    Q_PROPERTY(QDateTime startTime READ startTime NOTIFY startTimeChanged)
 
     /* The receiver now; in a replay, what it said at that moment. The
      * position is the filter's estimate, the accuracy the receiver's. */
@@ -144,6 +147,7 @@ public:
     QString type() const;
     void setType(const QString &type);
     Status status() const;
+    QDateTime startTime() const;
 
     SignalQuality signalQuality() const;
     bool hasPosition() const;
@@ -184,6 +188,7 @@ signals:
     void fileNameChanged();
     void typeChanged();
     void statusChanged();
+    void startTimeChanged();
     void positionChanged();
     void valuesChanged();
     void durationChanged();

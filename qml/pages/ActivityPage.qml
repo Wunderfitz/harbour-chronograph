@@ -108,6 +108,15 @@ Page {
         }, app.deleteRemorseTimeout)
     }
 
+    // When the activity started, as the list says it; a space before then.
+    function startText() {
+        var start = activity.startTime
+        if (activity.status === Activity.Ready || !start || isNaN(start.getTime()))
+            return " "
+        return Format.formatDate(start, Formatter.DateMedium) + ", "
+                + Format.formatDate(start, Formatter.TimeValue)
+    }
+
     function showWholeTrack() {
         var bounds = activity.bounds()
         if (bounds.width >= 0 && bounds.height >= 0)
@@ -143,22 +152,58 @@ Page {
             id: values
 
             x: page.sideInset
-            y: page.topInset
             width: (page.isPortrait ? page.width : page.width / 2) - page.sideInset
 
-            ComboBox {
-                id: typeBox
-                label: qsTr("Activity")
-                // Settled once the activity is over: it is stored as it was.
-                enabled: !page.finished
-                currentIndex: Math.max(0, app.activityTypes.indexOf(activity.type))
-                menu: ContextMenu {
-                    Repeater {
-                        model: app.activityTypes
-                        MenuItem { text: app.activityTypeName(modelData) }
+            // Until the start, the type to choose; from then on, and in a
+            // replay, a header naming it and when it started. Both are always
+            // there and the place is as tall as the taller of them, so nothing
+            // below moves when one gives way to the other.
+            Item {
+                id: titleArea
+
+                // A replay has its header from the beginning, not faded in.
+                readonly property bool showHeader: page.fileName !== ""
+                                                   || activity.status !== Activity.Ready
+
+                width: parent.width
+                height: Math.max(header.y + header.height, typeBox.y + typeBox.height)
+
+                ComboBox {
+                    id: typeBox
+                    y: page.topInset
+                    width: parent.width
+                    // Faded out and then disabled, but never hidden: a hidden
+                    // ComboBox loses its height. Disabled only once gone, as
+                    // it dims at once.
+                    opacity: titleArea.showHeader ? 0 : 1
+                    enabled: opacity > 0
+                    label: qsTr("Activity")
+                    currentIndex: Math.max(0, app.activityTypes.indexOf(activity.type))
+                    menu: ContextMenu {
+                        Repeater {
+                            model: app.activityTypes
+                            MenuItem { text: app.activityTypeName(modelData) }
+                        }
                     }
+                    onCurrentIndexChanged: activity.type = app.activityTypes[currentIndex]
+
+                    Behavior on opacity { FadeAnimation {} }
                 }
-                onCurrentIndexChanged: activity.type = app.activityTypes[currentIndex]
+
+                PageHeader {
+                    id: header
+                    // Silica's own header keeps clear of a notch once it has a
+                    // topMargin (5.x); before that it is moved down here.
+                    y: header.topMargin === undefined ? page.topInset : 0
+                    opacity: titleArea.showHeader ? 1 : 0
+                    visible: opacity > 0
+                    title: app.activityTypeName(activity.type)
+                    // A blank line until there is a start, so that the
+                    // header is as tall before as after.
+                    description: page.startText()
+
+                    Behavior on opacity { FadeAnimation {} }
+                }
             }
 
             Item {
@@ -204,7 +249,7 @@ Page {
                 height: Math.max(grid.height + Theme.paddingLarge + dots.height
                                  + dots.anchors.bottomMargin,
                                  (page.isPortrait ? page.height / 2 : page.height)
-                                 - page.topInset - typeBox.height - Theme.itemSizeExtraSmall)
+                                 - titleArea.height - Theme.itemSizeExtraSmall)
 
                 SlideshowView {
                     id: views

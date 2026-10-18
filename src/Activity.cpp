@@ -164,10 +164,11 @@ QString Activity::type() const
     return m_type;
 }
 
-/* Until it is stopped: what is stored is not changed after the fact. */
+/* Until it is started: from then on the page names it in its header, and what
+ * is stored is not changed after the fact. */
 void Activity::setType(const QString &type)
 {
-    if (m_status == Finished || m_type == type || !isType(type))
+    if (m_status != Ready || m_type == type || !isType(type))
         return;
     m_type = type;
     m_filter.setMode(filterMode(type));
@@ -177,6 +178,15 @@ void Activity::setType(const QString &type)
 Activity::Status Activity::status() const
 {
     return m_status;
+}
+
+/* To the second, as the history lists it. */
+QDateTime Activity::startTime() const
+{
+    const double time = m_track.startTime();
+    if (std::isnan(time))
+        return QDateTime();
+    return QDateTime::fromMSecsSinceEpoch(qint64(time) * 1000);
 }
 
 Activity::SignalQuality Activity::signalQuality() const
@@ -310,6 +320,7 @@ void Activity::start()
         return;
     const double time = now();
     m_track.begin(time);
+    emit startTimeChanged();
     setStatus(Recording);
     addEstimate(time);
     showLive();
@@ -500,6 +511,7 @@ void Activity::load()
         m_type = type;
         emit typeChanged();
     }
+    emit startTimeChanged();
     setStatus(Finished);
     emit durationChanged();
     emit trackChanged();

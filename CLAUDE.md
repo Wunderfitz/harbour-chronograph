@@ -241,7 +241,8 @@ QtQuick and the `Internet` permission.
 
 - Pushed without `fileName` from the pulley menu (record), with one from the
   list (replay). Type combo box (running is the default, as the first
-  entry), GPS row, then the rest of the upper half a Silica `SlideshowView`
+  entry) until the start, then a `PageHeader` with the type and the start's
+  date and time in its place, as in a replay; GPS row, then the rest of the upper half a Silica `SlideshowView`
   (Piepmatz's idiom, over a `VisualItemModel`): the eight values, and swiped
   to, the charts; a dot for each below it, the one shown highlighted. Map in
   the lower half, control at the bottom; in landscape the values or charts
@@ -260,7 +261,13 @@ QtQuick and the `Internet` permission.
   loses the activity in progress: nothing is written before the stop.
 - **An activity without a single recorded point is not stored** - there is
   nothing to replay - and the page says so.
-- The type can be changed until the stop; a stored activity's type is fixed.
+- **The type can be changed until the start** (decided 2026-10-18, at the
+  project owner's request); from then on the header names it, and a stored
+  activity's type is fixed. The combo box and the header share one place,
+  always as tall as the taller of them, and cross-fade: nothing below moves
+  at the start. The header's description is a blank line before it, so its
+  height does not change either; the combo box is faded out and disabled
+  but never hidden, as a hidden `ComboBox` drops to no height.
 - **Deleting** (decided 2026-10-18): from the list's context menu, or from
   the page's pulley once the activity is stored - in a replay, or after the
   stop. The page's content sits in a `SilicaFlickable` for that pulley alone,
@@ -347,8 +354,8 @@ than the movement and stay the receiver's.
   slower rule holds. Walking 0.1 along, 1 across; running 0.3 / 4; cycling
   0.5 / 4 (bikes brake hard); rowing 0.3 / 1, with next to no climb; driving
   4 / 10. Each is about the least that still follows setting off and stopping
-  within a second or two of the truth. Changing the type while recording
-  changes the filter at once.
+  within a second or two of the truth. The type is set before the start
+  and fixed from then on.
 - **Outliers**: a position or velocity more than 5 sigma off what the filter
   expects is left out (a velocity alone, keeping its fix's position); one
   beyond 2 sigma counts as if its noise were larger by the cube of how much
@@ -921,8 +928,10 @@ Inherited from Lauscher, where each one cost debugging time:
   the notch's depth). Push content down by it in `Orientation.Portrait`, and
   in landscape - where the notch sits halfway down whichever side the phone
   was turned to - keep that much margin from the side edge, as Silica's pulley
-  menu and the launcher do. `ActivityPage` does; the emulator has no notch, so
-  check it by faking one in the installed QML.
+  menu and the launcher do. `ActivityPage` does. **Silica's `PageHeader`
+  keeps clear of the notch itself from 5.x on** (it has a `topMargin`), not
+  in 4.6: `ActivityPage` moves its header down only where `topMargin` is
+  undefined. The 5.1 emulator reports a 43 px top cutout in portrait.
 - **Never `id: layer`** (or any other id that is also a property of `Item`):
   inside an `Image`, `layer.foo` finds the image's own `layer` group, not the
   id - silently, with a TypeError at runtime only. That cost the map its tiles.
