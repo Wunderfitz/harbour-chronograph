@@ -188,6 +188,15 @@ in that module.
   settled (five fixes that agree) there is no position on the map at all. The
   accuracy circle is the receiver's latest accuracy around the estimate,
   matching the GPS row.
+- **The last position is remembered** (decided 2026-10-18, at the project
+  owner's request): the filter's latest estimate, written once as the
+  receiver stops - at the stop, or as the page goes - not with every fix.
+  A new activity's map starts there (`hasLastPosition`, `lastLatitude`,
+  `lastLongitude`, read as the `Activity` is made) and moves to the position
+  once the filter has one; a replay ignores it. Kept with `QSettings` in
+  `settings.conf` in `AppConfigLocation`, i.e. `~/.config/de.ygriega/chronograph/`,
+  as Piepmatz keeps its settings: a single value pair is not worth a table.
+  A kill loses it, and the map starts where the activity before ended.
 - The direction arrow shows only at 0.5 m/s or more: below that a course is
   noise.
 - The altitude is the filter's, from the receiver's. Whether the hybris provider gives

@@ -30,6 +30,7 @@
 #include <QGeoPositionInfoSource>
 #include <QNmeaPositionInfoSource>
 #include <QSettings>
+#include <QStandardPaths>
 
 #include <keepalive/backgroundactivity.h>
 
@@ -65,6 +66,12 @@ const double kNmeaRangeError = 5.0;
  * the sandbox read it. */
 const char kLocationSettings[] = "/etc/location/location.conf";
 
+/* The app's own settings file, in its config directory, and where in it the
+ * receiver's last position is kept. */
+const char kSettingsFile[] = "settings.conf";
+const char kLastLatitudeKey[] = "lastPosition/latitude";
+const char kLastLongitudeKey[] = "lastPosition/longitude";
+
 const char kDefaultType[] = "running";
 
 bool isType(const QString &type)
@@ -98,6 +105,7 @@ Activity::Activity(QObject *parent)
     m_tick.setInterval(1000);
     connect(&m_tick, &QTimer::timeout, this, &Activity::tick);
     m_filter.setMode(filterMode(m_type));
+    readLastPosition();
 }
 
 /* The page left or the app closed while recording: the activity is stored all
@@ -199,6 +207,21 @@ double Activity::accuracy() const
 double Activity::direction() const
 {
     return m_direction;
+}
+
+bool Activity::hasLastPosition() const
+{
+    return m_hasLastPosition;
+}
+
+double Activity::lastLatitude() const
+{
+    return m_lastLatitude;
+}
+
+double Activity::lastLongitude() const
+{
+    return m_lastLongitude;
 }
 
 double Activity::elapsed() const
@@ -434,8 +457,37 @@ void Activity::stopPositioning()
         m_source->stopUpdates();
         delete m_source;
         m_source = nullptr;
+        writeLastPosition();
     }
     m_hasFix = false;
+}
+
+void Activity::readLastPosition()
+{
+    QSettings settings(settingsPath(), QSettings::NativeFormat);
+    bool latitudeRead = false;
+    bool longitudeRead = false;
+    const double latitude = settings.value(QLatin1String(kLastLatitudeKey)).toDouble(&latitudeRead);
+    const double longitude = settings.value(QLatin1String(kLastLongitudeKey)).toDouble(&longitudeRead);
+    if (!latitudeRead || !longitudeRead || !(std::fabs(latitude) <= 90)
+            || !(std::fabs(longitude) <= 180))
+        return;
+    m_hasLastPosition = true;
+    m_lastLatitude = latitude;
+    m_lastLongitude = longitude;
+}
+
+/* Once, as the receiver stops - on the stop, or as the page goes - rather than
+ * with every fix, which would write the file every second. A kill loses it,
+ * and the map starts where the activity before ended. */
+void Activity::writeLastPosition()
+{
+    if (!m_filter.hasEstimate())
+        return;
+    const TrackPoint &estimate = m_filter.estimate();
+    QSettings settings(settingsPath(), QSettings::NativeFormat);
+    settings.setValue(QLatin1String(kLastLatitudeKey), estimate.latitude);
+    settings.setValue(QLatin1String(kLastLongitudeKey), estimate.longitude);
 }
 
 void Activity::load()
@@ -604,4 +656,12 @@ bool Activity::locationEnabled()
     QSettings settings(QString::fromLatin1(kLocationSettings), QSettings::IniFormat);
     return settings.value(QStringLiteral("location/enabled"), true).toBool()
             && settings.value(QStringLiteral("location/gps/enabled"), true).toBool();
+}
+
+/* ~/.config/de.ygriega/chronograph, the one config directory Sailjail lets the
+ * app write - as for the database, the names set in main() decide it. */
+QString Activity::settingsPath()
+{
+    return QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation)
+            + QLatin1Char('/') + QLatin1String(kSettingsFile);
 }

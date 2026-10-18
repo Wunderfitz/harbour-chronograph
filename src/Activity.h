@@ -84,6 +84,13 @@ class Activity : public QObject, public QQmlParserStatus
     /* Degrees from north while moving, NaN while standing. */
     Q_PROPERTY(double direction READ direction NOTIFY positionChanged)
 
+    /* Where the receiver's last position was, the last time it ran - for the
+     * map of a new activity to start at before the first fix. As it was when
+     * this activity was created; hasLastPosition is false before the first. */
+    Q_PROPERTY(bool hasLastPosition READ hasLastPosition CONSTANT)
+    Q_PROPERTY(double lastLatitude READ lastLatitude CONSTANT)
+    Q_PROPERTY(double lastLongitude READ lastLongitude CONSTANT)
+
     /* Seconds, metres, metres per second: see TrackState. */
     Q_PROPERTY(double elapsed READ elapsed NOTIFY valuesChanged)
     Q_PROPERTY(double distance READ distance NOTIFY valuesChanged)
@@ -145,6 +152,10 @@ public:
     double accuracy() const;
     double direction() const;
 
+    bool hasLastPosition() const;
+    double lastLatitude() const;
+    double lastLongitude() const;
+
     double elapsed() const;
     double distance() const;
     double speed() const;
@@ -188,6 +199,8 @@ private slots:
 private:
     void startPositioning();
     void stopPositioning();
+    void readLastPosition();
+    void writeLastPosition();
     void load();
     void save();
     void addEstimate(double now);
@@ -200,6 +213,7 @@ private:
     static double now();
     static SignalQuality qualityOf(double accuracy);
     static bool locationEnabled();
+    static QString settingsPath();
 
     QPointer<ActivityHistory> m_history;
     QString m_fileName;
@@ -220,6 +234,10 @@ private:
     bool m_hasFix = false;
     /* What the fixes come to: the only positions shown or recorded. */
     TrackFilter m_filter;
+
+    bool m_hasLastPosition = false;
+    double m_lastLatitude = 0;
+    double m_lastLongitude = 0;
 
     Track m_track;
     double m_replayPosition = 0;

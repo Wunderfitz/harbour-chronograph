@@ -61,6 +61,13 @@ Page {
 
     allowedOrientations: Orientation.All
 
+    // A new activity's map starts where the receiver last had a position,
+    // rather than in the middle of the world until the filter has settled.
+    Component.onCompleted: {
+        if (!fileName && activity.hasLastPosition)
+            map.centerOn(activity.lastLatitude, activity.lastLongitude)
+    }
+
     function signalColor(quality) {
         switch (quality) {
         case Activity.Good:

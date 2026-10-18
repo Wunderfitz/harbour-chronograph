@@ -84,6 +84,12 @@ Item {
             setCenter(positionX, positionY)
     }
 
+    // Puts a place in the middle without making it the position: following,
+    // the map still moves to the position once there is one.
+    function centerOn(latitude, longitude) {
+        setCenter(mercatorX(longitude), mercatorY(latitude))
+    }
+
     // Zooms so that the point at (x, y) on the map stays where it is.
     function zoomTo(newZoom, x, y) {
         var dx = x - width / 2
