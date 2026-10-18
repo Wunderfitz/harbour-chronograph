@@ -194,7 +194,8 @@ Page {
             // for each below, the one shown highlighted.
             Item {
                 width: parent.width
-                height: Math.max(grid.height + Theme.paddingLarge + dots.height,
+                height: Math.max(grid.height + Theme.paddingLarge + dots.height
+                                 + dots.anchors.bottomMargin,
                                  (page.isPortrait ? page.height / 2 : page.height)
                                  - page.topInset - typeBox.height - Theme.itemSizeExtraSmall)
 
@@ -328,6 +329,8 @@ Page {
                     anchors {
                         horizontalCenter: parent.horizontalCenter
                         bottom: parent.bottom
+                        // Clear of the map below, which would otherwise crowd them.
+                        bottomMargin: Theme.paddingMedium
                     }
                     height: Theme.paddingLarge
                     spacing: Theme.paddingMedium
