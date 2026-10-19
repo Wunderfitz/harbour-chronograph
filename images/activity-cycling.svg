@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copyright (C) 2026 Sebastian J. Wolf and other contributors
+
+    This file is part of Chronograph.
+
+    Chronograph is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Chronograph is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Chronograph. If not, see <http://www.gnu.org/licenses/>.
+-->
+<!--
+    Cycling, for the list of activities: a bicycle from the side. White on
+    transparent, like the theme's icons: Silica's Icon tints it for the
+    ambience and for a pressed item.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <g fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="14" cy="42" r="10" stroke-width="4"/>
+    <circle cx="50" cy="42" r="10" stroke-width="4"/>
+    <path d="M14 42 L29 42 L43 28 L24 28 Z M29 42 L22 21 M17 21 L27 21 M50 42 L42 18 L48 17"
+          stroke-width="4"/>
+  </g>
+</svg>

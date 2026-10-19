@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copyright (C) 2026 Sebastian J. Wolf and other contributors
+
+    This file is part of Chronograph.
+
+    Chronograph is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Chronograph is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Chronograph. If not, see <http://www.gnu.org/licenses/>.
+-->
+<!--
+    Rowing, for the list of activities: a rower in a boat, the oar in the
+    water. White on transparent, like the theme's icons: Silica's Icon tints
+    it for the ambience and for a pressed item.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <circle cx="35" cy="11" r="6" fill="#ffffff"/>
+  <g fill="none" stroke="#ffffff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M36 21 L41 35"/>
+    <path d="M37 23 L31 31 L23 28"/>
+    <path d="M41 35 L29 30 L22 37"/>
+  </g>
+  <!-- The hull in two, apart where the oar crosses it: Qt draws SVG Tiny,
+       which has no masks. -->
+  <path d="M4 40 H27.75 L34.95 48 H9 Z M39.85 40 H60 L55 48 H47.05 Z" fill="#ffffff"/>
+  <g fill="none" stroke="#ffffff" stroke-linecap="round">
+    <path d="M23 28 L47 55" stroke-width="3.5"/>
+    <path d="M46 54 L54 63" stroke-width="7"/>
+  </g>
+</svg>

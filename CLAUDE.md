@@ -286,7 +286,8 @@ QtQuick and the `Internet` permission.
   `app.activityTypeName()` in `harbour-chronograph.qml` are the only place they
   are translated, `isType()` in `Activity.cpp` the only place they are
   checked, and `filterMode()` beside it the only place they are mapped to a
-  `TrackFilter::Mode`. A new type goes into all three. Every type shows the
+  `TrackFilter::Mode`. A new type goes into all three, and gets a pictogram,
+  `images/activity-<key>.svg`, which `app.activityTypeIcon()` finds by the key. Every type shows the
   same values, pace included, and `Track` applies the same rules to all of
   them; only the filter treats them differently.
 
@@ -604,7 +605,8 @@ qml/cover/CoverPage           today's count over the chronograph backdrop, or th
 qml/components/               BackgroundImage, AboutLink, AboutParagraph (from Lauscher);
                               TileMap, TileLayer, ActivityValue, ActivityChart, HoldButton
 qml/js/Units.js               durations, distances, paces and speeds as shown
-images/                       icon master, cover backdrops, heading arrow (SVG), installed whole
+images/                       icon master, cover backdrops, heading arrow, activity type
+                              pictograms (SVG), installed whole
 icons/<size>/                 the rendered launcher icon
 translations/                 German catalogue; the template is regenerated, untracked
 rpm/                          spec and changelog
@@ -873,6 +875,23 @@ else (see Lauscher's notes on what it misses).
   and libkeepalive.
 - Actions the way Lauscher has them: **one `CoverActionList` per state**,
   as lipstick takes an enabled list wholesale; none enabled means none shown.
+
+## The activity type pictograms
+
+`images/activity-<key>.svg`, one per type, shown at the left of each
+activity in the overview's list, as tall as its two lines. Drawn for this app
+on a 64-unit canvas (decided 2026-10-19): the stock theme has nothing for any
+of the types.
+
+- **White on transparent, like the theme's own icons**, and shown through
+  Silica's `Icon`, which tints them with the palette's primary colour - pale on
+  a dark ambience, dark on a light one - and with the highlight colour while
+  the item is pressed. One file serves both ambiences; Fernschreiber does its
+  own icons the same way. Only the alpha counts, so they are one colour.
+- Bold, rounded strokes (5.5 units for figures, 4 for the bicycle), so they
+  hold up at the list's size of about 64 px.
+- **Qt draws SVG Tiny 1.2**: no masks, filters or CSS. Where two shapes must
+  stay apart - the oar across the hull - the gap is cut into the geometry.
 
 ## The app icon
 

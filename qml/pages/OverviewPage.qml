@@ -94,11 +94,29 @@ Page {
                 }
             }
 
-            Column {
+            // The type's pictogram, as tall as the two lines beside it. Tinted
+            // by Icon, so it suits a dark and a light ambience alike.
+            Icon {
+                id: typeIcon
                 anchors {
                     left: parent.left
-                    right: parent.right
                     leftMargin: Theme.horizontalPageMargin
+                    verticalCenter: parent.verticalCenter
+                }
+                width: height
+                height: details.height
+                sourceSize.width: width
+                sourceSize.height: height
+                highlighted: delegate.highlighted
+                source: app.activityTypeIcon(model.type)
+            }
+
+            Column {
+                id: details
+                anchors {
+                    left: typeIcon.right
+                    right: parent.right
+                    leftMargin: Theme.paddingLarge
                     rightMargin: Theme.horizontalPageMargin
                     verticalCenter: parent.verticalCenter
                 }

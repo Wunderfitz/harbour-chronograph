@@ -49,6 +49,13 @@ ApplicationWindow {
         }
     }
 
+    // The type's pictogram in images/, white on transparent: an Icon tints it
+    // for the ambience. An unknown type is shown as running, as by its name.
+    function activityTypeIcon(type) {
+        var known = activityTypes.indexOf(type) !== -1
+        return Qt.resolvedUrl("../images/activity-" + (known ? type : "running") + ".svg")
+    }
+
     initialPage: Component { OverviewPage {} }
     cover: Qt.resolvedUrl("cover/CoverPage.qml")
     allowedOrientations: defaultAllowedOrientations

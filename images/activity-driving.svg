@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copyright (C) 2026 Sebastian J. Wolf and other contributors
+
+    This file is part of Chronograph.
+
+    Chronograph is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Chronograph is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Chronograph. If not, see <http://www.gnu.org/licenses/>.
+-->
+<!--
+    Driving, for the list of activities: a car from the side. White on
+    transparent, like the theme's icons: Silica's Icon tints it for the
+    ambience and for a pressed item.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <path fill="#ffffff" fill-rule="evenodd"
+        d="M5 43 V34 Q5 30 9 29.5 L16.5 28.5 L22.5 18.5 Q24.5 15.5 28.5 15.5 H40.5 Q44 15.5 46 18.5 L52 28.5 L55 29 Q59 29.5 59 34 V43 H55 A9 9 0 0 0 37 43 H27 A9 9 0 0 0 9 43 Z
+           M22.5 28 L27.5 20.5 Q28.5 19.5 30 19.5 H32.5 V28 Z
+           M36.5 19.5 H40 Q41.5 19.5 42.5 20.5 L47 28 H36.5 Z"/>
+  <circle cx="18" cy="43" r="6" fill="#ffffff"/>
+  <circle cx="46" cy="43" r="6" fill="#ffffff"/>
+</svg>
