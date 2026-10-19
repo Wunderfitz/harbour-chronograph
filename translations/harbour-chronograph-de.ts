@@ -115,8 +115,8 @@
         <translation>Gutes GPS-Signal</translation>
     </message>
     <message>
-        <source>Activity</source>
-        <translation>Aktivität</translation>
+        <source>Activity type</source>
+        <translation>Aktivitätstyp</translation>
     </message>
     <message>
         <source>± %1 m</source>

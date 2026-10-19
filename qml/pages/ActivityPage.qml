@@ -177,7 +177,7 @@ Page {
                     // it dims at once.
                     opacity: titleArea.showHeader ? 0 : 1
                     enabled: opacity > 0
-                    label: qsTr("Activity")
+                    label: qsTr("Activity type")
                     currentIndex: Math.max(0, app.activityTypes.indexOf(activity.type))
                     menu: ContextMenu {
                         Repeater {
