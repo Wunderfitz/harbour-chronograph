@@ -498,10 +498,10 @@ Page {
                     top: startButton.bottom
                     topMargin: Theme.paddingSmall
                 }
-                // Centred on the whole page, also in landscape, where the
-                // controls take only its right half.
-                x: (page.width - width) / 2 - parent.x
-                width: Math.min(implicitWidth, page.width - 2 * Theme.horizontalPageMargin)
+                // Centred on the control row, which is as wide as the map:
+                // the whole page in portrait, the map's half in landscape.
+                x: (parent.width - width) / 2
+                width: Math.min(implicitWidth, parent.width - 2 * Theme.horizontalPageMargin)
                 truncationMode: TruncationMode.Fade
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: alert ? Theme.highlightColor : Theme.secondaryColor
