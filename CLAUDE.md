@@ -260,8 +260,8 @@ QtQuick and the `Internet` permission.
   page indicator still goes back.
 - The control row: the **Auto-pause `TextSwitch`** on the left, the button on
   the right (`buttonWidthSmall`, to leave the switch room), the small hint
-  under the button - centred under it, moved left only as far as a long hint
-  needs. The hint says "Paused automatically" while auto-paused, else "GPS
+  below both, at the very bottom, centred on the whole page - in landscape
+  too, where the control row takes only the right half. The hint says "Paused automatically" while auto-paused, else "GPS
   signal lost" (see below), else what the button does. The switch is there
   until the stop, on for every new activity (not remembered, by the project
   owner's decision), and works at any time; `automaticCheck: false`, so its

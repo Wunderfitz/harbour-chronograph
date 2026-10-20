@@ -486,8 +486,8 @@ Page {
                 onHeld: activity.stop()
             }
 
-            // Under the button, what it does - or that the recording paused
-            // on its own, or has had no position for a while.
+            // At the very bottom, what the button does - or that the recording
+            // paused on its own, or has had no position for a while.
             Label {
                 id: hint
 
@@ -498,12 +498,10 @@ Page {
                     top: startButton.bottom
                     topMargin: Theme.paddingSmall
                 }
-                // Centred under the button, unless that would take it off
-                // the edge: then as far right as the margin lets it go.
-                x: Math.max(Theme.horizontalPageMargin,
-                            Math.min(startButton.x + (startButton.width - width) / 2,
-                                     parent.width - Theme.horizontalPageMargin - width))
-                width: Math.min(implicitWidth, parent.width - 2 * Theme.horizontalPageMargin)
+                // Centred on the whole page, also in landscape, where the
+                // controls take only its right half.
+                x: (page.width - width) / 2 - parent.x
+                width: Math.min(implicitWidth, page.width - 2 * Theme.horizontalPageMargin)
                 truncationMode: TruncationMode.Fade
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: alert ? Theme.highlightColor : Theme.secondaryColor
