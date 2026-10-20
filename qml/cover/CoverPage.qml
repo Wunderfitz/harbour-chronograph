@@ -123,10 +123,13 @@ CoverBackground {
             width: parent.width
             visible: cover.paused
             horizontalAlignment: Text.AlignLeft
+            wrapMode: Text.WordWrap
+            maximumLineCount: 2
             truncationMode: TruncationMode.Fade
             font.pixelSize: Theme.fontSizeSmall
             color: Theme.primaryColor
-            text: qsTr("Paused")
+            text: cover.recording && cover.activity.autoPaused ? qsTr("Paused automatically")
+                                                               : qsTr("Paused")
         }
 
         Label {

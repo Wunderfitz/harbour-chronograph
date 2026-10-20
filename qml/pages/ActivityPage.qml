@@ -28,7 +28,8 @@ import "../js/Units.js" as Units
 // values take the upper half - or, swiped to, charts of the pace and the
 // elevation - the map the lower, and the control at the bottom follows the
 // activity: Start, then Pause or Resume - held to stop - and once it is over
-// a slider through it.
+// a slider through it. Beside the button, until the stop, a switch for the
+// auto-pause, which pauses and resumes the recording on its own.
 //
 // Leaving the page while recording stops the activity and stores it: Activity
 // does that as it goes with the page. Once stored, the pulley deletes it.
@@ -126,6 +127,7 @@ Page {
     Activity {
         id: activity
         history: activityHistory
+        pedometer: stepCounter
         fileName: page.fileName
 
         // A finished activity is shown whole, for the slider to go through.
@@ -437,15 +439,33 @@ Page {
             height: page.finished ? replaySlider.height + Theme.paddingSmall
                                   : startButton.height + hint.height + 2 * Theme.paddingLarge
 
+            // Set rather than bound, as a TextSwitch that checks itself loses
+            // its binding: on until switched off, at any time.
+            TextSwitch {
+                id: autoPauseSwitch
+                visible: !page.finished
+                anchors {
+                    left: parent.left
+                    right: startButton.left
+                    rightMargin: Theme.paddingMedium
+                    verticalCenter: startButton.verticalCenter
+                }
+                automaticCheck: false
+                checked: activity.autoPause
+                text: qsTr("Auto-pause")
+                onClicked: activity.autoPause = !activity.autoPause
+            }
+
             Button {
                 id: startButton
                 visible: activity.status === Activity.Ready
                 anchors {
-                    horizontalCenter: parent.horizontalCenter
+                    right: parent.right
+                    rightMargin: Theme.horizontalPageMargin
                     top: parent.top
                     topMargin: Theme.paddingLarge
                 }
-                preferredWidth: Theme.buttonWidthMedium
+                preferredWidth: Theme.buttonWidthSmall
                 text: qsTr("Start")
                 onClicked: activity.start()
             }
@@ -453,11 +473,12 @@ Page {
             HoldButton {
                 visible: page.running
                 anchors {
-                    horizontalCenter: parent.horizontalCenter
+                    right: parent.right
+                    rightMargin: Theme.horizontalPageMargin
                     top: parent.top
                     topMargin: Theme.paddingLarge
                 }
-                preferredWidth: Theme.buttonWidthMedium
+                preferredWidth: Theme.buttonWidthSmall
                 idleText: activity.status === Activity.Paused ? qsTr("Resume") : qsTr("Pause")
                 //: The countdown on the pause button while it is held; %1 is the seconds left
                 holdText: qsTr("Stop in %1")
@@ -465,18 +486,32 @@ Page {
                 onHeld: activity.stop()
             }
 
+            // Under the button, what it does - or that the recording paused
+            // on its own, or has had no position for a while.
             Label {
                 id: hint
+
+                readonly property bool alert: activity.autoPaused || activity.signalLost
+
                 visible: !page.finished
                 anchors {
-                    horizontalCenter: parent.horizontalCenter
                     top: startButton.bottom
                     topMargin: Theme.paddingSmall
                 }
+                // Centred under the button, unless that would take it off
+                // the edge: then as far right as the margin lets it go.
+                x: Math.max(Theme.horizontalPageMargin,
+                            Math.min(startButton.x + (startButton.width - width) / 2,
+                                     parent.width - Theme.horizontalPageMargin - width))
+                width: Math.min(implicitWidth, parent.width - 2 * Theme.horizontalPageMargin)
+                truncationMode: TruncationMode.Fade
                 font.pixelSize: Theme.fontSizeExtraSmall
-                color: Theme.secondaryColor
-                text: activity.status === Activity.Ready ? qsTr("Best started once the signal is green")
-                                                         : qsTr("Hold for 3 seconds to stop")
+                color: alert ? Theme.highlightColor : Theme.secondaryColor
+                text: activity.autoPaused ? qsTr("Paused automatically")
+                                          : activity.signalLost ? qsTr("GPS signal lost")
+                                          : activity.status === Activity.Ready
+                                            ? qsTr("Best started once the signal is green")
+                                            : qsTr("Hold for 3 seconds to stop")
             }
 
             Slider {

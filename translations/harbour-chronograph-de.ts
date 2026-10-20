@@ -87,6 +87,10 @@
         <source>Open OpenStreetMap&apos;s copyright page</source>
         <translation>Urheberrechtsseite von OpenStreetMap öffnen</translation>
     </message>
+    <message>
+        <source>With Auto-pause on, the recording pauses on its own when you stand still for a few seconds, or move faster than the activity allows - on a bus, say - and resumes when you move on. Walking and running, your steps tell it too. The time you stood is not counted. Paused like this for half an hour, the activity is stopped and stored. A pause by hand is only resumed by hand.</source>
+        <translation>Ist Auto-Pause eingeschaltet, pausiert die Aufzeichnung von selbst, wenn Sie einige Sekunden stillstehen oder sich schneller bewegen, als es die Aktivität erlaubt - etwa im Bus -, und setzt fort, sobald Sie weitergehen. Beim Gehen und Laufen helfen auch Ihre Schritte dabei. Die Zeit, in der Sie standen, zählt nicht mit. Ist die Aktivität so eine halbe Stunde lang pausiert, wird sie beendet und gespeichert. Eine Pause von Hand wird nur von Hand fortgesetzt.</translation>
+    </message>
 </context>
 <context>
     <name>ActivityPage</name>
@@ -207,6 +211,18 @@
         <source>Delete activity</source>
         <translation>Aktivität löschen</translation>
     </message>
+    <message>
+        <source>Auto-pause</source>
+        <translation>Auto-Pause</translation>
+    </message>
+    <message>
+        <source>Paused automatically</source>
+        <translation>Automatisch pausiert</translation>
+    </message>
+    <message>
+        <source>GPS signal lost</source>
+        <translation>GPS-Signal verloren</translation>
+    </message>
 </context>
 <context>
     <name>CoverPage</name>
@@ -229,6 +245,10 @@
     <message>
         <source>Paused</source>
         <translation>Pausiert</translation>
+    </message>
+    <message>
+        <source>Paused automatically</source>
+        <translation>Automatisch pausiert</translation>
     </message>
 </context>
 <context>

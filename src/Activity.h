@@ -27,11 +27,13 @@
 #include <QRectF>
 #include <QTimer>
 
+#include "AutoPause.h"
 #include "Track.h"
 #include "TrackFilter.h"
 
 class ActivityHistory;
 class BackgroundActivity;
+class StepCounter;
 class QGeoPositionInfo;
 class QGeoPositionInfoSource;
 
@@ -56,6 +58,12 @@ class QGeoPositionInfoSource;
  * estimates reach the map, the values and the track - so the GPX file holds
  * them too, and a replay shows what was shown while recording.
  *
+ * With autoPause on, an AutoPause watches the filter's speed and, walking or
+ * running, the pedometer's steps, and pauses and resumes the recording on its
+ * own - a pause as of the moment the movement ended, so the points since are
+ * dropped again - and stops it after half an hour paused. A pause by hand is
+ * never resumed on its own.
+ *
  * While the receiver runs, a keepalive of its own stops the phone from
  * suspending, so a recording carries on with the display off - whatever
  * StepCounter's keepalive does.
@@ -73,6 +81,13 @@ class Activity : public QObject, public QQmlParserStatus
     /* "running", "walking", "cycling", "rowing" or "driving". */
     Q_PROPERTY(QString type READ type WRITE setType NOTIFY typeChanged)
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
+    /* Whether the recording pauses and resumes on its own. On by default, and
+     * switched at any time: switched off while paused on its own, it resumes. */
+    Q_PROPERTY(bool autoPause READ autoPause WRITE setAutoPause NOTIFY autoPauseChanged)
+    /* Paused on its own rather than by hand. */
+    Q_PROPERTY(bool autoPaused READ autoPaused NOTIFY statusChanged)
+    /* Whose steps tell auto-pause that the user walks or runs. */
+    Q_PROPERTY(StepCounter *pedometer READ pedometer WRITE setPedometer NOTIFY pedometerChanged)
     /* When it was started, local time, to the second; invalid before. */
     Q_PROPERTY(QDateTime startTime READ startTime NOTIFY startTimeChanged)
 
@@ -86,6 +101,8 @@ class Activity : public QObject, public QQmlParserStatus
     Q_PROPERTY(double accuracy READ accuracy NOTIFY positionChanged)
     /* Degrees from north while moving, NaN while standing. */
     Q_PROPERTY(double direction READ direction NOTIFY positionChanged)
+    /* No position good enough to record for a while, though recording. */
+    Q_PROPERTY(bool signalLost READ signalLost NOTIFY signalLostChanged)
 
     /* Where the receiver's last position was, the last time it ran - for the
      * map of a new activity to start at before the first fix. As it was when
@@ -147,6 +164,11 @@ public:
     QString type() const;
     void setType(const QString &type);
     Status status() const;
+    bool autoPause() const;
+    void setAutoPause(bool autoPause);
+    bool autoPaused() const;
+    StepCounter *pedometer() const;
+    void setPedometer(StepCounter *pedometer);
     QDateTime startTime() const;
 
     SignalQuality signalQuality() const;
@@ -155,6 +177,7 @@ public:
     double longitude() const;
     double accuracy() const;
     double direction() const;
+    bool signalLost() const;
 
     bool hasLastPosition() const;
     double lastLatitude() const;
@@ -188,6 +211,9 @@ signals:
     void fileNameChanged();
     void typeChanged();
     void statusChanged();
+    void autoPauseChanged();
+    void pedometerChanged();
+    void signalLostChanged();
     void startTimeChanged();
     void positionChanged();
     void valuesChanged();
@@ -200,6 +226,8 @@ private slots:
     void handlePosition(const QGeoPositionInfo &info);
     void handlePositioningError(int error);
     void tick();
+    void handleSteps();
+    void updateStepsCounted();
 
 private:
     void startPositioning();
@@ -209,6 +237,7 @@ private:
     void load();
     void save();
     void addEstimate(double now);
+    void applyAutoPause(double time);
     void setStatus(Status status);
     void showLive();
     void showReplay();
@@ -225,6 +254,7 @@ private:
     QString m_type;
     Status m_status = Ready;
     bool m_completed = false;
+    QPointer<StepCounter> m_pedometer;
 
     QGeoPositionInfoSource *m_source = nullptr;
     /* Keeps the phone awake while the receiver runs, display off or not. */
@@ -239,6 +269,14 @@ private:
     bool m_hasFix = false;
     /* What the fixes come to: the only positions shown or recorded. */
     TrackFilter m_filter;
+
+    bool m_autoPauseOn = true;
+    bool m_autoPaused = false;
+    AutoPause m_autoPause;
+    /* Recording since, as far as the signal is concerned: the start, or a
+     * resume by hand. */
+    double m_watchedSince = 0;
+    bool m_signalLost = false;
 
     bool m_hasLastPosition = false;
     double m_lastLatitude = 0;

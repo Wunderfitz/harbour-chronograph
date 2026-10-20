@@ -106,6 +106,10 @@ Page {
             }
 
             AboutParagraph {
+                text: qsTr("With Auto-pause on, the recording pauses on its own when you stand still for a few seconds, or move faster than the activity allows - on a bus, say - and resumes when you move on. Walking and running, your steps tell it too. The time you stood is not counted. Paused like this for half an hour, the activity is stopped and stored. A pause by hand is only resumed by hand.")
+            }
+
+            AboutParagraph {
                 text: qsTr("Each activity is kept on the phone as a GPX file, which other apps and sport sites read, in .local/share/de.ygriega/chronograph/gpx of your home directory.")
             }
 

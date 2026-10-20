@@ -221,6 +221,76 @@ void testPause()
     expectNear("pause: elapsed at the resume", track.elapsedAt(kStartTime + 60 + 120), 60, 0.001);
 }
 
+/* Climbing north at 2 m/s and 0.2 m/s up, one fix a second. */
+void climbNorth(Track &track, double &time, double &north, double &altitude, int seconds)
+{
+    for (int i = 0; i < seconds; ++i) {
+        time += 1.0;
+        north += 2.0;
+        altitude += 0.2;
+        TrackPoint point = fix(time, north, 0);
+        point.speed = 2.0;
+        point.altitude = altitude;
+        track.addPoint(point);
+    }
+}
+
+/* A pause noticed late: the points after the moment it began are dropped,
+ * and the track goes on as if they had never come. */
+void testEndAt()
+{
+    Track reference;
+    Track track;
+    double time = kStartTime;
+    double north = 0;
+    double altitude = 100;
+    reference.begin(time);
+    track.begin(time);
+    {
+        double t = time, n = north, a = altitude;
+        climbNorth(reference, t, n, a, 60);
+    }
+    climbNorth(track, time, north, altitude, 60);
+    reference.end(time);
+    const double pausedAt = time;
+
+    // Ten seconds that turn out to belong to the pause: moving on, and the
+    // altitude far up, which would have moved the climb's base.
+    for (int i = 1; i <= 10; ++i) {
+        TrackPoint point = fix(time + i, north + 2.0 * i, 0);
+        point.speed = 2.0;
+        point.altitude = altitude + 10.0;
+        track.addPoint(point);
+    }
+    track.endAt(pausedAt);
+    expectNear("end at: the later points dropped", double(track.size()), 60, 0);
+    expectNear("end at: duration up to the moment", track.duration(), 60, 0.001);
+    expectNear("end at: segment ends then", track.segments().back().end, pausedAt, 0.001);
+
+    time += 30;
+    reference.begin(time);
+    track.begin(time);
+    {
+        double t = time, n = north, a = altitude;
+        climbNorth(reference, t, n, a, 60);
+    }
+    climbNorth(track, time, north, altitude, 60);
+    reference.end(time);
+    track.end(time);
+    const TrackState expected = reference.stateAt(reference.duration());
+    const TrackState state = track.stateAt(track.duration());
+    expectNear("end at: duration as if never recorded", track.duration(), reference.duration(), 0.001);
+    expectNear("end at: distance as if never recorded", state.distance, expected.distance, 0.001);
+    expectNear("end at: climb as if never recorded", state.elevationGain, expected.elevationGain, 0.001);
+
+    Track early;
+    early.begin(kStartTime);
+    early.addPoint(fix(kStartTime + 1, 0, 0));
+    early.endAt(kStartTime - 10);
+    expectNear("end at: never before the segment began", early.segments().back().end, kStartTime, 0);
+    expectNear("end at: nothing left of it", double(early.size()), 0, 0);
+}
+
 void testStaleSpeed()
 {
     Track track;
@@ -288,6 +358,7 @@ int main()
     testStandingStill();
     testNoisyWalk();
     testPause();
+    testEndAt();
     testStaleSpeed();
     testAltitude();
     testRejects();

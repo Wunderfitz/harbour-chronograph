@@ -11,7 +11,9 @@ as a GPX file with a row in the database, lists them on the main page and
 replays them; swiped to from the values, charts show the pace and the
 elevation over the activity's time. An activity is deleted from the list's
 context menu or its page's pulley, after a ten-second remorse timer. While
-one is recorded, the cover shows it and pauses or resumes it.
+one is recorded, the cover shows it and pauses or resumes it. Auto-pause
+pauses and resumes a recording on its own: standing, too fast for the type,
+and after half an hour paused it stops it.
 
 ## Ground rules
 
@@ -123,7 +125,9 @@ The same split as for steps:
   left out, distance, current and average speed, smoothed altitude, climb.
   `tests/tst_track.cpp` drives it on the host. **Live recording and replay go
   through the same calls** (`begin()`, `addPoint()`, `end()`), so a stored
-  activity replays exactly as it was shown while recorded; `stateAt(elapsed)`
+  activity replays exactly as it was shown while recorded - only an
+  auto-pause ends a segment with `endAt()`, which may lie behind its latest
+  points and drops them, and a replay sees only what is left; `stateAt(elapsed)`
   answers both. Its rules, none tuned on real activities yet:
   - distance: straight lines between points at least 5 m apart, so a standing
     receiver's wander adds nothing; a point whose own speed says standing
@@ -155,6 +159,10 @@ The same split as for steps:
   the activity being recorded, for the cover - see [The cover](#the-cover).
 - `Gpx` (`src/Gpx.*`) reads and writes a `Track` as GPX 1.1.
 - `TrackLine` (`src/TrackLine.*`) paints the route on the map.
+- `AutoPause` (`src/AutoPause.*`) decides when a recording pauses, resumes
+  and stops on its own, in plain C++11 without Qt; `tests/tst_autopause.cpp`
+  drives it on the host. `Activity` feeds it and does what it says. See
+  [Auto-pause](#auto-pause-standing-too-fast-and-the-stop-after-half-an-hour).
 - `TrackChart` (`src/TrackChart.*`) is a `Track`'s pace or elevation per
   point and the axes for them, in plain C++11 without Qt;
   `tests/tst_trackchart.cpp` drives it on the host. `ChartLine`
@@ -250,6 +258,14 @@ QtQuick and the `Internet` permission.
 - The slideshow takes horizontal drags, as the map does, so the page's back
   swipe now works only over the type, the GPS row and the control - and the
   page indicator still goes back.
+- The control row: the **Auto-pause `TextSwitch`** on the left, the button on
+  the right (`buttonWidthSmall`, to leave the switch room), the small hint
+  under the button - centred under it, moved left only as far as a long hint
+  needs. The hint says "Paused automatically" while auto-paused, else "GPS
+  signal lost" (see below), else what the button does. The switch is there
+  until the stop, on for every new activity (not remembered, by the project
+  owner's decision), and works at any time; `automaticCheck: false`, so its
+  binding to `activity.autoPause` survives a tap.
 - The control: Start; then `HoldButton` - a tap (under 800 ms) pauses or
   resumes, **held for 3 s it stops**, counting the seconds down on itself
   (shown from 250 ms on, so a tap does not flash it); letting go early or
@@ -290,6 +306,72 @@ QtQuick and the `Internet` permission.
   `images/activity-<key>.svg`, which `app.activityTypeIcon()` finds by the key. Every type shows the
   same values, pace included, and `Track` applies the same rules to all of
   them; only the filter treats them differently.
+
+### Auto-pause: standing, too fast, and the stop after half an hour
+
+Decided 2026-10-20, at the project owner's request, from a list of proposed
+events. **Chosen:** A standing, B steps, C too fast for the type, H the stop,
+F′ a warning when the signal is lost. `AutoPause` decides, Qt-free; `Activity`
+feeds it the filter's speed with every estimate (also while paused), the
+pedometer's steps (`pedometer: stepCounter` from QML) and a check once a
+second, and does what it returns.
+
+| | Walking | Running | Cycling | Rowing | Driving |
+|---|---|---|---|---|---|
+| A pause: standing below, for | 0.4 m/s, 10 s | 1.0 m/s, 5 s | 1.0 m/s, 5 s | 0.5 m/s, 20 s | 1.0 m/s, 3 min |
+| A resume: moving above, for | 0.7 m/s, 3 s | 1.5 m/s, 2 s | 1.5 m/s, 2 s | 1.0 m/s, 5 s | 3.0 m/s, 3 s |
+| B pause also needs no step for | 5 s | 3 s | - | - | - |
+| C pause: too fast above, for | 3.5 m/s, 15 s | 8 m/s, 15 s | 25 m/s, 30 s | 7 m/s, 15 s | - |
+
+- **A, standing**: pauses as of the first slow second; walking or running,
+  as of the last step if that came later (B). Resumed by moving (A) or,
+  walking or running, by a step (B) - even without a signal.
+- **C, too fast** (bus, train, car): pauses as of the first second over the
+  limit. Resumed walking or running by a step while the speed is fresh and
+  within the limit; otherwise, or without steps, by 10 s within the type's
+  range - longer than A's resume, so a bus slowing for a stop does not
+  resume. **A step counts only after the last too-fast second**: walking
+  along a train, the steps must not resume it at the next station.
+- **H, the stop**: auto-paused for 30 min, the activity is stopped and
+  stored, as if held to stop. Queued, as the decision may come from the
+  receiver's own signal, which the stop deletes.
+- **F′, the signal lost**: no position good enough to record for 30 s while
+  recording (from the start or a resume by hand on), the hint says so. It
+  pauses nothing - the track bridges the gap with a straight line once a fix
+  comes, which a pause would not count. Shown with the switch off as well.
+- **Dated back** (decision 2): a pause ends the segment with `Track::endAt()`
+  at the moment the movement ended, dropping the points since, so neither
+  the waiting nor the bus counts; the elapsed time visibly steps back. A
+  resume begins the segment at the moment it is decided. `TrackLine` and
+  `TrackChart` see the track shrink and take it in anew - once per pause.
+- **By hand and on its own** (decision 1): a pause by hand is never resumed
+  on its own (`AutoPause` is halted). A resume by hand - button or cover -
+  restarts it unarmed: it waits for movement (A's resume or a step) before it
+  pauses again, so it does not at once pause what was resumed standing. The
+  start restarts it armed: standing after Start pauses as of the start.
+- **The switch**: off halts it, and resumes a recording it had paused, as
+  nothing else would; on while recording restarts it armed.
+- **No signal, no decision**: without a speed for 5 s nothing is decided
+  from the speed, and the runs of slow or fast seconds start over.
+- **Steps** come from `StepCounter::stepsAdded`, which holds a walk's first
+  six steps back until confirmed: a step resumes about 3 s into walking on.
+  Without a counting accelerometer (`status` not `Counting`) the speed alone
+  decides. For cycling, rowing and driving steps are ignored.
+- The GPX file is unchanged: an auto-pause is an ordinary segment break.
+- **Known limits**: none of the limits is tuned on real activities. The
+  walking filter follows a bus's acceleration slowly, so C may come some
+  seconds late and part of the ride count. A slow bus with a spurious step
+  resumes a walk (D below would catch it).
+- **Proposed and not chosen**, kept for reference: D, moving without steps
+  (walking or running: over 2.5 m/s with no step for 10 s is a vehicle);
+  E, climbing faster than legs can (over 0.8 m/s upwards for 30 s: a lift or
+  cable car; needs the phone's altitude checked first); G, the phone put down
+  (the accelerometer quiet for 30 s; in `StepCounter`, beside the detector,
+  not in it). F, pausing at a lost signal, in favour of F′'s warning.
+  **Terrain from OpenStreetMap was ruled out**: the raster tiles hold no
+  data; Overpass queries (railway, aerialway, ferry, water - leaving the
+  water would have paused a rowing boat being carried) would send the
+  position to another server, and vector tiles would need a decoder.
 
 ### The charts: painted in C++, like the route
 
@@ -579,6 +661,7 @@ src/StepCounter.*             QAccelerometer + keepalive, the QML facade
 src/StepDetector.*            the algorithm, Qt-free
 src/TrackFilter.*             the Kalman filter the fixes go through first, Qt-free
 src/Track.*                   an activity's segments and points and their values, Qt-free
+src/AutoPause.*               when a recording pauses, resumes and stops on its own, Qt-free
 src/Activity.*                positioning, recording and replay: the activity page's facade
 src/ActivityHistory.*         the activities table as a paged list model, and the GPX files
 src/Gpx.*                     Track to and from GPX 1.1
@@ -590,6 +673,7 @@ tests/tst_stepdetector.cpp    host-side checks for StepDetector (not packaged)
 tests/tst_track.cpp           host-side checks for Track
 tests/tst_trackfilter.cpp     host-side checks for TrackFilter, raw against filtered
 tests/tst_trackchart.cpp      host-side checks for TrackChart
+tests/tst_autopause.cpp       host-side checks for AutoPause
 tests/tst_stephistory.cpp     Database and StepHistory, run in the build engine
 tests/tst_activityhistory.cpp the migration, Gpx and ActivityHistory, in the build engine
 tests/replay_recording.cpp    replays a phone recording through StepDetector
@@ -709,6 +793,24 @@ track, and fitting an axis. Run it after any change to `TrackChart`, and to
 ```sh
 g++ -std=c++11 -Wall -Wextra -O2 -Isrc tests/tst_trackchart.cpp \
     src/TrackChart.cpp src/Track.cpp -o /tmp/tst_trackchart && /tmp/tst_trackchart
+```
+
+**`tests/tst_autopause.cpp`** checks `AutoPause` on the host, with a
+generated speed a second and steps at a steady cadence: standing while
+walking with and without steps, steps without speed, a runner's short and
+long stop and a sprint, a bus with and without steps (a stop on the way, the
+standing after it), walking along a train, a cycle downhill and in a car, a
+traffic light while cycling, a drive's traffic light and parking, a rowing
+boat drifting, started standing, resumed by hand while standing and in a
+bus, no signal standing and moving, the stop after half an hour, and a noisy
+walk and standing. Checked by breaking one rule at a time: each is caught,
+except the clamp of a pause to the watch's start, which the rules already
+keep. `Track::endAt()` has its case in `tst_track.cpp`. Run it after any
+change to `AutoPause`, also with `-O0`:
+
+```sh
+g++ -std=c++11 -Wall -Wextra -O2 -Isrc tests/tst_autopause.cpp \
+    src/AutoPause.cpp -o /tmp/tst_autopause && /tmp/tst_autopause
 ```
 
 **`tests/tst_stephistory.cpp`** checks `Database` and `StepHistory` with a clock
@@ -861,7 +963,8 @@ else (see Lauscher's notes on what it misses).
 - **While an activity is recorded or paused** (decided 2026-10-18, at the
   project owner's request) the cover shows it instead: its type, the elapsed
   time large, the distance and the current pace - the activity page's values,
-  through `Units.js` - and "Paused" while paused. One action pauses it, and
+  through `Units.js` - and "Paused" while paused, "Paused automatically"
+  while auto-paused. One action pauses it, and
   once paused resumes it, with the theme's `icon-cover-pause` and
   `icon-cover-play`. Before the start and after the stop it is the steps
   again, without an action.
@@ -1006,6 +1109,20 @@ time, distance and pace with a pause action while recording; "Paused", no
 pace and a play action after the cover's pause action fired; recording
 again after its resume action; the steps without an action after the stop.
 
+Auto-pause (2026-10-20) builds for all five targets without warnings,
+stays Harbour-clean, passes the host suites (`tst_autopause` and
+`tst_track` with `endAt()` new) and the activity history's tests, and in the
+emulator, sandboxed, walking, with a generated NMEA log and a patched-in
+timer: started standing it paused as of the start; 30 s standing paused
+after 10 s, the time stepping back by the wait; walking on resumed within
+3 s; a bus at 10 m/s paused about 18 s after it set off, distance and time
+going back to where it got fast; neither its stop nor the standing after it
+resumed; walking on did, after 10 s (the emulator has no steps); the switch
+off resumed, on again paused as of that moment; the GPX file held the five
+segments; the cover's label followed. A 50 s gap in the log showed "GPS
+signal lost" after 30 s and paused nothing. Portrait and landscape, German,
+checked on screen.
+
 Still to confirm on the Jolla Phone (2026):
 
 - [ ] Steps are still counted with only `Location` and `Internet` granted -
@@ -1021,6 +1138,10 @@ Still to confirm on the Jolla Phone (2026):
       tapping a countdown to keep the activity and tapping the cover's pause
       and resume action - all touch, which the emulator cannot do.
 - [ ] Tiles on mobile data, and the cache across restarts.
+- [ ] Auto-pause on real activities: whether the filter's speed standing
+      stays below the limits (a single second over restarts the count),
+      whether steps resume a walk promptly, how late a bus or a car is
+      caught, and tapping the switch.
 - [ ] The filter against real fixes: whether the route still cuts no corner
       worth speaking of, whether 5 sigma leaves out the phone's real jumps and
       nothing else, how often the second guess takes over (it should be rare),
@@ -1122,6 +1243,7 @@ still fails.
 - [ ] The cover backdrop on a light ambience.
 
 Candidates for later iterations, each to be decided with the project owner:
+auto-pause events D, E and G (see [Auto-pause](#auto-pause-standing-too-fast-and-the-stop-after-half-an-hour));
 a longer history; a reset; daily goals; distance and calories from step
 length; saving on SIGTERM, should a shutdown while walking lose too much; and
 whether all-day tracking needs a background service or a hardware step counter

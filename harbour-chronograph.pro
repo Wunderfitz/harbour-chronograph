@@ -13,6 +13,7 @@ PKGCONFIG += keepalive
 SOURCES += \
     src/main.cpp \
     src/Activity.cpp \
+    src/AutoPause.cpp \
     src/ActivityHistory.cpp \
     src/ChartLine.cpp \
     src/Database.cpp \
@@ -28,6 +29,7 @@ SOURCES += \
 
 HEADERS += \
     src/Activity.h \
+    src/AutoPause.h \
     src/ActivityHistory.h \
     src/ChartLine.h \
     src/Database.h \
@@ -66,6 +68,7 @@ DISTFILES += \
     tests/tst_track.cpp \
     tests/tst_trackfilter.cpp \
     tests/tst_trackchart.cpp \
+    tests/tst_autopause.cpp \
     tests/tst_activityhistory.cpp \
     tests/replay_recording.cpp \
     README.md \

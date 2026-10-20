@@ -21,6 +21,7 @@
 
 #include "ActivityHistory.h"
 #include "Gpx.h"
+#include "StepCounter.h"
 
 #include <QDateTime>
 #include <QDebug>
@@ -43,6 +44,11 @@ const int kUpdateIntervalMs = 1000;
 
 /* The signal counts as gone after this many seconds without a fix. */
 const double kSignalLostAfter = 5.0;
+
+/* Recording without a position good enough to record for this many seconds,
+ * the page says the signal is lost. Nothing else changes: the track bridges
+ * the gap once the signal is back. */
+const double kSignalWarningAfter = 30.0;
 
 /* A fix whose own time is older than this is the receiver's last known
  * position from before, which some hand out on start: not a fix at all. */
@@ -105,6 +111,7 @@ Activity::Activity(QObject *parent)
     m_tick.setInterval(1000);
     connect(&m_tick, &QTimer::timeout, this, &Activity::tick);
     m_filter.setMode(filterMode(m_type));
+    m_autoPause.setMode(filterMode(m_type));
     readLastPosition();
 }
 
@@ -172,12 +179,60 @@ void Activity::setType(const QString &type)
         return;
     m_type = type;
     m_filter.setMode(filterMode(type));
+    m_autoPause.setMode(filterMode(type));
     emit typeChanged();
 }
 
 Activity::Status Activity::status() const
 {
     return m_status;
+}
+
+bool Activity::autoPause() const
+{
+    return m_autoPauseOn;
+}
+
+/* Switched on while recording, it watches from now on; switched off while
+ * paused on its own, the recording resumes, as nothing else would resume it. */
+void Activity::setAutoPause(bool autoPause)
+{
+    if (m_autoPauseOn == autoPause)
+        return;
+    m_autoPauseOn = autoPause;
+    if (!autoPause) {
+        m_autoPause.halt();
+        if (m_autoPaused)
+            resume();
+    } else if (m_status == Recording) {
+        m_autoPause.restart(now(), true);
+    }
+    emit autoPauseChanged();
+}
+
+bool Activity::autoPaused() const
+{
+    return m_autoPaused;
+}
+
+StepCounter *Activity::pedometer() const
+{
+    return m_pedometer;
+}
+
+void Activity::setPedometer(StepCounter *pedometer)
+{
+    if (m_pedometer == pedometer)
+        return;
+    if (m_pedometer)
+        disconnect(m_pedometer, nullptr, this, nullptr);
+    m_pedometer = pedometer;
+    if (pedometer) {
+        connect(pedometer, &StepCounter::stepsAdded, this, &Activity::handleSteps);
+        connect(pedometer, &StepCounter::statusChanged, this, &Activity::updateStepsCounted);
+    }
+    updateStepsCounted();
+    emit pedometerChanged();
 }
 
 /* To the second, as the history lists it. */
@@ -217,6 +272,11 @@ double Activity::accuracy() const
 double Activity::direction() const
 {
     return m_direction;
+}
+
+bool Activity::signalLost() const
+{
+    return m_signalLost;
 }
 
 bool Activity::hasLastPosition() const
@@ -320,27 +380,38 @@ void Activity::start()
         return;
     const double time = now();
     m_track.begin(time);
+    m_watchedSince = time;
+    if (m_autoPauseOn)
+        m_autoPause.restart(time, true);
     emit startTimeChanged();
     setStatus(Recording);
     addEstimate(time);
     showLive();
 }
 
+/* By hand: resumed by hand only. */
 void Activity::pause()
 {
     if (m_status != Recording)
         return;
+    m_autoPause.halt();
     m_track.end(now());
     setStatus(Paused);
     showLive();
 }
 
+/* By hand, whoever paused it: auto-pause waits for movement before it pauses
+ * again, or it would pause at once what was resumed standing. */
 void Activity::resume()
 {
     if (m_status != Paused)
         return;
     const double time = now();
     m_track.begin(time);
+    m_watchedSince = time;
+    m_autoPaused = false;
+    if (m_autoPauseOn)
+        m_autoPause.restart(time, false);
     setStatus(Recording);
     addEstimate(time);
     showLive();
@@ -351,6 +422,8 @@ void Activity::stop()
     if (m_status != Recording && m_status != Paused)
         return;
     m_track.end(now());
+    m_autoPause.halt();
+    m_autoPaused = false;
     stopPositioning();
     save();
     setStatus(Finished);
@@ -394,6 +467,9 @@ void Activity::handlePosition(const QGeoPositionInfo &info)
     const bool estimated = qualityOf(fix.accuracy) >= Fair && m_filter.add(fix);
     if (estimated && m_status == Recording)
         addEstimate(time);
+    if (estimated)
+        m_autoPause.addSpeed(time, m_filter.estimate().speed);
+    applyAutoPause(time);
     showLive();
 }
 
@@ -408,9 +484,25 @@ void Activity::handlePositioningError(int error)
 
 void Activity::tick()
 {
-    if (m_hasFix && now() - m_fix.time > kSignalLostAfter)
+    const double time = now();
+    if (m_hasFix && time - m_fix.time > kSignalLostAfter)
         m_hasFix = false;
+    applyAutoPause(time);
     showLive();
+}
+
+void Activity::handleSteps()
+{
+    const double time = now();
+    m_autoPause.addStep(time);
+    applyAutoPause(time);
+}
+
+/* An accelerometer that does not deliver gives no steps: auto-pause goes by
+ * the speed alone then. */
+void Activity::updateStepsCounted()
+{
+    m_autoPause.setStepsCounted(m_pedometer && m_pedometer->status() == StepCounter::Counting);
 }
 
 /* Location is not asked for before the page is there, and given up the moment
@@ -554,6 +646,37 @@ void Activity::addEstimate(double time)
         emit trackChanged();
 }
 
+/* Does what auto-pause decides, while it watches: recording, or paused on its
+ * own. A pause ends the track's segment as of the moment the movement ended,
+ * which drops the points since: they were the waiting, or the bus. */
+void Activity::applyAutoPause(double time)
+{
+    if (!m_autoPauseOn || !(m_status == Recording || m_autoPaused))
+        return;
+    switch (m_autoPause.check(time)) {
+    case AutoPause::Pause:
+        m_track.endAt(m_autoPause.pauseTime());
+        m_autoPaused = true;
+        setStatus(Paused);
+        emit trackChanged();
+        showLive();
+        break;
+    case AutoPause::Resume:
+        m_track.begin(time);
+        m_autoPaused = false;
+        setStatus(Recording);
+        addEstimate(time);
+        showLive();
+        break;
+    case AutoPause::Stop:
+        // Queued: this may be the receiver's own signal, which stop() deletes.
+        QMetaObject::invokeMethod(this, "stop", Qt::QueuedConnection);
+        break;
+    case AutoPause::None:
+        break;
+    }
+}
+
 void Activity::setStatus(Status status)
 {
     if (m_status == status)
@@ -588,6 +711,14 @@ void Activity::showLive()
     if (std::isnan(state.altitude) && hasEstimate)
         state.altitude = estimate.altitude;
     showState(state);
+
+    const bool watched = m_status == Recording || m_autoPaused;
+    const double usable = hasEstimate ? qMax(estimate.time, m_watchedSince) : m_watchedSince;
+    const bool signalLost = watched && time - usable > kSignalWarningAfter;
+    if (signalLost != m_signalLost) {
+        m_signalLost = signalLost;
+        emit signalLostChanged();
+    }
 
     // Fixes coming in settle it, whatever the switches say: an NMEA log, say.
     SignalQuality quality = NoSignal;

@@ -87,6 +87,21 @@ void Track::end(double time)
     segment.end = end;
 }
 
+void Track::endAt(double time)
+{
+    if (!isOpen())
+        return;
+    TrackSegment &segment = m_segments.back();
+    time = std::max(time, segment.begin);
+    std::size_t kept = m_points.size();
+    while (kept > segment.firstPoint && m_points[kept - 1].time > time)
+        --kept;
+    m_points.resize(kept);
+    m_derived.resize(kept);
+    m_climbBase = kept > 0 ? m_derived.back().climbBase : std::nan("");
+    segment.end = time;
+}
+
 bool Track::isOpen() const
 {
     return !m_segments.empty() && std::isnan(m_segments.back().end);
@@ -145,6 +160,7 @@ bool Track::addPoint(const TrackPoint &point)
         }
     }
 
+    derived.climbBase = m_climbBase;
     m_points.push_back(point);
     m_derived.push_back(derived);
     m_derived.back().speed = smoothSpeed(m_points.size() - 1);

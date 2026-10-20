@@ -97,6 +97,10 @@ public:
     void begin(double time);
     /* Ends the current one: a pause, or the stop. */
     void end(double time);
+    /* Ends it at a moment that may lie behind its latest points, which are
+     * dropped: for a pause noticed only some time after it began. Never
+     * before the segment began. */
+    void endAt(double time);
     bool isOpen() const;
     bool isEmpty() const;
 
@@ -139,6 +143,8 @@ private:
         double speed = 0;
         double altitude = std::numeric_limits<double>::quiet_NaN();
         double elevationGain = 0;
+        /* m_climbBase after the point, to go back to should it be dropped. */
+        double climbBase = std::numeric_limits<double>::quiet_NaN();
     };
 
     double smoothSpeed(std::size_t index) const;
