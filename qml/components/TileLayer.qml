@@ -75,16 +75,21 @@ Item {
                       columns: columns, rows: rows }
     }
 
-    onOriginXChanged: refresh()
-    onOriginYChanged: refresh()
     onFrozenChanged: refresh()
     onLevelChanged: refresh()
     onColumnsChanged: refresh()
     onRowsChanged: refresh()
 
+    // Not on originX, which depends on the placement refresh() sets: that
+    // would be a binding loop at every change of level.
     Connections {
         target: map
         onViewedChanged: tileLayer.refresh()
+        onCenterXChanged: tileLayer.refresh()
+        onCenterYChanged: tileLayer.refresh()
+        onZoomChanged: tileLayer.refresh()
+        onWidthChanged: tileLayer.refresh()
+        onHeightChanged: tileLayer.refresh()
     }
 
     Repeater {
@@ -110,6 +115,7 @@ Item {
             visible: inWorld
             asynchronous: true
             smooth: true
+            onStatusChanged: if (status === Image.Ready) tileLayer.map.tileLoaded()
             source: inWorld ? "https://tile.openstreetmap.org/" + placement.level + "/"
                               + tileLayer.modulo(column, tileLayer.tiles) + "/" + row + ".png"
                             : ""
