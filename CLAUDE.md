@@ -9,7 +9,8 @@ three days before. Iteration 3 (0.3) records runs, walks, bike rides, rowing
 and drives with GPS on an activity page with an OpenStreetMap map, stores each
 as a GPX file with a row in the database, lists them on the main page and
 replays them; swiped to from the values, charts show the pace and the
-elevation over the activity's time. An activity is deleted from the list's
+elevation over the activity's time, and further on the distance over each
+land cover, read off the map's tiles. An activity is deleted from the list's
 context menu or its page's pulley, after a ten-second remorse timer. While
 one is recorded, the cover shows it and pauses or resumes it. Auto-pause
 pauses and resumes a recording on its own: standing, too fast for the type,
@@ -167,6 +168,10 @@ The same split as for steps:
   point and the axes for them, in plain C++11 without Qt;
   `tests/tst_trackchart.cpp` drives it on the host. `ChartLine`
   (`src/ChartLine.*`) paints it. See [The charts](#the-charts-painted-in-c-like-the-route).
+- `LandCover` (`src/LandCover.*`) tells the land cover around a place from a
+  tile's colours, in plain C++11 without Qt; `tests/tst_landcover.cpp` drives
+  it on the host with generated tiles. `TileCache` (`src/TileCache.*`) hands
+  it the map's cached tiles. See [Land cover](#land-cover-read-off-the-maps-tiles).
 
 ### Positioning: QtPositioning in C++
 
@@ -231,6 +236,9 @@ QtQuick and the `Internet` permission.
   modulo the grid, so a pan reloads one row or column, not all. **Two layers
   take turns**: at a change of level the old one is frozen underneath until
   the new one has loaded over it, so the map never goes blank while zooming.
+- `TileMap.tilesLoaded()` comes a second after the last tile of a batch has
+  loaded - they are in the disk cache then; the activity page passes it on
+  to `Activity.updateLandCover()`.
 - Gestures: drag (with `preventStealing`, so the page's back swipe works only
   above the map), pinch, double-tap. Dragging stops following the position; a
   button in the corner resumes it. A finished activity is shown whole.
@@ -260,7 +268,8 @@ QtQuick and the `Internet` permission.
   entry) until the start, then a `PageHeader` with the type and the start's
   date and time in its place, as in a replay; GPS row, then the rest of the upper half a Silica `SlideshowView`
   (Piepmatz's idiom, over a `VisualItemModel`): the eight values, and swiped
-  to, the charts; a dot for each below it, the one shown highlighted. Map in
+  to, the charts, then the land cover (`LandCoverList.qml`); a dot for each
+  below it, the one shown highlighted. Map in
   the lower half, control at the bottom; in landscape the values or charts
   on the left, the map right.
 - The slideshow takes horizontal drags, as the map does, so the page's back
@@ -376,8 +385,10 @@ second, and does what it returns.
   cable car; needs the phone's altitude checked first); G, the phone put down
   (the accelerometer quiet for 30 s; in `StepCounter`, beside the detector,
   not in it). F, pausing at a lost signal, in favour of F′'s warning.
-  **Terrain from OpenStreetMap was ruled out**: the raster tiles hold no
-  data; Overpass queries (railway, aerialway, ferry, water - leaving the
+  **Terrain from OpenStreetMap was ruled out** for auto-pause: the raster
+  tiles hold no tags, only colours - enough for the land cover afterwards
+  (see [Land cover](#land-cover-read-off-the-maps-tiles)), not for railways
+  or ferries, and only where the map was shown; Overpass queries (railway, aerialway, ferry, water - leaving the
   water would have paused a rowing boat being carried) would send the
   position to another server, and vector tiles would need a decoder.
 
@@ -417,6 +428,63 @@ caption and the axis labels in Silica's fonts, placed by `ChartLine`'s
   changed, so the label repeaters are not rebuilt every second. Painting
   draws per column of pixels only the first, highest, lowest and last point,
   so a long activity costs no more than a column's worth each.
+
+### Land cover: read off the map's tiles
+
+Decided 2026-10-23, at the project owner's request, after weighing three
+ways: how far an activity went over each kind of land, in km and %, as a
+third slide after the charts. Land cover alone was asked for; not the way
+type or its surface.
+
+- **From the standard tiles' colours**, which OSM Carto paints each kind of
+  land in. Overpass would have had the real tags but sends the route to
+  another server; vector tiles would need a decoder and a provider. Raster
+  colours need neither, and the map loads the tiles anyway.
+- **Only tiles the map has shown**: `TileCache` reads the QML engine's disk
+  cache (a `QNetworkDiskCache` of its own on the same directory, read only)
+  and never fetches - OSM's tile usage policy forbids fetching a tile nobody
+  is viewing, so nothing is fetched for the land cover, ever. Cached tiles
+  from earlier activities count too, display off or not.
+- **Seven coarse kinds** (`LandCover::Kind`, keys in the GPX file):
+  `forest`, `farmland` (also farmyards, orchards, vineyards), `grassland`
+  (grass, meadows, parks, pitches, cemeteries, allotments), `builtup`
+  (residential, commercial, industrial, buildings, car parks...), `water`
+  (lakes, rivers, the sea), `natural` (heath, scrub, bare rock, sand, beach,
+  glacier), `unmapped` (Carto's land background); and the land not known.
+  Carto's finer classes lie a few shades apart and were merged rather than
+  told apart unreliably. `app.landCoverName()` and `app.landCoverColor()` are
+  the only places they are named and coloured.
+- **The colour table** is Carto's `landcover.mss`, matched per channel within
+  2 (the closest two kinds lie 5 apart, so no pixel matches two). Roads,
+  labels, symbols, the forest's tree pattern and edges match nothing and are
+  left out. A Carto colour that changes makes its kind silent - counted as
+  unknown, never as another kind.
+- **The vote**: every pixel within 20 m of the point (at least 2 pixels,
+  sampled at most 12 on either side), across up to four tiles; the kind with
+  the most pixels, unless under 20 % of the circle matched any kind. The
+  point's own tile must be at hand; its neighbours count if they are.
+- **The finest level that tells**, from 19 down to 10; a finer one replaces a
+  coarser later. Levels whose tile was at hand and told nothing are
+  remembered per point (`untelling`) and not sampled again.
+- **When**: each point as it is recorded, then every time the map says it
+  has loaded tiles (`updateLandCover()`), at the stop and when a stored
+  activity is opened. After the stop the map shows the whole activity, so
+  the stretches recorded with the display off get the level of that view
+  (about 12-13 for a few km).
+- **Per point, in the GPX file**: `<chronograph:landCover level="16">forest</chronograph:landCover>`,
+  none where unknown. A stored activity's file is **rewritten** 3 s after the
+  last change, or as the page goes, through `ActivityHistory::rewrite()`,
+  which refuses an activity no longer in the table, so a deleted one is not
+  brought back. Files from before get theirs on their first replay, and are
+  rewritten then.
+- **The distance per kind**: each step of `Track`'s distance counts for the
+  point that ends it, so the kinds add up to the distance; up to the replay
+  position, like the other values.
+- **Known limits**: not tried on real activities. Farmland and the land
+  background lie 20 apart only; OSM's sea areas with a boundary drawn over
+  them have a dotted grey-blue that matches nothing; a bridge counts as the
+  road on it, a tunnel as the land above. Stretches whose tiles were never
+  shown stay unknown.
 
 ### Smoothing the fixes: a Kalman filter per activity type
 
@@ -639,7 +707,8 @@ the OS; like the sensorfw plugin it is not `Require`d, as Harbour would refuse i
   means the same in every time zone, and has no colons, so it survives being
   copied to any file system. A second activity in the same second gets `-2`.
   Written whole with `QSaveFile` at the stop, with the filter's estimates
-  as its points. GPX 1.1, one `trkseg` per stretch between pauses; the
+  as its points, and again as the land cover is learnt (see [Land
+  cover](#land-cover-read-off-the-maps-tiles)). GPX 1.1, one `trkseg` per stretch between pauses; the
   speed and course go into Garmin's `TrackPointExtension` v2, which sport
   sites read, and each point's horizontal and vertical accuracy (the
   receiver's) and each segment's begin and end into Chronograph's own
@@ -676,26 +745,31 @@ src/Gpx.*                     Track to and from GPX 1.1
 src/TrackLine.*               the route, painted over the map
 src/TrackChart.*              a Track's pace or elevation per point and the axes, Qt-free
 src/ChartLine.*               one chart's grid, line and average, painted
+src/LandCover.*               the land cover around a place from a tile's colours, Qt-free
+src/TileCache.*               the map's cached tiles, read for LandCover, never fetched
 src/TileNetworkFactory.*      the QML engine's network access: User-Agent and tile cache
 tests/tst_stepdetector.cpp    host-side checks for StepDetector (not packaged)
 tests/tst_track.cpp           host-side checks for Track
 tests/tst_trackfilter.cpp     host-side checks for TrackFilter, raw against filtered
 tests/tst_trackchart.cpp      host-side checks for TrackChart
 tests/tst_autopause.cpp       host-side checks for AutoPause
+tests/tst_landcover.cpp       host-side checks for LandCover, on generated tiles
 tests/tst_stephistory.cpp     Database and StepHistory, run in the build engine
 tests/tst_activityhistory.cpp the migration, Gpx and ActivityHistory, in the build engine
 tests/replay_recording.cpp    replays a phone recording through StepDetector
 tests/raw-data/               personal data, git-ignored, local only: the recordings,
                               their ground truth (README), parts, FINDINGS.md
-qml/harbour-chronograph.qml   ApplicationWindow; the activity types and their names
+qml/harbour-chronograph.qml   ApplicationWindow; the activity types and the land covers, named
 qml/pages/OverviewPage        the activities above, the steps in the lower third; pulley menu
-qml/pages/ActivityPage        record or replay one activity: values or charts, map, control;
+qml/pages/ActivityPage        record or replay one activity: values, charts or land cover, map,
+                              control;
                               pulley to delete a stored one
 qml/pages/AboutPage           logo, version, what to know, credits
 qml/cover/CoverPage           today's count over the chronograph backdrop, or the activity
                               being recorded, with an action to pause or resume it
 qml/components/               BackgroundImage, AboutLink, AboutParagraph (from Lauscher);
-                              TileMap, TileLayer, ActivityValue, ActivityChart, HoldButton
+                              TileMap, TileLayer, ActivityValue, ActivityChart, HoldButton,
+                              LandCoverList
 qml/js/Units.js               durations, distances, paces and speeds as shown
 images/                       icon master, cover backdrops, heading arrow, activity type
                               pictograms (SVG), installed whole
@@ -821,6 +895,20 @@ g++ -std=c++11 -Wall -Wextra -O2 -Isrc tests/tst_autopause.cpp \
     src/AutoPause.cpp -o /tmp/tst_autopause && /tmp/tst_autopause
 ```
 
+**`tests/tst_landcover.cpp`** checks `LandCover` on the host with generated
+tiles of Carto's fills: the colours and the keys, a road through a forest
+with its tree pattern and a label, an edge between two kinds, across a
+tile's border and a corner, the place's own tile missing, too little to
+tell, levels 19 and 10, the finest level that tells and the levels that told
+nothing, the antimeridian and the poles. Checked by breaking one rule at a
+time: each is caught except the sampling's density, which only costs time.
+Run it after any change to `LandCover`, also with `-O0`:
+
+```sh
+g++ -std=c++11 -Wall -Wextra -O2 -Isrc tests/tst_landcover.cpp \
+    src/LandCover.cpp -o /tmp/tst_landcover && /tmp/tst_landcover
+```
+
 **`tests/tst_stephistory.cpp`** checks `Database` and `StepHistory` with a clock
 of its own: the schema and its migration, saving only when asked and on
 destruction, a restart the same day, midnight, the clock set back, the previous
@@ -851,9 +939,10 @@ they are and warns about them under `-Wextra`. Run it after any change to
 to the millisecond) and from other apps, and `ActivityHistory`: file names,
 rows, newest first, paging across 250 activities with a page boundary among
 three of the same second, an activity added between pages, deleting one
-(row, file and list; its file already gone; names with a path refused), no
-database. The build command is at the top of the file. Run it after any change to
-`Database`, `Gpx`, `Track` or `ActivityHistory`.
+(row, file and list; its file already gone; names with a path refused),
+rewriting one (with its land cover; not one deleted, unlisted or named with
+a path), no database. The build command is at the top of the file. Run it after any change to
+`Database`, `Gpx`, `Track`, `LandCover` or `ActivityHistory`.
 
 **Synthetic tests in place of recorded data** (decided 2026-10-14). Checked by
 breaking one rule of `StepDetector` at a time - 17 in all: each correction
@@ -1131,6 +1220,17 @@ segments; the cover's label followed. A 50 s gap in the log showed "GPS
 signal lost" after 30 s and paused nothing. Portrait and landscape, German,
 checked on screen.
 
+Land cover (2026-10-23) builds for all five targets without warnings, stays
+Harbour-clean, passes all host suites and the activity history's tests, and
+in the emulator, sandboxed, driving a generated straight line through
+Tampere with the tile cache emptied first and the display off for 2.5 of
+almost 4 minutes: no tile was fetched while it was off; the points shown
+live got level 16, most of the dark stretch too from the map's view at
+either end; after the stop the whole-route view at level 12 classified 15
+more and the file was rewritten 4 s later; 5 % stayed unknown. A file from
+before replayed, got level 17 and was rewritten. The slide, German, portrait
+and landscape, checked on screen.
+
 Still to confirm on the Jolla Phone (2026):
 
 - [ ] Steps are still counted with only `Location` and `Internet` granted -
@@ -1146,6 +1246,10 @@ Still to confirm on the Jolla Phone (2026):
       tapping a countdown to keep the activity and tapping the cover's pause
       and resume action - all touch, which the emulator cannot do.
 - [ ] Tiles on mobile data, and the cache across restarts.
+- [ ] No tile fetched with the display off while recording (the map's
+      `viewed`), and the land cover on real activities: whether farmland and
+      unmapped land are told apart, how much stays unknown, and whether the
+      file is rewritten after the stop.
 - [ ] Auto-pause on real activities: whether the filter's speed standing
       stays below the limits (a single second over restarts the count),
       whether steps resume a walk promptly, how late a bus or a car is

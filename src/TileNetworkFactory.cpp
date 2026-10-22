@@ -57,10 +57,14 @@ QNetworkAccessManager *TileNetworkFactory::create(QObject *parent)
 {
     QNetworkAccessManager *manager = new TileNetworkAccessManager(parent);
     QNetworkDiskCache *cache = new QNetworkDiskCache(manager);
-    cache->setCacheDirectory(
-            QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation))
-            .filePath(QStringLiteral("tiles")));
+    cache->setCacheDirectory(cacheDirectory());
     cache->setMaximumCacheSize(kCacheSize);
     manager->setCache(cache);
     return manager;
+}
+
+QString TileNetworkFactory::cacheDirectory()
+{
+    return QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation))
+            .filePath(QStringLiteral("tiles"));
 }

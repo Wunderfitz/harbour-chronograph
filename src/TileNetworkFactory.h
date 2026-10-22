@@ -21,6 +21,7 @@
 #define TILENETWORKFACTORY_H
 
 #include <QQmlNetworkAccessManagerFactory>
+#include <QString>
 
 /**
  * The network access of the QML engine, which loads the map's tiles as plain
@@ -30,13 +31,16 @@
  * a User-Agent that names the app, and tiles kept on the phone as long as the
  * server says they are good for, rather than fetched again. So every request
  * goes out with Chronograph's User-Agent, and through a disk cache below the
- * app's cache directory.
+ * app's cache directory - where TileCache reads them, too.
  */
 class TileNetworkFactory : public QQmlNetworkAccessManagerFactory
 {
 public:
     /* Called by the engine, possibly from its loader threads. */
     QNetworkAccessManager *create(QObject *parent) override;
+
+    /* tiles/ below the app's cache directory. */
+    static QString cacheDirectory();
 };
 
 #endif // TILENETWORKFACTORY_H

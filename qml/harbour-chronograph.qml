@@ -56,6 +56,51 @@ ApplicationWindow {
         return Qt.resolvedUrl("../images/activity-" + (known ? type : "running") + ".svg")
     }
 
+    // The land covers by LandCover's keys, an empty one for the land not
+    // known: what the activity page calls them.
+    function landCoverName(key) {
+        switch (key) {
+        case "forest":
+            return qsTr("Forest")
+        case "farmland":
+            return qsTr("Farmland")
+        case "grassland":
+            return qsTr("Meadows and parks")
+        case "builtup":
+            return qsTr("Built-up area")
+        case "water":
+            return qsTr("Water")
+        case "natural":
+            return qsTr("Heath, scrub and rock")
+        case "unmapped":
+            return qsTr("Not mapped")
+        default:
+            return qsTr("Unknown")
+        }
+    }
+
+    // And the colour the map paints each in; none for the land not known.
+    function landCoverColor(key) {
+        switch (key) {
+        case "forest":
+            return "#add19e"
+        case "farmland":
+            return "#eef0d5"
+        case "grassland":
+            return "#cdebb0"
+        case "builtup":
+            return "#e0dfdf"
+        case "water":
+            return "#aad3df"
+        case "natural":
+            return "#d6d99f"
+        case "unmapped":
+            return "#f2efe9"
+        default:
+            return "transparent"
+        }
+    }
+
     initialPage: Component { OverviewPage {} }
     cover: Qt.resolvedUrl("cover/CoverPage.qml")
     allowedOrientations: defaultAllowedOrientations

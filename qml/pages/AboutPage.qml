@@ -114,7 +114,11 @@ Page {
             }
 
             AboutParagraph {
-                text: qsTr("The map's tiles are downloaded from OpenStreetMap while the activity page is open, which uses mobile data; tiles already seen are kept on the phone for a while. GPS costs battery for as long as the activity page is open.")
+                text: qsTr("The map's tiles are downloaded from OpenStreetMap while the map is on screen, which uses mobile data; tiles already seen are kept on the phone for a while. GPS costs battery for as long as the activity page is open.")
+            }
+
+            AboutParagraph {
+                text: qsTr("Swiped to after the charts, the activity page shows how far you went through forest, farmland, water and other land. It is read off the map's tiles, and only off those shown on screen, during the activity or after it: nothing is downloaded for it. Land whose tiles were never shown counts as unknown until they are.")
             }
 
             AboutParagraph {

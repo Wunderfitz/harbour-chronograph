@@ -233,6 +233,28 @@ bool ActivityHistory::remove(const QString &fileName)
     return true;
 }
 
+bool ActivityHistory::rewrite(const QString &fileName, const QString &type, const Track &track)
+{
+    if (fileName.isEmpty() || QFileInfo(fileName).fileName() != fileName || track.isEmpty())
+        return false;
+    const QString path = filePath(fileName);
+    if (!QFileInfo::exists(path))
+        return false;
+
+    if (m_database->isOpen()) {
+        QSqlQuery query(m_database->connection());
+        query.prepare(QStringLiteral("SELECT COUNT(*) FROM activities WHERE file = :file"));
+        query.bindValue(QStringLiteral(":file"), fileName);
+        if (!query.exec() || !query.next()) {
+            qWarning() << "Cannot look up the activity" << fileName << query.lastError().text();
+            return false;
+        }
+        if (query.value(0).toInt() == 0)
+            return false;
+    }
+    return Gpx::write(path, track, type);
+}
+
 QObject *ActivityHistory::recording() const
 {
     return m_recording;

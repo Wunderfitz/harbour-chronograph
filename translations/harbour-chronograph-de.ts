@@ -76,10 +76,6 @@
         <translation>Jede Aktivität wird auf dem Telefon als GPX-Datei gespeichert, die andere Apps und Sportportale lesen können, und zwar in .local/share/de.ygriega/chronograph/gpx in Ihrem Benutzerverzeichnis.</translation>
     </message>
     <message>
-        <source>The map&apos;s tiles are downloaded from OpenStreetMap while the activity page is open, which uses mobile data; tiles already seen are kept on the phone for a while. GPS costs battery for as long as the activity page is open.</source>
-        <translation>Die Kartenkacheln werden von OpenStreetMap geladen, solange die Aktivitätsseite geöffnet ist, was mobile Daten verbraucht; bereits geladene Kacheln bleiben eine Weile auf dem Telefon. GPS kostet Akku, solange die Aktivitätsseite geöffnet ist.</translation>
-    </message>
-    <message>
         <source>Map data © OpenStreetMap contributors, available under the Open Database License. Map tiles by the OpenStreetMap Foundation.</source>
         <translation>Kartendaten © OpenStreetMap-Mitwirkende, verfügbar unter der Open Database License. Kartenkacheln von der OpenStreetMap Foundation.</translation>
     </message>
@@ -90,6 +86,14 @@
     <message>
         <source>With Auto-pause on, the recording pauses on its own when you stand still for a few seconds, or move faster than the activity allows - on a bus, say - and resumes when you move on. Walking and running, your steps tell it too. The time you stood is not counted. Paused like this for half an hour, the activity is stopped and stored. A pause by hand is only resumed by hand.</source>
         <translation>Ist Auto-Pause eingeschaltet, pausiert die Aufzeichnung von selbst, wenn Sie einige Sekunden stillstehen oder sich schneller bewegen, als es die Aktivität erlaubt - etwa im Bus -, und setzt fort, sobald Sie weitergehen. Beim Gehen und Laufen helfen auch Ihre Schritte dabei. Die Zeit, in der Sie standen, zählt nicht mit. Ist die Aktivität so eine halbe Stunde lang pausiert, wird sie beendet und gespeichert. Eine Pause von Hand wird nur von Hand fortgesetzt.</translation>
+    </message>
+    <message>
+        <source>The map&apos;s tiles are downloaded from OpenStreetMap while the map is on screen, which uses mobile data; tiles already seen are kept on the phone for a while. GPS costs battery for as long as the activity page is open.</source>
+        <translation>Die Kartenkacheln werden von OpenStreetMap geladen, solange die Karte zu sehen ist, was mobile Daten verbraucht; bereits geladene Kacheln bleiben eine Weile auf dem Telefon. GPS kostet Akku, solange die Aktivitätsseite geöffnet ist.</translation>
+    </message>
+    <message>
+        <source>Swiped to after the charts, the activity page shows how far you went through forest, farmland, water and other land. It is read off the map&apos;s tiles, and only off those shown on screen, during the activity or after it: nothing is downloaded for it. Land whose tiles were never shown counts as unknown until they are.</source>
+        <translation>Wenn Sie nach den Diagrammen weiterwischen, zeigt die Aktivitätsseite, wie weit Sie durch Wald, Ackerland, Wasser und anderes Gelände gekommen sind. Das wird aus den Kartenkacheln gelesen, und nur aus denen, die während oder nach der Aktivität auf dem Bildschirm zu sehen waren: Dafür wird nichts heruntergeladen. Gelände, dessen Kacheln nie zu sehen waren, gilt als unbekannt, bis sie es sind.</translation>
     </message>
 </context>
 <context>
@@ -223,6 +227,10 @@
         <source>GPS signal lost</source>
         <translation>GPS-Signal verloren</translation>
     </message>
+    <message>
+        <source>Land cover</source>
+        <translation>Gelände</translation>
+    </message>
 </context>
 <context>
     <name>CoverPage</name>
@@ -249,6 +257,14 @@
     <message>
         <source>Paused automatically</source>
         <translation>Automatisch pausiert</translation>
+    </message>
+</context>
+<context>
+    <name>LandCoverList</name>
+    <message>
+        <source>%1%</source>
+        <extracomment>A share of the activity&apos;s distance; %1 is the whole percent</extracomment>
+        <translation>%1 %</translation>
     </message>
 </context>
 <context>
@@ -334,6 +350,38 @@
     <message>
         <source>Running</source>
         <translation>Laufen</translation>
+    </message>
+    <message>
+        <source>Forest</source>
+        <translation>Wald</translation>
+    </message>
+    <message>
+        <source>Farmland</source>
+        <translation>Ackerland</translation>
+    </message>
+    <message>
+        <source>Meadows and parks</source>
+        <translation>Wiesen und Parks</translation>
+    </message>
+    <message>
+        <source>Built-up area</source>
+        <translation>Bebaute Fläche</translation>
+    </message>
+    <message>
+        <source>Water</source>
+        <translation>Wasser</translation>
+    </message>
+    <message>
+        <source>Heath, scrub and rock</source>
+        <translation>Heide, Gebüsch und Fels</translation>
+    </message>
+    <message>
+        <source>Not mapped</source>
+        <translation>Nicht kartiert</translation>
+    </message>
+    <message>
+        <source>Unknown</source>
+        <translation>Unbekannt</translation>
     </message>
 </context>
 </TS>

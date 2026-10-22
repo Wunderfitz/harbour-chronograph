@@ -19,6 +19,7 @@
 
 #include "Gpx.h"
 
+#include "LandCover.h"
 #include "Track.h"
 
 #include <QDateTime>
@@ -81,7 +82,9 @@ void writePoint(QXmlStreamWriter &xml, const TrackPoint &point)
     const bool course = !std::isnan(point.course);
     const bool accuracy = !std::isnan(point.accuracy);
     const bool verticalAccuracy = !std::isnan(point.verticalAccuracy);
-    if (speed || course || accuracy || verticalAccuracy) {
+    const bool landCover = point.landCover > LandCover::Unknown
+            && point.landCover < LandCover::KindCount;
+    if (speed || course || accuracy || verticalAccuracy || landCover) {
         xml.writeStartElement(kGpxNamespace, QStringLiteral("extensions"));
         if (speed || course) {
             xml.writeStartElement(kGarminNamespace, QStringLiteral("TrackPointExtension"));
@@ -96,6 +99,12 @@ void writePoint(QXmlStreamWriter &xml, const TrackPoint &point)
         if (verticalAccuracy)
             xml.writeTextElement(kOwnNamespace, QStringLiteral("verticalAccuracy"),
                                  number(point.verticalAccuracy, 1));
+        if (landCover) {
+            xml.writeStartElement(kOwnNamespace, QStringLiteral("landCover"));
+            xml.writeAttribute(QStringLiteral("level"), QString::number(point.landCoverLevel));
+            xml.writeCharacters(QString::fromLatin1(LandCover::key(LandCover::Kind(point.landCover))));
+            xml.writeEndElement();
+        }
         xml.writeEndElement();
     }
     xml.writeEndElement();
@@ -229,6 +238,14 @@ bool read(const QString &filePath, Track *track, QString *type)
                     point.accuracy = parseNumber(xml.readElementText());
                 } else if (name == QLatin1String("verticalAccuracy")) {
                     point.verticalAccuracy = parseNumber(xml.readElementText());
+                } else if (name == QLatin1String("landCover")) {
+                    const int level = xml.attributes().value(QStringLiteral("level")).toInt();
+                    const LandCover::Kind kind =
+                            LandCover::fromKey(xml.readElementText().trimmed().toStdString());
+                    if (kind != LandCover::Unknown) {
+                        point.landCover = kind;
+                        point.landCoverLevel = level;
+                    }
                 }
             } else if (inSegment) {
                 if (name == QLatin1String("begin"))

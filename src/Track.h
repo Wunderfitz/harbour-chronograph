@@ -42,6 +42,10 @@ struct TrackPoint {
     double speed = std::numeric_limits<double>::quiet_NaN();
     /* Degrees clockwise from true north. */
     double course = std::numeric_limits<double>::quiet_NaN();
+    /* What the map shows around it, a LandCover::Kind - 0 until a tile has
+     * told - and the zoom level of the tile it was read from. */
+    int landCover = 0;
+    int landCoverLevel = 0;
 };
 
 /* A stretch of recording between start or resume and pause or stop. */
@@ -89,6 +93,9 @@ struct TrackState {
  *   without one, the distance over the last few seconds.
  * - The altitude is smoothed and the climb counted with hysteresis, as a
  *   receiver's altitude wanders by metres even standing still.
+ * - The land cover is whatever the points say, which may be learnt only after
+ *   they were added; each step of the distance counts for the land of the
+ *   point it ends at.
  */
 class Track
 {
@@ -127,6 +134,12 @@ public:
     double speedAtPoint(std::size_t index) const;
     /* Smoothed, as stateAt() gives it; NaN until a fix brought one. */
     double altitudeAtPoint(std::size_t index) const;
+    /* Changes nothing but the point's land cover, so it may come late. */
+    void setLandCover(std::size_t index, int landCover, int level);
+    /* Metres covered up to and including point `last` over each land cover,
+     * 0 to kinds - 1: they add up to the distance at that point. A land
+     * cover outside that range counts as 0. */
+    std::vector<double> distanceByLandCover(int last, int kinds) const;
     const std::vector<TrackSegment> &segments() const;
 
     /* Metres between two positions on the WGS 84 mean sphere. */

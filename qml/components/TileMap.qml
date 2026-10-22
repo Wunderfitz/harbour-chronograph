@@ -29,6 +29,9 @@ import de.ygriega.chronograph 1.0
 // Everything is placed in Web Mercator coordinates, 0 to 1 across the world
 // from its top left, which zoom turns into pixels: worldSize is the whole
 // world's width at the current zoom.
+//
+// Once a batch of tiles has loaded it says so, tilesLoaded(): they are in
+// the tile cache then, for the land cover to be read from.
 Item {
     id: map
 
@@ -68,6 +71,8 @@ Item {
     // The layer showing `level`; the other one holds the level before.
     property Item frontLayer: layerA
 
+    signal tilesLoaded()
+
     function mercatorX(longitude) {
         return (longitude + 180) / 360
     }
@@ -86,6 +91,12 @@ Item {
     function centerOnPosition() {
         if (hasPosition)
             setCenter(positionX, positionY)
+    }
+
+    // Called by the layers for each tile; a second after the last of a batch,
+    // the map says it has them.
+    function tileLoaded() {
+        loadedTimer.restart()
     }
 
     // Puts a place in the middle without making it the position: following,
@@ -140,6 +151,12 @@ Item {
     onFollowingChanged: if (following) centerOnPosition()
 
     clip: true
+
+    Timer {
+        id: loadedTimer
+        interval: 1000
+        onTriggered: map.tilesLoaded()
+    }
 
     // OpenStreetMap's land colour, for where no tile has come yet.
     Rectangle {

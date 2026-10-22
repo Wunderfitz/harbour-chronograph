@@ -20,8 +20,8 @@
 /*
  * Host-side checks for Track, which has no Qt in it for exactly this reason:
  * the time with pauses left out, the distance with and without the receiver's
- * wander, the current and average speed, the climb, and what a replay sees at
- * a given moment. Every track here is generated; fixes come once a second, as
+ * wander, the current and average speed, the climb, the distance per land
+ * cover, and what a replay sees at a given moment. Every track here is generated; fixes come once a second, as
  * from the phone's receiver. Build and run from the project root:
  *
  *   g++ -std=c++11 -Wall -Wextra -O2 -Isrc tests/tst_track.cpp \
@@ -350,6 +350,47 @@ void testRejects()
 
 } // namespace
 
+/* Two segments with the 300 m between them skipped; the land cover set only
+ * afterwards, as the tiles come: forest, then farmland, part of it unknown. */
+void testLandCover()
+{
+    Track track;
+    double time = kStartTime;
+    track.begin(time);
+    double north = walkNorth(track, time, 0, 2.0, 60);
+    track.end(time);
+    time += 120;
+    north += 300;
+    track.begin(time);
+    walkNorth(track, time, north, 2.0, 60);
+    track.end(time);
+
+    const int kinds = 4;
+    for (std::size_t i = 0; i < track.size(); ++i) {
+        if (i < 60)
+            track.setLandCover(i, 1, 16);
+        else if (i < 100)
+            track.setLandCover(i, 2, 13);
+    }
+    const int last = int(track.size()) - 1;
+    const std::vector<double> distances = track.distanceByLandCover(last, kinds);
+    const double total = track.distanceAtPoint(std::size_t(last));
+    expectNear("land cover: the kinds add up to the distance",
+               distances[0] + distances[1] + distances[2] + distances[3], total, 0.001);
+    expectNear("land cover: the first segment's", distances[1], track.distanceAtPoint(59), 0.001);
+    expectNear("land cover: none across the pause, 40 s of the second", distances[2], 76, 6);
+    expectNear("land cover: the last 20 s unknown", distances[0], 40, 6);
+    expectNear("land cover: a kind not seen", distances[3], 0, 0);
+    expectNear("land cover: its level kept", track.point(70).landCoverLevel, 13, 0);
+
+    const std::vector<double> halfway = track.distanceByLandCover(30, kinds);
+    expectNear("land cover: up to a point only", halfway[1], track.distanceAtPoint(30), 0.001);
+    const std::vector<double> outside = track.distanceByLandCover(last, 2);
+    expectNear("land cover: a kind out of range counts as unknown", outside[0],
+               distances[0] + distances[2], 0.001);
+    expectNear("land cover: before the first point", track.distanceByLandCover(-1, kinds)[1], 0, 0);
+}
+
 int main()
 {
     testEmpty();
@@ -362,6 +403,7 @@ int main()
     testStaleSpeed();
     testAltitude();
     testRejects();
+    testLandCover();
 
     std::printf("%s\n", g_failures ? "FAILED" : "All passed");
     return g_failures ? 1 : 0;

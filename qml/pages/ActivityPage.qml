@@ -26,7 +26,7 @@ import "../js/Units.js" as Units
 // Records an activity, or replays one. Pushed without a fileName it starts the
 // receiver and waits for Start; with one it shows that stored activity. The
 // values take the upper half - or, swiped to, charts of the pace and the
-// elevation - the map the lower, and the control at the bottom follows the
+// elevation, and the distance over each land cover - the map the lower, and the control at the bottom follows the
 // activity: Start, then Pause or Resume - held to stop - and once it is over
 // a slider through it. Beside the button, until the stop, a switch for the
 // auto-pause, which pauses and resumes the recording on its own.
@@ -244,8 +244,8 @@ Page {
             }
 
             // What the half page leaves: the values, or swiped to, the charts of
-            // the pace and the elevation over the activity's time - with a dot
-            // for each below, the one shown highlighted.
+            // the pace and the elevation over the activity's time, and the land
+            // cover - with a dot for each below, the one shown highlighted.
             Item {
                 width: parent.width
                 height: Math.max(grid.height + Theme.paddingLarge + dots.height
@@ -374,6 +374,23 @@ Page {
                                 emptyText: page.chartEmptyText
                             }
                         }
+
+                        // Read off the tiles the map has shown, so it fills in
+                        // as the map loads them - also after the stop.
+                        Item {
+                            width: views.itemWidth
+                            height: views.itemHeight
+
+                            LandCoverList {
+                                x: Theme.horizontalPageMargin
+                                y: Theme.paddingSmall
+                                width: parent.width - 2 * Theme.horizontalPageMargin
+                                height: parent.height - y
+                                entries: activity.landCover
+                                label: qsTr("Land cover")
+                                emptyText: page.chartEmptyText
+                            }
+                        }
                     }
                 }
 
@@ -426,6 +443,7 @@ Page {
             // turn of the phone changes it.
             onWidthChanged: if (page.finished) page.showWholeTrack()
             onHeightChanged: if (page.finished) page.showWholeTrack()
+            onTilesLoaded: activity.updateLandCover()
         }
 
         Item {

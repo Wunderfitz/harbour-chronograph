@@ -42,7 +42,8 @@ class Track;
  * scrolls towards the end of what it has.
  *
  * remove() deletes an activity again, row and file; the pages ask for it only
- * once their remorse timer has run out.
+ * once their remorse timer has run out. rewrite() writes a stored activity's
+ * file anew, with what has been learnt about it since: its land cover.
  *
  * It also knows the activity being recorded, if any, for the cover: the
  * activity page's Activity is QML's, and the cover cannot see into the page.
@@ -93,6 +94,12 @@ public:
      * that cannot be replayed. Returns false, changing nothing, if the row
      * could not be deleted or the name is not a file of this directory. */
     Q_INVOKABLE bool remove(const QString &fileName);
+
+    /* Writes a stored activity's GPX file anew from its track as it is now;
+     * its row and its place in the list stay as they are. Only for an
+     * activity still stored, row and file, so that one deleted meanwhile is
+     * not brought back: returns false, writing nothing, otherwise. */
+    bool rewrite(const QString &fileName, const QString &type, const Track &track);
 
     QObject *recording() const;
     /* Set by the Activity as it starts recording, cleared as it stops - also

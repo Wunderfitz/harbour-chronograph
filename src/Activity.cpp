@@ -21,7 +21,9 @@
 
 #include "ActivityHistory.h"
 #include "Gpx.h"
+#include "LandCover.h"
 #include "StepCounter.h"
+#include "TileNetworkFactory.h"
 
 #include <QDateTime>
 #include <QDebug>
@@ -32,9 +34,11 @@
 #include <QNmeaPositionInfoSource>
 #include <QSettings>
 #include <QStandardPaths>
+#include <QVariantMap>
 
 #include <keepalive/backgroundactivity.h>
 
+#include <algorithm>
 #include <cmath>
 
 namespace {
@@ -80,6 +84,11 @@ const char kLastLongitudeKey[] = "lastPosition/longitude";
 
 const char kDefaultType[] = "running";
 
+/* A stored activity's file is written anew this long after its land cover
+ * last changed: the map loads its tiles over a second or two, each time it is
+ * moved. */
+const int kRewriteDelayMs = 3000;
+
 bool isType(const QString &type)
 {
     return type == QLatin1String("running") || type == QLatin1String("walking")
@@ -106,22 +115,29 @@ TrackFilter::Mode filterMode(const QString &type)
 Activity::Activity(QObject *parent)
     : QObject(parent)
     , m_type(QString::fromLatin1(kDefaultType))
+    , m_tiles(TileNetworkFactory::cacheDirectory())
     , m_direction(std::nan(""))
 {
     m_tick.setInterval(1000);
     connect(&m_tick, &QTimer::timeout, this, &Activity::tick);
+    m_rewrite.setSingleShot(true);
+    m_rewrite.setInterval(kRewriteDelayMs);
+    connect(&m_rewrite, &QTimer::timeout, this, &Activity::rewrite);
     m_filter.setMode(filterMode(m_type));
     m_autoPause.setMode(filterMode(m_type));
     readLastPosition();
 }
 
 /* The page left or the app closed while recording: the activity is stored all
- * the same. Quietly, as the page that shows it is going too. */
+ * the same. Quietly, as the page that shows it is going too. A land cover
+ * learnt since the file was last written goes into it now. */
 Activity::~Activity()
 {
     blockSignals(true);
     stop();
     stopPositioning();
+    if (m_rewrite.isActive())
+        rewrite();
 }
 
 void Activity::classBegin()
@@ -329,6 +345,34 @@ int Activity::currentPoint() const
     return m_state.point;
 }
 
+/* Up to the point the values are from, so that a replay's slider takes it
+ * along. */
+QVariantList Activity::landCover() const
+{
+    const std::vector<double> distances = m_track.distanceByLandCover(m_state.point,
+                                                                      LandCover::KindCount);
+    std::vector<int> kinds;
+    for (int kind = LandCover::Unknown + 1; kind < LandCover::KindCount; ++kind) {
+        if (distances[std::size_t(kind)] > 0)
+            kinds.push_back(kind);
+    }
+    std::stable_sort(kinds.begin(), kinds.end(), [&distances](int a, int b) {
+        return distances[std::size_t(a)] > distances[std::size_t(b)];
+    });
+    // The land not known, whatever its share, last.
+    if (distances[LandCover::Unknown] > 0)
+        kinds.push_back(LandCover::Unknown);
+
+    QVariantList list;
+    for (int kind : kinds) {
+        QVariantMap entry;
+        entry.insert(QStringLiteral("key"), QString::fromLatin1(LandCover::key(LandCover::Kind(kind))));
+        entry.insert(QStringLiteral("distance"), distances[std::size_t(kind)]);
+        list.append(entry);
+    }
+    return list;
+}
+
 double Activity::duration() const
 {
     return m_status == Finished ? m_track.duration() : 0;
@@ -425,12 +469,23 @@ void Activity::stop()
     m_autoPause.halt();
     m_autoPaused = false;
     stopPositioning();
+    updateLandCover();
     save();
     setStatus(Finished);
     emit durationChanged();
     m_replayPosition = m_track.duration();
     emit replayPositionChanged();
     showReplay();
+}
+
+void Activity::updateLandCover()
+{
+    m_tiles.forgetMissing();
+    bool changed = false;
+    for (std::size_t i = 0; i < m_track.size(); ++i)
+        changed = readLandCover(i) || changed;
+    if (changed)
+        landCoverRead();
 }
 
 void Activity::handlePosition(const QGeoPositionInfo &info)
@@ -610,6 +665,8 @@ void Activity::load()
     m_replayPosition = m_track.duration();
     emit replayPositionChanged();
     showReplay();
+    // Whatever the tiles cached since can tell about it.
+    updateLandCover();
 }
 
 /* An activity in which no fix was good enough to record has nothing to replay,
@@ -642,8 +699,11 @@ void Activity::addEstimate(double time)
         return;
     TrackPoint point = m_filter.estimate();
     point.time = time;
-    if (m_track.addPoint(point))
-        emit trackChanged();
+    if (!m_track.addPoint(point))
+        return;
+    emit trackChanged();
+    if (readLandCover(m_track.size() - 1))
+        landCoverRead();
 }
 
 /* Does what auto-pause decides, while it watches: recording, or paused on its
@@ -656,6 +716,8 @@ void Activity::applyAutoPause(double time)
     switch (m_autoPause.check(time)) {
     case AutoPause::Pause:
         m_track.endAt(m_autoPause.pauseTime());
+        if (m_untelling.size() > m_track.size())
+            m_untelling.resize(m_track.size());
         m_autoPaused = true;
         setStatus(Paused);
         emit trackChanged();
@@ -762,6 +824,7 @@ void Activity::showState(const TrackState &state)
 {
     m_state = state;
     emit valuesChanged();
+    emit landCoverChanged();
 }
 
 void Activity::showPoint(const TrackPoint &point, double speed, SignalQuality quality)
@@ -770,6 +833,39 @@ void Activity::showPoint(const TrackPoint &point, double speed, SignalQuality qu
     m_signalQuality = quality;
     m_direction = !std::isnan(speed) && speed >= Track::kMovingSpeed ? point.course : std::nan("");
     emit positionChanged();
+}
+
+/* The point's land cover at the finest level the tiles at hand tell, if that
+ * is finer than what it has. Whether it changed. */
+bool Activity::readLandCover(std::size_t index)
+{
+    if (m_untelling.size() <= index)
+        m_untelling.resize(index + 1, 0);
+    const TrackPoint &point = m_track.point(index);
+    int level = 0;
+    const LandCover::Kind kind = LandCover::classifyFinest(
+            m_tiles, LandCover::kFinestLevel, qMax(LandCover::kCoarsestLevel, point.landCoverLevel + 1),
+            point.latitude, point.longitude, &level, &m_untelling[index]);
+    if (kind == LandCover::Unknown)
+        return false;
+    m_track.setLandCover(index, kind, level);
+    return true;
+}
+
+/* While recording, the stop writes it with everything else; once stored, the
+ * file is written anew. */
+void Activity::landCoverRead()
+{
+    emit landCoverChanged();
+    if (m_status == Finished && !m_fileName.isEmpty())
+        m_rewrite.start();
+}
+
+void Activity::rewrite()
+{
+    m_rewrite.stop();
+    if (m_history && !m_fileName.isEmpty())
+        m_history->rewrite(m_fileName, m_type, m_track);
 }
 
 double Activity::now()

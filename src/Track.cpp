@@ -249,6 +249,27 @@ double Track::altitudeAtPoint(std::size_t index) const
     return m_derived[index].altitude;
 }
 
+void Track::setLandCover(std::size_t index, int landCover, int level)
+{
+    m_points[index].landCover = landCover;
+    m_points[index].landCoverLevel = level;
+}
+
+/* A step of the distance is added at the point that ends it; nothing is added
+ * at a segment's first point, as nothing is counted across a pause. */
+std::vector<double> Track::distanceByLandCover(int last, int kinds) const
+{
+    std::vector<double> distances(std::size_t(std::max(kinds, 1)), 0.0);
+    last = std::min(last, int(m_points.size()) - 1);
+    for (int i = 1; i <= last; ++i) {
+        const std::size_t index = std::size_t(i);
+        const int landCover = m_points[index].landCover;
+        distances[landCover > 0 && landCover < kinds ? std::size_t(landCover) : 0] +=
+                m_derived[index].distance - m_derived[index - 1].distance;
+    }
+    return distances;
+}
+
 const std::vector<TrackSegment> &Track::segments() const
 {
     return m_segments;

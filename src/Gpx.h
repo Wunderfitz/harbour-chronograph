@@ -33,8 +33,10 @@ class Track;
  * What GPX itself has no place for goes into extensions: the speed and course
  * as Garmin's TrackPointExtension, which most sport sites read, and in
  * Chronograph's own namespace the receiver's horizontal and vertical accuracy
- * at each point and each segment's begin and end. The last pair is what lets a replay leave the pauses out exactly as
- * the recording did. A file without them still reads, with the segments taken
+ * at each point, what the map shows around it (its land cover, with the zoom
+ * level of the tile it was read from), and each segment's begin and end. The
+ * last pair is what lets a replay leave the pauses out exactly as the
+ * recording did. A file without them still reads, with the segments taken
  * to run from their first point to their last.
  */
 namespace Gpx {

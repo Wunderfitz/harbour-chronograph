@@ -26,8 +26,13 @@
 #include <QQmlParserStatus>
 #include <QRectF>
 #include <QTimer>
+#include <QVariantList>
+
+#include <cstdint>
+#include <vector>
 
 #include "AutoPause.h"
+#include "TileCache.h"
 #include "Track.h"
 #include "TrackFilter.h"
 
@@ -67,6 +72,14 @@ class QGeoPositionInfoSource;
  * While the receiver runs, a keepalive of its own stops the phone from
  * suspending, so a recording carries on with the display off - whatever
  * StepCounter's keepalive does.
+ *
+ * Each point's land cover is read off the map's tiles - only those the map
+ * has shown, from its cache: as the point is recorded, and again whenever the
+ * map says it has loaded tiles, updateLandCover(), which also finds a finer
+ * level for points read from a coarse one. That goes on after the stop, when
+ * the map shows the whole activity, and in a replay; a stored activity's
+ * file is then written anew, a few seconds after the last change or as the
+ * page goes.
  */
 class Activity : public QObject, public QQmlParserStatus
 {
@@ -120,6 +133,10 @@ class Activity : public QObject, public QQmlParserStatus
     Q_PROPERTY(double elevationGain READ elevationGain NOTIFY valuesChanged)
     /* The track point the values are from, -1 for none. */
     Q_PROPERTY(int currentPoint READ currentPoint NOTIFY valuesChanged)
+    /* The distance so far over each land cover, the most first: maps of the
+     * LandCover key ("" for the land not known) and the metres. Only those
+     * covered at all. */
+    Q_PROPERTY(QVariantList landCover READ landCover NOTIFY landCoverChanged)
 
     /* The whole activity's length, once finished. */
     Q_PROPERTY(double duration READ duration NOTIFY durationChanged)
@@ -190,6 +207,7 @@ public:
     double altitude() const;
     double elevationGain() const;
     int currentPoint() const;
+    QVariantList landCover() const;
 
     double duration() const;
     double replayPosition() const;
@@ -206,6 +224,11 @@ public:
     Q_INVOKABLE void resume();
     Q_INVOKABLE void stop();
 
+    /* Reads the land cover of every point it is not known for, or known only
+     * from a coarser level than the tiles the map has now: for the map to
+     * call once it has loaded tiles. */
+    Q_INVOKABLE void updateLandCover();
+
 signals:
     void historyChanged();
     void fileNameChanged();
@@ -221,6 +244,7 @@ signals:
     void replayPositionChanged();
     /* Points were added, or the whole track loaded. */
     void trackChanged();
+    void landCoverChanged();
 
 private slots:
     void handlePosition(const QGeoPositionInfo &info);
@@ -243,6 +267,9 @@ private:
     void showReplay();
     void showState(const TrackState &state);
     void showPoint(const TrackPoint &point, double speed, SignalQuality quality);
+    bool readLandCover(std::size_t index);
+    void landCoverRead();
+    void rewrite();
 
     static double now();
     static SignalQuality qualityOf(double accuracy);
@@ -284,6 +311,14 @@ private:
 
     Track m_track;
     double m_replayPosition = 0;
+
+    /* The map's tiles, as cached. */
+    TileCache m_tiles;
+    /* Per point, the levels whose tiles told nothing about it: see
+     * LandCover::classifyFinest(). */
+    std::vector<std::uint32_t> m_untelling;
+    /* Writes a stored activity's file anew once its land cover has settled. */
+    QTimer m_rewrite;
 
     SignalQuality m_signalQuality = NoSignal;
     bool m_hasPosition = false;

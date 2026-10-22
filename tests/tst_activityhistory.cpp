@@ -22,7 +22,7 @@
  * GPX files written and read back - pauses, the receiver's speeds and all - and
  * read from other apps, and ActivityHistory's list, which is read a page at a
  * time, newest first, takes new activities at the top and lets them be deleted
- * again - and names the activity being recorded. Every track here is generated.
+ * again and their files rewritten - and names the activity being recorded. Every track here is generated.
  *
  * Like tst_stephistory this needs Qt with QtSql and its SQLite driver, so it
  * runs in the build engine against the i486 target, from that target's build
@@ -35,7 +35,7 @@
  *       g++ -std=c++11 -Wall -Wextra -fPIC -I$S/src \
  *           $(pkg-config --cflags Qt5Sql | sed "s/-I/-isystem /g") \
  *           $S/tests/tst_activityhistory.cpp $S/src/ActivityHistory.cpp \
- *           $S/src/Database.cpp $S/src/Gpx.cpp $S/src/Track.cpp \
+ *           $S/src/Database.cpp $S/src/Gpx.cpp $S/src/LandCover.cpp $S/src/Track.cpp \
  *           $B/moc_ActivityHistory.cpp $(pkg-config --libs Qt5Sql) \
  *           -o $B/tst_activityhistory &&
  *       $B/tst_activityhistory'
@@ -44,6 +44,7 @@
 #include "ActivityHistory.h"
 #include "Database.h"
 #include "Gpx.h"
+#include "LandCover.h"
 #include "Track.h"
 
 #include <QCoreApplication>
@@ -169,7 +170,9 @@ void testMigration(const QString &directory)
 
 void testGpxRoundTrip(const QString &directory)
 {
-    const Track written = makeTrack(kStartTime, 120, 45);
+    Track written = makeTrack(kStartTime, 120, 45);
+    written.setLandCover(10, LandCover::Forest, 16);
+    written.setLandCover(11, LandCover::Water, 12);
     const QString file = QDir(directory).filePath(QStringLiteral("round.gpx"));
     expect("a GPX file is written", Gpx::write(file, written, QStringLiteral("cycling")));
 
@@ -191,6 +194,12 @@ void testGpxRoundTrip(const QString &directory)
     expectEqual("its vertical accuracy", read.point(10).verticalAccuracy, 6.0, 0.05);
     expectEqual("its altitude", read.point(10).altitude, 41.0, 0.05);
     expectEqual("its time, to the millisecond", read.point(10).time, written.point(10).time, 0.0005);
+    expect("its land cover", read.point(10).landCover == LandCover::Forest
+                             && read.point(10).landCoverLevel == 16);
+    expect("the next one's", read.point(11).landCover == LandCover::Water
+                             && read.point(11).landCoverLevel == 12);
+    expect("none where none was known", read.point(12).landCover == LandCover::Unknown
+                                        && read.point(12).landCoverLevel == 0);
 
     QFile in(file);
     in.open(QIODevice::ReadOnly);
@@ -198,6 +207,9 @@ void testGpxRoundTrip(const QString &directory)
     expect("the file is GPX 1.1", text.contains(QStringLiteral("xmlns=\"http://www.topografix.com/GPX/1/1\""))
                                   && text.contains(QStringLiteral("version=\"1.1\"")));
     expect("with the speed in Garmin's extension", text.contains(QStringLiteral("<gpxtpx:speed>3.00</gpxtpx:speed>")));
+    expect("and the land cover in Chronograph's",
+           text.contains(QStringLiteral("<chronograph:landCover level=\"16\">forest</chronograph:landCover>")));
+    expectEqual("only where it is known", text.count(QStringLiteral("landCover level")), 2);
 }
 
 void testForeignGpx(const QString &directory)
@@ -209,7 +221,8 @@ void testForeignGpx(const QString &directory)
               "<gpx version=\"1.0\" xmlns=\"http://www.topografix.com/GPX/1/0\">\n"
               " <trk><name>Morning</name><type>walking</type><trkseg>\n"
               "  <trkpt lat=\"52.5\" lon=\"13.4\"><time>2026-10-16T07:30:01Z</time><speed>1.4</speed></trkpt>\n"
-              "  <trkpt lat=\"52.50005\" lon=\"13.4\"><time>2026-10-16T07:30:05Z</time><speed>1.4</speed></trkpt>\n"
+              "  <trkpt lat=\"52.50005\" lon=\"13.4\"><time>2026-10-16T07:30:05Z</time><speed>1.4</speed>"
+              "<extensions><landCover level=\"15\">swamp</landCover></extensions></trkpt>\n"
               "  <trkpt lat=\"52.5001\" lon=\"13.4\"></trkpt>\n"
               "  <trkpt lat=\"52.5001\" lon=\"13.4\"><time>2026-10-16T07:30:09.500+00:00</time></trkpt>\n"
               " </trkseg></trk>\n"
@@ -224,6 +237,8 @@ void testForeignGpx(const QString &directory)
     expectEqual("the segment runs from its first point to its last", track.duration(), 8.5, 0.001);
     expectEqual("GPX 1.0's own speed is read", track.point(0).speed, 1.4, 0.001);
     expectEqual("the distance", track.stateAt(track.duration()).distance, 11.1, 0.2);
+    expect("a land cover of no known kind is left out", track.point(1).landCover == LandCover::Unknown
+                                                        && track.point(1).landCoverLevel == 0);
 
     Track none;
     expect("a missing file does not read", !Gpx::read(QDir(directory).filePath(QStringLiteral("missing.gpx")), &none, &type));
@@ -306,6 +321,46 @@ void testRemoving(const QString &directory)
                history.add(QStringLiteral("running"), makeTrack(kStartTime + 3600, 30)), middle);
 }
 
+/* As the land cover comes in after the stop. */
+void testRewriting(const QString &directory)
+{
+    const QString gpx = QDir(directory).filePath(QStringLiteral("gpx-rewriting"));
+    Database database(QDir(directory).filePath(QStringLiteral("rewriting.db")));
+    ActivityHistory history(&database, gpx);
+    Track track = makeTrack(kStartTime, 60);
+    const QString name = history.add(QStringLiteral("walking"), track);
+    for (std::size_t i = 0; i < track.size(); ++i)
+        track.setLandCover(i, LandCover::Grassland, 13);
+
+    expect("a stored activity's file is written anew", history.rewrite(name, QStringLiteral("walking"), track));
+    Track read;
+    QString type;
+    Gpx::read(QDir(gpx).filePath(name), &read, &type);
+    expect("with the land cover learnt since", read.point(30).landCover == LandCover::Grassland
+                                               && read.point(30).landCoverLevel == 13);
+    expectText("and its type", type, QStringLiteral("walking"));
+    expectEqual("all its points", double(read.size()), double(track.size()));
+    expectEqual("its row stays the one", scalar(database, QStringLiteral("SELECT COUNT(*) FROM activities")), 1);
+    expectEqual("and so does the list", history.rowCount(), 1);
+
+    expect("a name with a path is refused",
+           !history.rewrite(QStringLiteral("../rewriting.db"), QStringLiteral("walking"), track));
+    expect("an empty track is not written", !history.rewrite(name, QStringLiteral("walking"), Track()));
+
+    // A file the table does not list, as one left behind by a failed delete.
+    QFile stray(QDir(gpx).filePath(QStringLiteral("stray.gpx")));
+    stray.open(QIODevice::WriteOnly);
+    stray.write("stray");
+    stray.close();
+    expect("a file the history does not list is not written",
+           !history.rewrite(QStringLiteral("stray.gpx"), QStringLiteral("walking"), track));
+    expectEqual("and keeps what it held", double(QFileInfo(stray.fileName()).size()), 5);
+
+    history.remove(name);
+    expect("a deleted activity is not written", !history.rewrite(name, QStringLiteral("walking"), track));
+    expect("nor brought back", !QFileInfo::exists(QDir(gpx).filePath(name)));
+}
+
 void testPaging(const QString &directory)
 {
     Database database(QDir(directory).filePath(QStringLiteral("paging.db")));
@@ -352,8 +407,11 @@ void testNoDatabase(const QString &directory)
     const QString name = history.add(QStringLiteral("running"), makeTrack(kStartTime, 10));
     expect("without a database the GPX file is still written", QFileInfo::exists(QDir(gpx).filePath(name)));
     expectEqual("and the activity listed while the app runs", history.rowCount(), 1);
+    expect("and its file rewritten", history.rewrite(name, QStringLiteral("running"), makeTrack(kStartTime, 10)));
     expect("and deleted again", history.remove(name));
     expect("file and all", history.rowCount() == 0 && !QFileInfo::exists(QDir(gpx).filePath(name)));
+    expect("and then not rewritten", !history.rewrite(name, QStringLiteral("running"), makeTrack(kStartTime, 10))
+                                     && !QFileInfo::exists(QDir(gpx).filePath(name)));
 }
 
 /* The activity being recorded, as the cover asks for it: any QObject will do
@@ -397,6 +455,7 @@ int main(int argc, char *argv[])
     testForeignGpx(directory.path());
     testAdding(directory.path());
     testRemoving(directory.path());
+    testRewriting(directory.path());
     testPaging(directory.path());
     testNoDatabase(directory.path());
     testRecording(directory.path());

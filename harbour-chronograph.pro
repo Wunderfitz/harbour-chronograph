@@ -18,9 +18,11 @@ SOURCES += \
     src/ChartLine.cpp \
     src/Database.cpp \
     src/Gpx.cpp \
+    src/LandCover.cpp \
     src/StepCounter.cpp \
     src/StepDetector.cpp \
     src/StepHistory.cpp \
+    src/TileCache.cpp \
     src/TileNetworkFactory.cpp \
     src/Track.cpp \
     src/TrackChart.cpp \
@@ -34,9 +36,11 @@ HEADERS += \
     src/ChartLine.h \
     src/Database.h \
     src/Gpx.h \
+    src/LandCover.h \
     src/StepCounter.h \
     src/StepDetector.h \
     src/StepHistory.h \
+    src/TileCache.h \
     src/TileNetworkFactory.h \
     src/Track.h \
     src/TrackChart.h \
@@ -52,6 +56,7 @@ DISTFILES += \
     qml/components/ActivityValue.qml \
     qml/components/BackgroundImage.qml \
     qml/components/HoldButton.qml \
+    qml/components/LandCoverList.qml \
     qml/components/TileLayer.qml \
     qml/components/TileMap.qml \
     qml/js/Units.js \
@@ -69,6 +74,7 @@ DISTFILES += \
     tests/tst_trackfilter.cpp \
     tests/tst_trackchart.cpp \
     tests/tst_autopause.cpp \
+    tests/tst_landcover.cpp \
     tests/tst_activityhistory.cpp \
     tests/replay_recording.cpp \
     README.md \
