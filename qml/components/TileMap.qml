@@ -57,6 +57,10 @@ Item {
     readonly property real tileSize: Math.round(256 * Theme.pixelRatio)
     readonly property real worldSize: tileSize * Math.pow(2, zoom)
     readonly property int level: Math.max(minimumZoom, Math.min(maximumZoom, Math.round(zoom)))
+    // Whether anyone can see the map, which is when its tiles may be fetched:
+    // not with the display off, nor with the app in the background, though a
+    // recording still moves the map along.
+    readonly property bool viewed: Qt.application.active && visible
 
     readonly property real positionX: mercatorX(longitude)
     readonly property real positionY: mercatorY(latitude)

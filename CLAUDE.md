@@ -244,6 +244,14 @@ QtQuick and the `Internet` permission.
   servers' headers allow; the attribution sits on the map and in the about
   page. No prefetching, only visible tiles. Heavy use would need a tile
   provider of our own choosing.
+- **Tiles are fetched only while the map is viewed** (fixed 2026-10-23): the
+  policy forbids fetching any tile a user is not viewing, and a recording
+  moves the map along with the display off. `TileMap.viewed`
+  (`Qt.application.active` and visible) gates `TileLayer`: while it is false
+  the slots keep their tiles and only move, and the level, the first tile
+  and the number of slots change only together, in `placement`, so no slot
+  asks for a tile from half of a change. Checked in the emulator: no request
+  for a minute of driving with the display off.
 
 ### The activity page
 

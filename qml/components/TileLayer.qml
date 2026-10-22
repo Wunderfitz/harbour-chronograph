@@ -27,6 +27,10 @@ import QtQuick 2.2
 // single row or column of slots; the others just move along, without loading
 // anything again. A frozen layer stops taking new tiles altogether and only
 // moves - it is the level before, kept underneath while the new one loads.
+//
+// Tiles are fetched only while the map is viewed: OpenStreetMap's tile usage
+// policy allows no tile a user is not looking at. While the display is off or
+// the app is in the background, the layer keeps what it shows and only moves.
 Item {
     id: tileLayer
 
@@ -35,9 +39,15 @@ Item {
     property int level: -1
     property bool frozen: false
 
-    readonly property real tileScale: Math.pow(2, map.zoom - level)
+    // The level the slots show, the first tile in view, which they count
+    // from, and how many columns and rows of them there are. Set all at once,
+    // so that no slot ever asks for a tile from half of a change; kept while
+    // frozen or not viewed.
+    property var placement: ({ level: -1, firstColumn: 0, firstRow: 0, columns: 0, rows: 0 })
+
+    readonly property real tileScale: Math.pow(2, map.zoom - placement.level)
     readonly property real size: map.tileSize * tileScale
-    readonly property int tiles: level >= 0 ? Math.pow(2, level) : 0
+    readonly property int tiles: placement.level >= 0 ? Math.pow(2, placement.level) : 0
     // Where the top left corner of the world is, on the map.
     readonly property real originX: map.width / 2 - map.centerX * tiles * size
     readonly property real originY: map.height / 2 - map.centerY * tiles * size
@@ -46,34 +56,48 @@ Item {
     readonly property int columns: Math.ceil(map.width * Math.SQRT2 / map.tileSize) + 1
     readonly property int rows: Math.ceil(map.height * Math.SQRT2 / map.tileSize) + 1
 
-    // The first tile in view, which the slots count from; kept while frozen.
-    property int firstColumn: 0
-    property int firstRow: 0
-
     function modulo(value, divisor) {
         return ((value % divisor) + divisor) % divisor
     }
 
     function refresh() {
-        if (frozen || level < 0)
+        if (frozen || level < 0 || !map.viewed)
             return
-        firstColumn = Math.floor(-originX / size)
-        firstRow = Math.floor(-originY / size)
+        var size = map.tileSize * Math.pow(2, map.zoom - level)
+        var tiles = Math.pow(2, level)
+        var firstColumn = Math.floor(-(map.width / 2 - map.centerX * tiles * size) / size)
+        var firstRow = Math.floor(-(map.height / 2 - map.centerY * tiles * size) / size)
+        if (placement.level === level && placement.firstColumn === firstColumn
+                && placement.firstRow === firstRow && placement.columns === columns
+                && placement.rows === rows)
+            return
+        placement = { level: level, firstColumn: firstColumn, firstRow: firstRow,
+                      columns: columns, rows: rows }
     }
 
     onOriginXChanged: refresh()
     onOriginYChanged: refresh()
     onFrozenChanged: refresh()
     onLevelChanged: refresh()
+    onColumnsChanged: refresh()
+    onRowsChanged: refresh()
+
+    Connections {
+        target: map
+        onViewedChanged: tileLayer.refresh()
+    }
 
     Repeater {
-        model: tileLayer.level >= 0 ? tileLayer.columns * tileLayer.rows : 0
+        model: tileLayer.placement.columns * tileLayer.placement.rows
 
         Image {
-            readonly property int column: tileLayer.firstColumn
-                                          + tileLayer.modulo(index % tileLayer.columns - tileLayer.firstColumn, tileLayer.columns)
-            readonly property int row: tileLayer.firstRow
-                                       + tileLayer.modulo(Math.floor(index / tileLayer.columns) - tileLayer.firstRow, tileLayer.rows)
+            readonly property var placement: tileLayer.placement
+            readonly property int column: placement.firstColumn
+                                          + tileLayer.modulo(index % placement.columns - placement.firstColumn,
+                                                             placement.columns)
+            readonly property int row: placement.firstRow
+                                       + tileLayer.modulo(Math.floor(index / placement.columns) - placement.firstRow,
+                                                          placement.rows)
 
             // Rounded edge by edge, so neighbours meet without a hairline.
             x: Math.round(tileLayer.originX + column * tileLayer.size)
@@ -86,7 +110,7 @@ Item {
             visible: inWorld
             asynchronous: true
             smooth: true
-            source: inWorld ? "https://tile.openstreetmap.org/" + tileLayer.level + "/"
+            source: inWorld ? "https://tile.openstreetmap.org/" + placement.level + "/"
                               + tileLayer.modulo(column, tileLayer.tiles) + "/" + row + ".png"
                             : ""
         }
