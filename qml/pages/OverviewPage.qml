@@ -32,6 +32,13 @@ Page {
 
     readonly property bool unavailable: stepCounter.status === StepCounter.Unavailable
 
+    // The activity page, compiled in the background as the app starts rather
+    // than on the first tap, which it held up by a tenth of a second on a
+    // phone. Still pushed by its URL, which finds it compiled - or, tapped
+    // before then, compiles it as before.
+    readonly property Component activityPage:
+        Qt.createComponent(Qt.resolvedUrl("ActivityPage.qml"), Component.Asynchronous)
+
     // A weekday's name for a yyyy-MM-dd key, in the phone's language. Built
     // from its parts, as new Date("yyyy-MM-dd") would be midnight UTC.
     function dayName(day) {
@@ -84,7 +91,7 @@ Page {
 
             contentHeight: Theme.itemSizeMedium
             onClicked: pageStack.push(Qt.resolvedUrl("ActivityPage.qml"),
-                                      { fileName: model.fileName })
+                                      { fileName: model.fileName, type: model.type })
             ListView.onRemove: animateRemoval(delegate)
 
             menu: ContextMenu {

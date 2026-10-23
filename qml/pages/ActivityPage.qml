@@ -36,8 +36,10 @@ import "../js/Units.js" as Units
 Page {
     id: page
 
-    // A stored activity's GPX file, to replay it.
+    // A stored activity's GPX file, to replay it, and its type, which names it
+    // while the file is read.
     property string fileName
+    property string type
 
     readonly property bool finished: activity.status === Activity.Finished
     readonly property bool running: activity.status === Activity.Recording
@@ -45,9 +47,11 @@ Page {
     // Over and in the history: replayed, or recorded and stopped.
     readonly property bool stored: finished && activity.fileName !== ""
 
-    // What a chart says while it has nothing to draw.
-    readonly property string chartEmptyText: finished ? qsTr("Not recorded")
-                                                      : qsTr("Shown as the activity goes on")
+    // What a chart says while it has nothing to draw; nothing while a stored
+    // activity is read.
+    readonly property string chartEmptyText: activity.loading ? ""
+                                             : finished ? qsTr("Not recorded")
+                                             : qsTr("Shown as the activity goes on")
 
     // The page has no header to keep clear of a notch for it, so the values
     // keep clear themselves, the way Silica's own pulley menu does: below it
@@ -129,9 +133,12 @@ Page {
         history: activityHistory
         pedometer: stepCounter
         fileName: page.fileName
+        type: page.type
 
-        // A finished activity is shown whole, for the slider to go through.
+        // A finished activity is shown whole, for the slider to go through -
+        // a stored one once its file is read.
         onStatusChanged: if (status === Activity.Finished) page.showWholeTrack()
+        onLoadingChanged: if (!loading) page.showWholeTrack()
     }
 
     // A flickable only for the pulley, which deletes a stored activity: the
@@ -594,7 +601,7 @@ Page {
             }
 
             Label {
-                visible: page.finished && activity.duration <= 0
+                visible: page.finished && !activity.loading && activity.duration <= 0
                 anchors.centerIn: parent
                 width: parent.width - 2 * Theme.horizontalPageMargin
                 horizontalAlignment: Text.AlignHCenter

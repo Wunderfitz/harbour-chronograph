@@ -19,6 +19,7 @@ SOURCES += \
     src/Database.cpp \
     src/Gpx.cpp \
     src/LandCover.cpp \
+    src/LandCoverReader.cpp \
     src/StepCounter.cpp \
     src/StepDetector.cpp \
     src/StepHistory.cpp \
@@ -27,7 +28,8 @@ SOURCES += \
     src/Track.cpp \
     src/TrackChart.cpp \
     src/TrackFilter.cpp \
-    src/TrackLine.cpp
+    src/TrackLine.cpp \
+    src/TrackReader.cpp
 
 HEADERS += \
     src/Activity.h \
@@ -37,6 +39,7 @@ HEADERS += \
     src/Database.h \
     src/Gpx.h \
     src/LandCover.h \
+    src/LandCoverReader.h \
     src/StepCounter.h \
     src/StepDetector.h \
     src/StepHistory.h \
@@ -45,7 +48,8 @@ HEADERS += \
     src/Track.h \
     src/TrackChart.h \
     src/TrackFilter.h \
-    src/TrackLine.h
+    src/TrackLine.h \
+    src/TrackReader.h
 
 DISTFILES += \
     qml/harbour-chronograph.qml \

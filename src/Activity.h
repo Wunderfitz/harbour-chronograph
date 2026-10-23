@@ -32,8 +32,9 @@
 #include <vector>
 
 #include "AutoPause.h"
-#include "TileCache.h"
+#include "LandCoverReader.h"
 #include "Track.h"
+#include "TrackReader.h"
 #include "TrackFilter.h"
 
 class ActivityHistory;
@@ -79,7 +80,8 @@ class QGeoPositionInfoSource;
  * level for points read from a coarse one. That goes on after the stop, when
  * the map shows the whole activity, and in a replay; a stored activity's
  * file is then written anew, a few seconds after the last change or as the
- * page goes.
+ * page goes. The tiles are read in a LandCoverReader's thread, one batch at a
+ * time, and landCoverChanged() comes once a batch has found something.
  */
 class Activity : public QObject, public QQmlParserStatus
 {
@@ -94,6 +96,9 @@ class Activity : public QObject, public QQmlParserStatus
     /* "running", "walking", "cycling", "rowing" or "driving". */
     Q_PROPERTY(QString type READ type WRITE setType NOTIFY typeChanged)
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
+    /* A stored activity's file is being read: it is Finished from the start,
+     * but its track, values and start time come once the file is read. */
+    Q_PROPERTY(bool loading READ loading NOTIFY loadingChanged)
     /* Whether the recording pauses and resumes on its own. On by default, and
      * switched at any time: switched off while paused on its own, it resumes. */
     Q_PROPERTY(bool autoPause READ autoPause WRITE setAutoPause NOTIFY autoPauseChanged)
@@ -184,6 +189,7 @@ public:
     QString type() const;
     void setType(const QString &type);
     Status status() const;
+    bool loading() const;
     bool autoPause() const;
     void setAutoPause(bool autoPause);
     bool autoPaused() const;
@@ -230,7 +236,8 @@ public:
 
     /* Reads the land cover of every point it is not known for, or known only
      * from a coarser level than the tiles the map has now: for the map to
-     * call once it has loaded tiles. */
+     * call once it has loaded tiles. In the background: the values follow
+     * once it is done. */
     Q_INVOKABLE void updateLandCover();
 
 signals:
@@ -238,6 +245,7 @@ signals:
     void fileNameChanged();
     void typeChanged();
     void statusChanged();
+    void loadingChanged();
     void autoPauseChanged();
     void pedometerChanged();
     void signalLostChanged();
@@ -256,6 +264,8 @@ private slots:
     void tick();
     void handleSteps();
     void updateStepsCounted();
+    void handleTrack();
+    void handleLandCover();
 
 private:
     void startPositioning();
@@ -271,8 +281,8 @@ private:
     void showReplay();
     void showState(const TrackState &state);
     void showPoint(const TrackPoint &point, double speed, SignalQuality quality);
-    bool readLandCover(std::size_t index);
-    void landCoverRead();
+    void readLandCover(std::size_t index);
+    void readLandCover();
     void rewrite();
 
     static double now();
@@ -314,10 +324,17 @@ private:
     double m_lastLongitude = 0;
 
     Track m_track;
+    /* Reads a stored activity's file. */
+    TrackReader m_trackReader;
+    bool m_loading = false;
     double m_replayPosition = 0;
 
-    /* The map's tiles, as cached. */
-    TileCache m_tiles;
+    /* Reads the points' land cover off the map's cached tiles. */
+    LandCoverReader m_landCoverReader;
+    /* What it is to read once it is done with the batch it reads: all points,
+     * or those recorded since. */
+    bool m_landCoverOfAll = false;
+    std::vector<std::size_t> m_landCoverOf;
     /* Per point, the levels whose tiles told nothing about it: see
      * LandCover::classifyFinest(). */
     std::vector<std::uint32_t> m_untelling;

@@ -159,6 +159,9 @@ The same split as for steps:
   an activity page destroyed with the view still finds it. It also names
   the activity being recorded, for the cover - see [The cover](#the-cover).
 - `Gpx` (`src/Gpx.*`) reads and writes a `Track` as GPX 1.1.
+  `TrackReader` (`src/TrackReader.*`) reads a stored activity's file with
+  it in a thread of its own - see opening a stored activity under [The
+  activity page](#the-activity-page).
 - `TrackLine` (`src/TrackLine.*`) paints the route on the map.
 - `AutoPause` (`src/AutoPause.*`) decides when a recording pauses, resumes
   and stops on its own, in plain C++11 without Qt; `tests/tst_autopause.cpp`
@@ -171,7 +174,8 @@ The same split as for steps:
 - `LandCover` (`src/LandCover.*`) tells the land cover around a place from a
   tile's colours, in plain C++11 without Qt; `tests/tst_landcover.cpp` drives
   it on the host with generated tiles. `TileCache` (`src/TileCache.*`) hands
-  it the map's cached tiles. See [Land cover](#land-cover-read-off-the-maps-tiles).
+  it the map's cached tiles, in `LandCoverReader`'s thread
+  (`src/LandCoverReader.*`). See [Land cover](#land-cover-read-off-the-maps-tiles).
 
 ### Positioning: QtPositioning in C++
 
@@ -289,6 +293,24 @@ QtQuick and the `Internet` permission.
   (shown from 250 ms on, so a tap does not flash it); letting go early or
   sliding off gives up. After the stop a `Slider` through the activity, in
   whole seconds, starting at the end.
+- **Opening a stored activity off the UI thread** (decided 2026-10-23, at
+  the project owner's request, after a delay opening the page). Measured
+  on the phone with an activity of 8,300 points, from the tap until the page
+  showed, about 400 ms: compiling `ActivityPage.qml` 100 ms (Qt 5.6 has no
+  QML disk cache: the first open of each run), reading the GPX file 110 ms,
+  creating the page's items 90 ms, the first frame 95 ms (the charts and the
+  route painted in 25 ms of it); the land cover, already known, 30 ms in
+  its thread. The first two now happen elsewhere:
+  - `OverviewPage` compiles the page **as the app starts**, with
+    `Qt.createComponent(..., Component.Asynchronous)` in Qt's loader thread,
+    and keeps it; pushing the URL then finds it compiled.
+  - `Activity` reads the file in a `TrackReader` thread. It is `Finished`
+    from the start, with `loading` true until the track is there: the page
+    shows a replay at once, with no Start button, no "nothing was stored"
+    and no "Not recorded" in the charts meanwhile, and fits the map to the
+    route once `loading` turns false. The list passes the activity's
+    `type` along, so the header names it rightly before the file says so.
+  The items and the first frame stay on their threads: they are the page.
 - **Leaving the page while recording or paused stops and stores the
   activity**: `Activity`'s destructor does it, with its signals blocked, so it
   also happens when the app is closed with the page open. A kill or a crash
@@ -472,6 +494,18 @@ type or its surface.
   activity is opened. After the stop the map shows the whole activity, so
   the stretches recorded with the display off get the level of that view
   (about 12-13 for a few km).
+- **In a thread of its own** (decided 2026-10-23, at the project owner's
+  request, after opening an activity without its land cover stalled the
+  page): `LandCoverReader`, a `QThread` as Piepmatz and Fernschreiber run
+  theirs, reads one batch of copied points at a time and owns the
+  `TileCache`, which nothing else touches. Requests coalesce while a batch
+  runs - the points recorded since, or all of them - and go as the next
+  batch once it is done. A result goes into its point only if the track
+  still holds that point (same index and time): an auto-pause may have
+  dropped it meanwhile. The values show the land cover once a batch has
+  found it. A batch running as the page goes is given up, not waited for:
+  the next replay reads it again. On the emulator, 221 points with their
+  tiles cached took 130 ms - seconds for a long activity on a phone.
 - **Per point, in the GPX file**: `<chronograph:landCover level="16">forest</chronograph:landCover>`,
   none where unknown. A stored activity's file is **rewritten** 3 s after the
   last change, or as the page goes, through `ActivityHistory::rewrite()`,
@@ -752,11 +786,13 @@ src/AutoPause.*               when a recording pauses, resumes and stops on its 
 src/Activity.*                positioning, recording and replay: the activity page's facade
 src/ActivityHistory.*         the activities table as a paged list model, and the GPX files
 src/Gpx.*                     Track to and from GPX 1.1
+src/TrackReader.*             reads a stored activity's GPX file, in a thread of its own
 src/TrackLine.*               the route, painted over the map
 src/TrackChart.*              a Track's pace or elevation per point and the axes, Qt-free
 src/ChartLine.*               one chart's grid, line and average, painted
 src/LandCover.*               the land cover around a place from a tile's colours, Qt-free
 src/TileCache.*               the map's cached tiles, read for LandCover, never fetched
+src/LandCoverReader.*         reads the points' land cover off them, in a thread of its own
 src/TileNetworkFactory.*      the QML engine's network access: User-Agent and tile cache
 tests/tst_stepdetector.cpp    host-side checks for StepDetector (not packaged)
 tests/tst_track.cpp           host-side checks for Track
