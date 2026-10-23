@@ -373,6 +373,14 @@ QVariantList Activity::landCover() const
     return list;
 }
 
+QString Activity::currentLandCover() const
+{
+    if (m_state.point < 0 || std::size_t(m_state.point) >= m_track.size())
+        return QString();
+    const int kind = m_track.point(std::size_t(m_state.point)).landCover;
+    return QString::fromLatin1(LandCover::key(LandCover::Kind(kind)));
+}
+
 double Activity::duration() const
 {
     return m_status == Finished ? m_track.duration() : 0;

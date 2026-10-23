@@ -267,7 +267,8 @@ QtQuick and the `Internet` permission.
   list (replay). Type combo box (running is the default, as the first
   entry) until the start, then a `PageHeader` with the type and the start's
   date and time in its place, as in a replay; GPS row, then the rest of the upper half a Silica `SlideshowView`
-  (Piepmatz's idiom, over a `VisualItemModel`): the eight values, and swiped
+  (Piepmatz's idiom, over a `VisualItemModel`): the eight values with the
+  current land cover in a row below them, and swiped
   to, the charts, then the land cover (`LandCoverList.qml`); a dot for each
   below it, the one shown highlighted. Map in
   the lower half, control at the bottom; in landscape the values or charts
@@ -477,6 +478,15 @@ type or its surface.
   which refuses an activity no longer in the table, so a deleted one is not
   brought back. Files from before get theirs on their first replay, and are
   rewritten then.
+- **The current land cover** (decided 2026-10-23, at the project owner's
+  request): one row below the values on their slide - the kind's colour
+  and its name in `fontSizeMedium`, with no caption (removed at the
+  project owner's request), so it takes a single line.
+  `Activity.currentLandCover`, the key at the point the values are from:
+  the latest while recording, the slider's in a replay; "Unknown" where the
+  point has none, a dash before the first.
+  The slide grows the values' half to fit should it not, shrinking the map;
+  on the emulator's screen it fits in both orientations as it is.
 - **The distance per kind**: each step of `Track`'s distance counts for the
   point that ends it, so the kinds add up to the distance; up to the replay
   position, like the other values.

@@ -137,6 +137,9 @@ class Activity : public QObject, public QQmlParserStatus
      * LandCover key ("" for the land not known) and the metres. Only those
      * covered at all. */
     Q_PROPERTY(QVariantList landCover READ landCover NOTIFY landCoverChanged)
+    /* The land cover at the point the values are from, a LandCover key: ""
+     * where it is not known, and before the first point. */
+    Q_PROPERTY(QString currentLandCover READ currentLandCover NOTIFY landCoverChanged)
 
     /* The whole activity's length, once finished. */
     Q_PROPERTY(double duration READ duration NOTIFY durationChanged)
@@ -208,6 +211,7 @@ public:
     double elevationGain() const;
     int currentPoint() const;
     QVariantList landCover() const;
+    QString currentLandCover() const;
 
     double duration() const;
     double replayPosition() const;

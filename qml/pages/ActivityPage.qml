@@ -248,7 +248,7 @@ Page {
             // cover - with a dot for each below, the one shown highlighted.
             Item {
                 width: parent.width
-                height: Math.max(grid.height + Theme.paddingLarge + dots.height
+                height: Math.max(valueColumn.height + Theme.paddingLarge + dots.height
                                  + dots.anchors.bottomMargin,
                                  (page.isPortrait ? page.height / 2 : page.height)
                                  - titleArea.height - Theme.itemSizeExtraSmall)
@@ -266,69 +266,113 @@ Page {
                     clip: true
 
                     model: VisualItemModel {
-                        // The values sit in the middle.
+                        // The values sit in the middle, the land cover in a
+                        // row of its own below them.
                         Item {
                             width: views.itemWidth
                             height: views.itemHeight
 
-                            Grid {
-                                id: grid
-
-                                readonly property real cellWidth: (width - columnSpacing) / 2
+                            Column {
+                                id: valueColumn
 
                                 x: Theme.horizontalPageMargin
                                 width: parent.width - 2 * Theme.horizontalPageMargin
                                 anchors.verticalCenter: parent.verticalCenter
-                                columns: 2
-                                columnSpacing: Theme.paddingLarge
-                                rowSpacing: Theme.paddingMedium
+                                spacing: Theme.paddingMedium
 
-                                ActivityValue {
-                                    width: grid.cellWidth
-                                    label: qsTr("Duration")
-                                    value: Units.duration(activity.elapsed)
+                                Grid {
+                                    id: grid
+
+                                    readonly property real cellWidth: (width - columnSpacing) / 2
+
+                                    width: parent.width
+                                    columns: 2
+                                    columnSpacing: Theme.paddingLarge
+                                    rowSpacing: Theme.paddingMedium
+
+                                    ActivityValue {
+                                        width: grid.cellWidth
+                                        label: qsTr("Duration")
+                                        value: Units.duration(activity.elapsed)
+                                    }
+                                    ActivityValue {
+                                        width: grid.cellWidth
+                                        label: qsTr("Distance")
+                                        value: Units.distance(activity.distance)
+                                        unit: "km"
+                                    }
+                                    ActivityValue {
+                                        width: grid.cellWidth
+                                        label: qsTr("Pace")
+                                        value: Units.pace(activity.speed)
+                                        unit: "min/km"
+                                    }
+                                    ActivityValue {
+                                        width: grid.cellWidth
+                                        label: qsTr("Speed")
+                                        value: Units.speed(activity.speed)
+                                        unit: "km/h"
+                                    }
+                                    ActivityValue {
+                                        width: grid.cellWidth
+                                        label: qsTr("Average pace")
+                                        value: Units.pace(activity.averageSpeed)
+                                        unit: "min/km"
+                                    }
+                                    ActivityValue {
+                                        width: grid.cellWidth
+                                        label: qsTr("Average speed")
+                                        value: Units.speed(activity.averageSpeed)
+                                        unit: "km/h"
+                                    }
+                                    ActivityValue {
+                                        width: grid.cellWidth
+                                        label: qsTr("Elevation")
+                                        value: Units.metres(activity.altitude)
+                                        unit: "m"
+                                    }
+                                    ActivityValue {
+                                        width: grid.cellWidth
+                                        label: qsTr("Elevation gain")
+                                        value: Units.metres(activity.elevationGain)
+                                        unit: "m"
+                                    }
                                 }
-                                ActivityValue {
-                                    width: grid.cellWidth
-                                    label: qsTr("Distance")
-                                    value: Units.distance(activity.distance)
-                                    unit: "km"
-                                }
-                                ActivityValue {
-                                    width: grid.cellWidth
-                                    label: qsTr("Pace")
-                                    value: Units.pace(activity.speed)
-                                    unit: "min/km"
-                                }
-                                ActivityValue {
-                                    width: grid.cellWidth
-                                    label: qsTr("Speed")
-                                    value: Units.speed(activity.speed)
-                                    unit: "km/h"
-                                }
-                                ActivityValue {
-                                    width: grid.cellWidth
-                                    label: qsTr("Average pace")
-                                    value: Units.pace(activity.averageSpeed)
-                                    unit: "min/km"
-                                }
-                                ActivityValue {
-                                    width: grid.cellWidth
-                                    label: qsTr("Average speed")
-                                    value: Units.speed(activity.averageSpeed)
-                                    unit: "km/h"
-                                }
-                                ActivityValue {
-                                    width: grid.cellWidth
-                                    label: qsTr("Elevation")
-                                    value: Units.metres(activity.altitude)
-                                    unit: "m"
-                                }
-                                ActivityValue {
-                                    width: grid.cellWidth
-                                    label: qsTr("Elevation gain")
-                                    value: Units.metres(activity.elevationGain)
-                                    unit: "m"
+
+                                // Smaller than the values and without a caption, to
+                                // take a single line: the colour and the name say it.
+                                Row {
+                                    id: landCoverRow
+
+                                    readonly property string key: activity.currentLandCover
+
+                                    width: parent.width
+                                    spacing: Theme.paddingMedium
+
+                                    Rectangle {
+                                        anchors.verticalCenter: landCoverName.verticalCenter
+                                        visible: landCoverRow.key !== ""
+                                        width: Theme.paddingLarge
+                                        height: width
+                                        radius: Theme.paddingSmall / 2
+                                        color: app.landCoverColor(landCoverRow.key)
+                                        border.width: Math.max(1, Math.round(Theme.pixelRatio))
+                                        border.color: Theme.rgba(Theme.primaryColor, Theme.opacityLow)
+                                    }
+
+                                    Label {
+                                        id: landCoverName
+                                        width: Math.min(implicitWidth, parent.width
+                                                        - (landCoverRow.key !== "" ? Theme.paddingLarge
+                                                                                     + parent.spacing
+                                                                                   : 0))
+                                        truncationMode: TruncationMode.Fade
+                                        font.pixelSize: Theme.fontSizeMedium
+                                        color: landCoverRow.key ? Theme.highlightColor
+                                                                : Theme.secondaryHighlightColor
+                                        text: activity.currentPoint < 0 ? Units.none
+                                                                        : app.landCoverName(landCoverRow.key)
+                                    }
                                 }
                             }
                         }

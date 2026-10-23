@@ -25,7 +25,8 @@
 - Swiped to after the charts, how far the activity went through forest,
   farmland, meadows and parks, built-up land, water and the like, in
   kilometres and per cent. It is read off the map's tiles - only those shown
-  on screen, during the activity or after it - and kept in the GPX file.
+  on screen, during the activity or after it - and kept in the GPX file. The
+  land cover at the current position shows below the values as well.
 - Map tiles are downloaded only while the map is on screen, as
   OpenStreetMap's tile usage policy asks, no longer with the display off.
 - Asks for the Location and Internet permissions; no longer for Sensors, which
