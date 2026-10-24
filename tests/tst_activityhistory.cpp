@@ -22,7 +22,10 @@
  * GPX files written and read back - pauses, the receiver's speeds and all - and
  * read from other apps, and ActivityHistory's list, which is read a page at a
  * time, newest first, takes new activities at the top and lets them be deleted
- * again and their files rewritten - and names the activity being recorded. Every track here is generated.
+ * again and their files rewritten - and names the activity being recorded.
+ * Also each activity's distance over each land cover, stored with it or read
+ * off the files of activities from before, and ActivityStatistics, which
+ * works the totals out from both. Every track here is generated.
  *
  * Like tst_stephistory this needs Qt with QtSql and its SQLite driver, so it
  * runs in the build engine against the i486 target, from that target's build
@@ -31,17 +34,21 @@
  *   cd ../build-harbour-chronograph-4.6.0.13-i486
  *   sfdk -c target=SailfishOS-4.6.0.13-i486 build-shell sh -c '
  *       S=../harbour-chronograph B=../build-tst_activityhistory && mkdir -p $B &&
- *       moc $S/src/ActivityHistory.h -o $B/moc_ActivityHistory.cpp &&
+ *       for h in ActivityHistory ActivityStatistics DistanceByLandCoverReader; do
+ *           moc $S/src/$h.h -o $B/moc_$h.cpp || exit 1; done &&
  *       g++ -std=c++11 -Wall -Wextra -fPIC -I$S/src \
  *           $(pkg-config --cflags Qt5Sql | sed "s/-I/-isystem /g") \
  *           $S/tests/tst_activityhistory.cpp $S/src/ActivityHistory.cpp \
+ *           $S/src/ActivityStatistics.cpp $S/src/DistanceByLandCoverReader.cpp \
  *           $S/src/Database.cpp $S/src/Gpx.cpp $S/src/LandCover.cpp $S/src/Track.cpp \
- *           $B/moc_ActivityHistory.cpp $(pkg-config --libs Qt5Sql) \
+ *           $B/moc_ActivityHistory.cpp $B/moc_ActivityStatistics.cpp \
+ *           $B/moc_DistanceByLandCoverReader.cpp $(pkg-config --libs Qt5Sql) \
  *           -o $B/tst_activityhistory &&
  *       $B/tst_activityhistory'
  */
 
 #include "ActivityHistory.h"
+#include "ActivityStatistics.h"
 #include "Database.h"
 #include "Gpx.h"
 #include "LandCover.h"
@@ -50,11 +57,15 @@
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDir>
+#include <QElapsedTimer>
+#include <QEventLoop>
 #include <QFile>
 #include <QFileInfo>
 #include <QSqlQuery>
 #include <QTemporaryDir>
+#include <QTimer>
 #include <QVariant>
+#include <QVariantMap>
 
 #include <cmath>
 #include <cstdio>
@@ -96,6 +107,93 @@ int scalar(const Database &database, const QString &sql)
     if (!query.exec(sql) || !query.next())
         return -1;
     return query.value(0).toInt();
+}
+
+/* Metres stored for an activity, named by its file, over a land cover by
+ * its key; -1 for no row. */
+double landCoverOf(const Database &database, const QString &fileName, const QString &kind)
+{
+    QSqlQuery query(database.connection());
+    query.prepare(QStringLiteral("SELECT l.distance FROM activity_land_cover l "
+                                 "JOIN activities a ON a.id = l.activity "
+                                 "WHERE a.file = :file AND l.kind = :kind"));
+    query.bindValue(QStringLiteral(":file"), fileName);
+    // Never a null string, which would be bound as NULL.
+    query.bindValue(QStringLiteral(":kind"), kind.isNull() ? QStringLiteral("") : kind);
+    if (!query.exec() || !query.next())
+        return -1;
+    return query.value(0).toDouble();
+}
+
+int landCoverRows(const Database &database, const QString &fileName)
+{
+    return scalar(database, QStringLiteral("SELECT COUNT(*) FROM activity_land_cover l "
+                                           "JOIN activities a ON a.id = l.activity "
+                                           "WHERE a.file = '%1'").arg(fileName));
+}
+
+/* Runs the event loop until the history says its activities changed, or
+ * `timeout` ms have passed; whether it did. */
+bool waitForChanges(const ActivityHistory &history, int timeout = 10000)
+{
+    QEventLoop loop;
+    bool came = false;
+    QObject::connect(&history, &ActivityHistory::activitiesChanged, &loop, [&loop, &came]() {
+        came = true;
+        loop.quit();
+    });
+    QTimer::singleShot(timeout, &loop, &QEventLoop::quit);
+    loop.exec();
+    return came;
+}
+
+/* An activity's row put straight into the table, as one stored before its
+ * land cover was. */
+void storeOld(const Database &database, const QString &type, double start, double distance,
+              const QString &fileName)
+{
+    QSqlQuery query(database.connection());
+    query.prepare(QStringLiteral("INSERT INTO activities (type, start, duration, distance, file) "
+                                 "VALUES (:type, :start, 60, :distance, :file)"));
+    query.bindValue(QStringLiteral(":type"), type);
+    query.bindValue(QStringLiteral(":start"),
+                    QDateTime::fromMSecsSinceEpoch(qint64(start) * 1000, Qt::UTC).toString(Qt::ISODate));
+    query.bindValue(QStringLiteral(":distance"), distance);
+    query.bindValue(QStringLiteral(":file"), fileName);
+    query.exec();
+}
+
+/* Metres over each land cover, as Track has them. */
+std::vector<double> distancesOf(const Track &track)
+{
+    return track.distanceByLandCover(int(track.size()) - 1, LandCover::KindCount);
+}
+
+/* The land cover of points `from` up to `to`, not included. */
+void setLandCover(Track *track, std::size_t from, std::size_t to, LandCover::Kind kind)
+{
+    for (std::size_t i = from; i < to && i < track->size(); ++i)
+        track->setLandCover(i, kind, 16);
+}
+
+/* One entry of ActivityStatistics::read(), by type; an empty map for none. */
+QVariantMap statisticsOf(const QVariantList &statistics, const QString &type)
+{
+    for (const QVariant &entry : statistics) {
+        if (entry.toMap().value(QStringLiteral("type")).toString() == type)
+            return entry.toMap();
+    }
+    return QVariantMap();
+}
+
+/* The metres of a land cover in such an entry; -1 for none. */
+double landCoverIn(const QVariantMap &statistics, const QString &kind)
+{
+    for (const QVariant &entry : statistics.value(QStringLiteral("landCover")).toList()) {
+        if (entry.toMap().value(QStringLiteral("key")).toString() == kind)
+            return entry.toMap().value(QStringLiteral("distance")).toDouble();
+    }
+    return -1;
 }
 
 /* A run north at 3 m/s from `start`, one fix a second, with a pause of
@@ -162,10 +260,15 @@ void testMigration(const QString &directory)
 
     Database database(file);
     expect("a database from 0.2 opens", database.isOpen());
-    expectEqual("and is migrated to schema version 3", scalar(database, QStringLiteral("PRAGMA user_version")), 3);
+    expectEqual("and is migrated to schema version 6", scalar(database, QStringLiteral("PRAGMA user_version")), 6);
     expectEqual("its steps are kept", scalar(database, QStringLiteral("SELECT steps FROM daily_steps")), 5000);
     expectEqual("and it has an empty activities table",
                 scalar(database, QStringLiteral("SELECT COUNT(*) FROM activities")), 0);
+    expectEqual("an empty table for their land cover",
+                scalar(database, QStringLiteral("SELECT COUNT(*) FROM activity_land_cover")), 0);
+    expectEqual("and empty ones for the statistics",
+                scalar(database, QStringLiteral("SELECT COUNT(*) FROM statistics"))
+                + scalar(database, QStringLiteral("SELECT COUNT(*) FROM statistics_land_cover")), 0);
 }
 
 void testGpxRoundTrip(const QString &directory)
@@ -361,6 +464,199 @@ void testRewriting(const QString &directory)
     expect("nor brought back", !QFileInfo::exists(QDir(gpx).filePath(name)));
 }
 
+/* Each activity's distance over each land cover, kept with its row. */
+void testLandCoverRows(const QString &directory)
+{
+    const QString gpx = QDir(directory).filePath(QStringLiteral("gpx-landcover"));
+    Database database(QDir(directory).filePath(QStringLiteral("landcover.db")));
+    ActivityHistory history(&database, gpx);
+    int changes = 0;
+    QObject::connect(&history, &ActivityHistory::activitiesChanged, [&changes]() { ++changes; });
+
+    Track track = makeTrack(kStartTime, 60);
+    setLandCover(&track, 0, 20, LandCover::Forest);
+    setLandCover(&track, 20, 40, LandCover::Water);
+    const std::vector<double> distances = distancesOf(track);
+    const QString name = history.add(QStringLiteral("walking"), track);
+    expect("storing an activity says so", changes == 1);
+    expectEqual("its forest is stored with it", landCoverOf(database, name, QStringLiteral("forest")),
+                distances[LandCover::Forest], 0.001);
+    expectEqual("its water", landCoverOf(database, name, QStringLiteral("water")),
+                distances[LandCover::Water], 0.001);
+    expectEqual("and the land not known", landCoverOf(database, name, QString()),
+                distances[LandCover::Unknown], 0.001);
+    expectEqual("nothing for the land it did not cross", landCoverRows(database, name), 3);
+    expect("the test crosses all three", distances[LandCover::Forest] > 0 && distances[LandCover::Water] > 0
+                                         && distances[LandCover::Unknown] > 0);
+
+    setLandCover(&track, 0, track.size(), LandCover::Grassland);
+    history.rewrite(name, QStringLiteral("walking"), track);
+    expect("a rewrite says so", changes == 2);
+    expectEqual("and replaces it", landCoverOf(database, name, QStringLiteral("grassland")),
+                distancesOf(track)[LandCover::Grassland], 0.001);
+    expectEqual("the land not known keeps its row at 0", landCoverOf(database, name, QString()), 0);
+    expectEqual("and nothing else is left", landCoverRows(database, name), 2);
+
+    const qint64 rows = scalar(database, QStringLiteral("SELECT COUNT(*) FROM activity_land_cover"));
+    history.remove(name);
+    expect("deleting says so", changes == 3);
+    expectEqual("and takes the land cover along",
+                scalar(database, QStringLiteral("SELECT COUNT(*) FROM activity_land_cover")), rows - 2);
+}
+
+/* Activities stored before their land cover went into the database have it
+ * read off their files once. */
+void testMissingLandCover(const QString &directory)
+{
+    const QString gpx = QDir(directory).filePath(QStringLiteral("gpx-missing"));
+    Database database(QDir(directory).filePath(QStringLiteral("missing.db")));
+    Track track = makeTrack(kStartTime, 60);
+    setLandCover(&track, 0, 30, LandCover::Forest);
+    const std::vector<double> distances = distancesOf(track);
+    QDir().mkpath(gpx);
+    Gpx::write(QDir(gpx).filePath(QStringLiteral("old.gpx")), track, QStringLiteral("running"));
+    storeOld(database, QStringLiteral("running"), kStartTime, track.stateAt(track.duration()).distance,
+             QStringLiteral("old.gpx"));
+    storeOld(database, QStringLiteral("walking"), kStartTime + 3600, 123, QStringLiteral("gone.gpx"));
+    Gpx::write(QDir(gpx).filePath(QStringLiteral("deleted.gpx")), track, QStringLiteral("running"));
+    storeOld(database, QStringLiteral("running"), kStartTime + 7200, 456, QStringLiteral("deleted.gpx"));
+
+    ActivityHistory history(&database, gpx);
+    // Before the files are read.
+    history.remove(QStringLiteral("deleted.gpx"));
+    expect("an old activity's land cover is read off its file in the background",
+           waitForChanges(history));
+    // The file keeps the positions to a few millimetres.
+    expectEqual("its forest", landCoverOf(database, QStringLiteral("old.gpx"), QStringLiteral("forest")),
+                distances[LandCover::Forest], 0.01);
+    expectEqual("and the land not known", landCoverOf(database, QStringLiteral("old.gpx"), QString()),
+                distances[LandCover::Unknown], 0.01);
+    expectEqual("one whose file is gone counts as not known",
+                landCoverOf(database, QStringLiteral("gone.gpx"), QString()), 123);
+    expectEqual("one deleted meanwhile is not brought back",
+                scalar(database, QStringLiteral("SELECT COUNT(*) FROM activity_land_cover")), 3);
+
+    ActivityHistory again(&database, gpx);
+    expect("a restart reads none again",
+           !waitForChanges(again, 500));
+}
+
+void testStatistics(const QString &directory)
+{
+    const QString gpx = QDir(directory).filePath(QStringLiteral("gpx-statistics"));
+    Database database(QDir(directory).filePath(QStringLiteral("statistics.db")));
+    ActivityHistory history(&database, gpx);
+    ActivityStatistics statistics(&database);
+    int updates = 0;
+    QObject::connect(&history, &ActivityHistory::activitiesChanged, &statistics, &ActivityStatistics::update);
+    QObject::connect(&statistics, &ActivityStatistics::updated, [&updates]() { ++updates; });
+    expect("none before the first activity", statistics.read().isEmpty());
+
+    Track forest = makeTrack(kStartTime, 60);
+    setLandCover(&forest, 0, 30, LandCover::Forest);
+    Track unknown = makeTrack(kStartTime + 3600, 90, 30);
+    Track water = makeTrack(kStartTime + 7200, 40);
+    setLandCover(&water, 0, water.size(), LandCover::Water);
+    history.add(QStringLiteral("running"), forest);
+    const QString unknownName = history.add(QStringLiteral("running"), unknown);
+    const QString waterName = history.add(QStringLiteral("walking"), water);
+    expectEqual("worked out with each activity stored", updates, 3);
+
+    const double forestDistance = forest.stateAt(forest.duration()).distance;
+    const double unknownDistance = unknown.stateAt(unknown.duration()).distance;
+    const double waterDistance = water.stateAt(water.duration()).distance;
+    QVariantList read = statistics.read();
+    expectEqual("all activities and each type that has any", read.size(), 3);
+    expectText("all activities first", read.value(0).toMap().value(QStringLiteral("type")).toString(), QString());
+    QVariantMap all = statisticsOf(read, QString());
+    expectEqual("all: how many", all.value(QStringLiteral("activities")).toInt(), 3);
+    expectEqual("all: how long", all.value(QStringLiteral("duration")).toDouble(),
+                forest.duration() + unknown.duration() + water.duration(), 0.01);
+    expectEqual("all: how far", all.value(QStringLiteral("distance")).toDouble(),
+                forestDistance + unknownDistance + waterDistance, 0.01);
+    expectEqual("all: forest", landCoverIn(all, QStringLiteral("forest")),
+                distancesOf(forest)[LandCover::Forest], 0.01);
+    expectEqual("all: water", landCoverIn(all, QStringLiteral("water")), distancesOf(water)[LandCover::Water], 0.01);
+    expectEqual("all: the land not known", landCoverIn(all, QString()),
+                distancesOf(forest)[LandCover::Unknown] + unknownDistance, 0.01);
+    const QVariantList kinds = all.value(QStringLiteral("landCover")).toList();
+    expectText("the land not known last", kinds.value(kinds.size() - 1).toMap().value(QStringLiteral("key")).toString(),
+               QString());
+    expect("the others the most first",
+           kinds.value(0).toMap().value(QStringLiteral("distance")).toDouble()
+           >= kinds.value(1).toMap().value(QStringLiteral("distance")).toDouble());
+
+    QVariantMap running = statisticsOf(read, QStringLiteral("running"));
+    expectEqual("running: how many", running.value(QStringLiteral("activities")).toInt(), 2);
+    expectEqual("running: how long, pauses left out", running.value(QStringLiteral("duration")).toDouble(),
+                forest.duration() + unknown.duration(), 0.01);
+    expectEqual("running: no water", landCoverIn(running, QStringLiteral("water")), -1);
+    QVariantMap walking = statisticsOf(read, QStringLiteral("walking"));
+    expectEqual("walking: how far", walking.value(QStringLiteral("distance")).toDouble(), waterDistance, 0.01);
+    expectEqual("walking: all of it water", landCoverIn(walking, QStringLiteral("water")), waterDistance, 0.01);
+    expectEqual("walking: no land not known where there is none", landCoverIn(walking, QString()), -1);
+    expect("no type without activities", statisticsOf(read, QStringLiteral("cycling")).isEmpty());
+
+    setLandCover(&unknown, 0, unknown.size(), LandCover::BuiltUp);
+    history.rewrite(unknownName, QStringLiteral("running"), unknown);
+    expectEqual("worked out anew as the land cover is learnt", updates, 4);
+    running = statisticsOf(statistics.read(), QStringLiteral("running"));
+    expectEqual("running: built-up now", landCoverIn(running, QStringLiteral("builtup")), unknownDistance, 0.01);
+    expectEqual("running: only the forest run's land not known",
+                landCoverIn(running, QString()), distancesOf(forest)[LandCover::Unknown], 0.01);
+
+    history.remove(waterName);
+    expectEqual("worked out anew as one is deleted", updates, 5);
+    read = statistics.read();
+    expect("walking is gone", statisticsOf(read, QStringLiteral("walking")).isEmpty());
+    all = statisticsOf(read, QString());
+    expectEqual("all: one less", all.value(QStringLiteral("activities")).toInt(), 2);
+    expectEqual("all: no water", landCoverIn(all, QStringLiteral("water")), -1);
+
+    // One still waiting for its file to be read.
+    storeOld(database, QStringLiteral("cycling"), kStartTime + 10800, 500, QStringLiteral("waiting.gpx"));
+    statistics.update();
+    read = statistics.read();
+    expectEqual("one whose land cover is not read yet counts as not known",
+                landCoverIn(statisticsOf(read, QStringLiteral("cycling")), QString()), 500, 0.01);
+    expectEqual("in all of them too", landCoverIn(statisticsOf(read, QString()), QString()),
+                distancesOf(forest)[LandCover::Unknown] + 500, 0.01);
+
+    ActivityStatistics reopened(&database);
+    expect("a restart reads them as stored, without working them out", reopened.read() == read);
+}
+
+/* What working them out costs, with more activities than anyone records. */
+void testStatisticsCost(const QString &directory)
+{
+    Database database(QDir(directory).filePath(QStringLiteral("cost.db")));
+    const char *const types[] = { "running", "walking", "cycling", "rowing", "driving" };
+    const char *const kinds[] = { "forest", "farmland", "builtup", "" };
+    database.connection().transaction();
+    QSqlQuery query(database.connection());
+    for (int i = 0; i < 2000; ++i) {
+        storeOld(database, QString::fromLatin1(types[i % 5]), kStartTime + i * 3600.0, 4000,
+                 QStringLiteral("cost.gpx"));
+        for (const char *kind : kinds)
+            query.exec(QStringLiteral("INSERT INTO activity_land_cover VALUES (%1, '%2', 1000)")
+                       .arg(i + 1).arg(QString::fromLatin1(kind)));
+    }
+    database.connection().commit();
+
+    ActivityStatistics statistics(&database);
+    QElapsedTimer timer;
+    timer.start();
+    statistics.update();
+    const qint64 updated = timer.elapsed();
+    timer.restart();
+    const QVariantList read = statistics.read();
+    std::printf("INFO 2000 activities: worked out in %lld ms, read in %lld ms\n",
+                updated, qint64(timer.elapsed()));
+    expectEqual("2000 activities worked out", statisticsOf(read, QString()).value(QStringLiteral("activities")).toInt(),
+                2000);
+    expectEqual("their forest", landCoverIn(statisticsOf(read, QString()), QStringLiteral("forest")), 2e6, 0.01);
+}
+
 void testPaging(const QString &directory)
 {
     Database database(QDir(directory).filePath(QStringLiteral("paging.db")));
@@ -456,6 +752,10 @@ int main(int argc, char *argv[])
     testAdding(directory.path());
     testRemoving(directory.path());
     testRewriting(directory.path());
+    testLandCoverRows(directory.path());
+    testMissingLandCover(directory.path());
+    testStatistics(directory.path());
+    testStatisticsCost(directory.path());
     testPaging(directory.path());
     testNoDatabase(directory.path());
     testRecording(directory.path());

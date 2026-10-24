@@ -14,7 +14,9 @@ land cover, read off the map's tiles. An activity is deleted from the list's
 context menu or its page's pulley, after a ten-second remorse timer. While
 one is recorded, the cover shows it and pauses or resumes it. Auto-pause
 pauses and resumes a recording on its own: standing, too fast for the type,
-and after half an hour paused it stops it.
+and after half an hour paused it stops it. A statistics page, from the main
+page's pulley, totals the distance, the time and the land cover of all
+activities together and of each type.
 
 ## Ground rules
 
@@ -176,6 +178,11 @@ The same split as for steps:
   it on the host with generated tiles. `TileCache` (`src/TileCache.*`) hands
   it the map's cached tiles, in `LandCoverReader`'s thread
   (`src/LandCoverReader.*`). See [Land cover](#land-cover-read-off-the-maps-tiles).
+- `ActivityStatistics` (`src/ActivityStatistics.*`) works out the statistics
+  page's totals and keeps them; `DistanceByLandCoverReader`
+  (`src/DistanceByLandCoverReader.*`) reads the land cover of activities
+  from before off their files, in a thread. See [The
+  statistics](#the-statistics-worked-out-as-activities-change-read-when-shown).
 
 ### Positioning: QtPositioning in C++
 
@@ -530,6 +537,51 @@ type or its surface.
   road on it, a tunnel as the land above. Stretches whose tiles were never
   shown stay unknown.
 
+### The statistics: worked out as activities change, read when shown
+
+Decided 2026-10-24, at the project owner's request: a page of its own, from
+the main page's pulley, with the distance, the time and the land cover (km
+and %) of all activities together, and below them the same for each type
+that has any, in the order the activity page offers them. **Worked out
+whenever an activity is stored and kept in the database**, so that the page
+only reads them.
+
+- **Worked out whole, not added to**: `ActivityStatistics::update()` empties
+  `statistics` and `statistics_land_cover` and fills them from `activities`
+  and `activity_land_cover` with a few `GROUP BY`s, in one transaction. Never
+  drifting from what is stored was worth more than the cost: 2,000
+  activities took 8 ms in the build engine, so it stays on the UI thread,
+  once at each stop. Measure it on a phone should anyone record thousands.
+- **When**: `ActivityHistory::activitiesChanged()`, connected in `main()` -
+  an activity stored, deleted, or rewritten as its land cover is learnt
+  after the stop or at a replay. The last two change the totals as well, so
+  they count as "persisted" too. The page reads them as it opens and again
+  on `updated()`, should that come while it is open.
+- **Each activity's land cover in the database**, `activity_land_cover`,
+  which `ActivityHistory` writes with the row and at every rewrite: deleting
+  an activity or learning its land cover must change the totals without
+  reading a single GPX file. The land not known always has its row, if only
+  with 0 - any row says the activity has been summed up.
+- **Activities from before** (0.3 files on phones) have no rows. As the
+  history is made it reads those files in a `DistanceByLandCoverReader`
+  thread, writes the rows of the ones still stored and still without, and
+  says the activities changed; a file that cannot be read counts as land not
+  known, so it is not read at every start. Until then the statistics count
+  their whole distance as not known, so the kinds always add up.
+- **The land not known** is the activities' rows with an empty key plus the
+  distance of any still waiting; the page lists it last, like an activity's
+  land cover slide (`LandCoverList`, shared). Shares are of the land cover's
+  sum.
+- The time is the duration with the pauses left out, as in the list, through
+  `Units.duration()` - hours go past 24.
+- **Each section** (`ActivityStatisticsSection.qml`): a `SectionHeader`, the
+  distance and the time side by side as `ActivityValue`s, **each centred in
+  its half** (decided 2026-10-25, at the project owner's request, after left
+  and right alignment both looked off; `ActivityValue.horizontalAlignment`,
+  left on the activity page), and the land cover below them.
+- Not shown, though stored: the number of activities (it decides which types
+  get a section).
+
 ### Smoothing the fixes: a Kalman filter per activity type
 
 Decided 2026-10-17. A phone's fixes jump by tens of metres now and then, its
@@ -721,8 +773,10 @@ the OS; like the sensorfw plugin it is not `Require`d, as Harbour would refuse i
   is opened as it is. If the file cannot be opened or migrated, it stays closed
   and the app counts in memory only.
 - **The classes that use a table own its queries**: `daily_steps` belongs to
-  `StepHistory`, `activities` to `ActivityHistory`. Further features get their
-  own class and their own table.
+  `StepHistory`, `activities` and `activity_land_cover` to `ActivityHistory`,
+  `statistics` and `statistics_land_cover` to `ActivityStatistics` - which
+  reads `ActivityHistory`'s two to fill them, and nothing else does. Further
+  features get their own class and their own table.
 - **`daily_steps`**: `day TEXT PRIMARY KEY` (the local date, `yyyy-MM-dd`, so
   text order is date order) and `steps INTEGER`, the whole day's count. Rows are
   written with `INSERT OR REPLACE`, which is fine while the count is the only
@@ -746,6 +800,15 @@ the OS; like the sensorfw plugin it is not `Require`d, as Harbour would refuse i
   (UTC, `yyyy-MM-ddTHH:mm:ssZ`, so text order is time order), `duration`
   (seconds, pauses left out), `distance` (metres) and `file`, the GPX file's
   name. Only what the list shows; everything else is in the file.
+- **`activity_land_cover`** (schema 4): `activity` (the id), `kind`
+  (`LandCover`'s key, empty for the land not known) and `distance` (metres),
+  one row per kind the activity crossed - see [The
+  statistics](#the-statistics-worked-out-as-activities-change-read-when-shown).
+  Deleted with the activity's row, in one transaction.
+- **`statistics`** (schema 5): `type` (the key, empty for all activities
+  together), `activities`, `duration` and `distance`; **`statistics_land_cover`**
+  (schema 6): `type`, `kind` and `distance`. Derived, emptied and refilled
+  at every change.
 - **The GPX files** live in `gpx/` beside the database, named after the start
   in UTC in ISO 8601's basic format, `20261016T073000Z.gpx`: sorts by time,
   means the same in every time zone, and has no colons, so it survives being
@@ -785,6 +848,8 @@ src/Track.*                   an activity's segments and points and their values
 src/AutoPause.*               when a recording pauses, resumes and stops on its own, Qt-free
 src/Activity.*                positioning, recording and replay: the activity page's facade
 src/ActivityHistory.*         the activities table as a paged list model, and the GPX files
+src/ActivityStatistics.*      the statistics page's totals, worked out and kept
+src/DistanceByLandCoverReader.* the land cover of older activities off their files, in a thread
 src/Gpx.*                     Track to and from GPX 1.1
 src/TrackReader.*             reads a stored activity's GPX file, in a thread of its own
 src/TrackLine.*               the route, painted over the map
@@ -801,7 +866,8 @@ tests/tst_trackchart.cpp      host-side checks for TrackChart
 tests/tst_autopause.cpp       host-side checks for AutoPause
 tests/tst_landcover.cpp       host-side checks for LandCover, on generated tiles
 tests/tst_stephistory.cpp     Database and StepHistory, run in the build engine
-tests/tst_activityhistory.cpp the migration, Gpx and ActivityHistory, in the build engine
+tests/tst_activityhistory.cpp the migration, Gpx, ActivityHistory and ActivityStatistics,
+                              in the build engine
 tests/replay_recording.cpp    replays a phone recording through StepDetector
 tests/raw-data/               personal data, git-ignored, local only: the recordings,
                               their ground truth (README), parts, FINDINGS.md
@@ -810,12 +876,13 @@ qml/pages/OverviewPage        the activities above, the steps in the lower third
 qml/pages/ActivityPage        record or replay one activity: values, charts or land cover, map,
                               control;
                               pulley to delete a stored one
+qml/pages/StatisticsPage      distance, time and land cover of all activities, then per type
 qml/pages/AboutPage           logo, version, what to know, credits
 qml/cover/CoverPage           today's count over the chronograph backdrop, or the activity
                               being recorded, with an action to pause or resume it
 qml/components/               BackgroundImage, AboutLink, AboutParagraph (from Lauscher);
                               TileMap, TileLayer, ActivityValue, ActivityChart, HoldButton,
-                              LandCoverList
+                              LandCoverList, ActivityStatisticsSection
 qml/js/Units.js               durations, distances, paces and speeds as shown
 images/                       icon master, cover backdrops, heading arrow, activity type
                               pictograms (SVG), installed whole
@@ -987,8 +1054,15 @@ rows, newest first, paging across 250 activities with a page boundary among
 three of the same second, an activity added between pages, deleting one
 (row, file and list; its file already gone; names with a path refused),
 rewriting one (with its land cover; not one deleted, unlisted or named with
-a path), no database. The build command is at the top of the file. Run it after any change to
-`Database`, `Gpx`, `Track`, `LandCover` or `ActivityHistory`.
+a path), no database; each activity's land cover rows as it is stored,
+rewritten and deleted, those of older activities read off their files (one
+whose file is gone, one deleted meanwhile, none read twice); and the
+statistics: all activities and per type, their land cover with the land not
+known last, worked out anew at each change, an activity still waiting
+counted as not known, read back as stored - and what working out 2,000
+costs. The build command is at the top of the file. Run it after any change to
+`Database`, `Gpx`, `Track`, `LandCover`, `ActivityHistory` or
+`ActivityStatistics`.
 
 **Synthetic tests in place of recorded data** (decided 2026-10-14). Checked by
 breaking one rule of `StepDetector` at a time - 17 in all: each correction
@@ -1277,6 +1351,14 @@ more and the file was rewritten 4 s later; 5 % stayed unknown. A file from
 before replayed, got level 17 and was rewritten. The slide, German, portrait
 and landscape, checked on screen.
 
+The statistics (2026-10-24) build for all five targets without warnings,
+stay Harbour-clean, pass the activity history's and the step history's
+tests, and in the emulator, sandboxed, with a patched-in timer: a database
+of 16 generated activities was migrated from schema 3 to 6, their land
+cover read off their files at the start and not again at the next; the page
+showed all activities, then running, walking and driving, the types adding
+up to the whole. German, portrait, checked on screen.
+
 Still to confirm on the Jolla Phone (2026):
 
 - [ ] Steps are still counted with only `Location` and `Internet` granted -
@@ -1296,6 +1378,8 @@ Still to confirm on the Jolla Phone (2026):
       `viewed`), and the land cover on real activities: whether farmland and
       unmapped land are told apart, how much stays unknown, and whether the
       file is rewritten after the stop.
+- [ ] The statistics: the pulley's entry, and the land cover of the
+      activities recorded before read at the first start.
 - [ ] Auto-pause on real activities: whether the filter's speed standing
       stays below the limits (a single second over restarts the count),
       whether steps resume a walk promptly, how late a bus or a car is

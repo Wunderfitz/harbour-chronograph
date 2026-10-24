@@ -233,6 +233,21 @@
     </message>
 </context>
 <context>
+    <name>ActivityStatisticsSection</name>
+    <message>
+        <source>Distance</source>
+        <translation>Strecke</translation>
+    </message>
+    <message>
+        <source>Time</source>
+        <translation>Zeit</translation>
+    </message>
+    <message>
+        <source>Land cover</source>
+        <translation>Gelände</translation>
+    </message>
+</context>
+<context>
     <name>CoverPage</name>
     <message>
         <source>Chronograph</source>
@@ -320,6 +335,25 @@
     <message>
         <source>Delete activity</source>
         <translation>Aktivität löschen</translation>
+    </message>
+    <message>
+        <source>Statistics</source>
+        <translation>Statistik</translation>
+    </message>
+</context>
+<context>
+    <name>StatisticsPage</name>
+    <message>
+        <source>Statistics</source>
+        <translation>Statistik</translation>
+    </message>
+    <message>
+        <source>All activities</source>
+        <translation>Alle Aktivitäten</translation>
+    </message>
+    <message>
+        <source>No activities yet</source>
+        <translation>Noch keine Aktivitäten</translation>
     </message>
 </context>
 <context>

@@ -21,6 +21,7 @@
 
 #include "Database.h"
 #include "Gpx.h"
+#include "LandCover.h"
 #include "Track.h"
 
 #include <QDebug>
@@ -31,6 +32,8 @@
 #include <QSqlQuery>
 #include <QStandardPaths>
 #include <QVariant>
+
+#include <algorithm>
 
 namespace {
 
@@ -46,6 +49,12 @@ QString startText(const QDateTime &start)
     return start.toUTC().toString(Qt::ISODate);
 }
 
+/* Metres over each land cover, the whole track. */
+std::vector<double> distancesOf(const Track &track)
+{
+    return track.distanceByLandCover(int(track.size()) - 1, LandCover::KindCount);
+}
+
 } // namespace
 
 ActivityHistory::ActivityHistory(Database *database, const QString &directory, QObject *parent)
@@ -53,7 +62,15 @@ ActivityHistory::ActivityHistory(Database *database, const QString &directory, Q
     , m_database(database)
     , m_directory(directory)
 {
+    connect(&m_landCoverReader, &QThread::finished, this, &ActivityHistory::handleMissingLandCover);
     fetchMore(QModelIndex());
+    readMissingLandCover();
+}
+
+/* Files still being read are left for the next start. */
+ActivityHistory::~ActivityHistory()
+{
+    disconnect(&m_landCoverReader, nullptr, this, nullptr);
 }
 
 int ActivityHistory::rowCount(const QModelIndex &parent) const
@@ -174,7 +191,10 @@ QString ActivityHistory::add(const QString &type, const Track &track)
         return QString();
 
     if (m_database->isOpen()) {
-        QSqlQuery query(m_database->connection());
+        // The row and its land cover at once, and with a single write.
+        QSqlDatabase connection = m_database->connection();
+        connection.transaction();
+        QSqlQuery query(connection);
         query.prepare(QStringLiteral(
                 "INSERT INTO activities (type, start, duration, distance, file) "
                 "VALUES (:type, :start, :duration, :distance, :file)"));
@@ -183,10 +203,17 @@ QString ActivityHistory::add(const QString &type, const Track &track)
         query.bindValue(QStringLiteral(":duration"), entry.duration);
         query.bindValue(QStringLiteral(":distance"), entry.distance);
         query.bindValue(QStringLiteral(":file"), entry.fileName);
-        if (query.exec())
+        if (query.exec()) {
             entry.id = query.lastInsertId().toLongLong();
-        else
+            storeLandCover(entry.id, distancesOf(track));
+        } else {
             qWarning() << "Cannot store the activity" << entry.fileName << query.lastError().text();
+        }
+        if (!connection.commit()) {
+            qWarning() << "Cannot store the activity" << entry.fileName << connection.lastError().text();
+            connection.rollback();
+            entry.id = -1;
+        }
     }
 
     /* Normally at the top. Should the clock have been set back, further down -
@@ -199,6 +226,7 @@ QString ActivityHistory::add(const QString &type, const Track &track)
         m_entries.insert(row, entry);
         endInsertRows();
     }
+    emit activitiesChanged();
     return entry.fileName;
 }
 
@@ -209,11 +237,22 @@ bool ActivityHistory::remove(const QString &fileName)
         return false;
 
     if (m_database->isOpen()) {
-        QSqlQuery query(m_database->connection());
-        query.prepare(QStringLiteral("DELETE FROM activities WHERE file = :file"));
+        QSqlDatabase connection = m_database->connection();
+        connection.transaction();
+        QSqlQuery query(connection);
+        query.prepare(QStringLiteral("DELETE FROM activity_land_cover "
+                                     "WHERE activity IN (SELECT id FROM activities WHERE file = :file)"));
         query.bindValue(QStringLiteral(":file"), fileName);
-        if (!query.exec()) {
-            qWarning() << "Cannot delete the activity" << fileName << query.lastError().text();
+        bool deleted = query.exec();
+        if (deleted) {
+            query.prepare(QStringLiteral("DELETE FROM activities WHERE file = :file"));
+            query.bindValue(QStringLiteral(":file"), fileName);
+            deleted = query.exec();
+        }
+        if (!deleted || !connection.commit()) {
+            qWarning() << "Cannot delete the activity" << fileName << query.lastError().text()
+                       << connection.lastError().text();
+            connection.rollback();
             return false;
         }
     }
@@ -230,6 +269,7 @@ bool ActivityHistory::remove(const QString &fileName)
             break;
         }
     }
+    emit activitiesChanged();
     return true;
 }
 
@@ -241,18 +281,30 @@ bool ActivityHistory::rewrite(const QString &fileName, const QString &type, cons
     if (!QFileInfo::exists(path))
         return false;
 
+    qint64 id = -1;
     if (m_database->isOpen()) {
         QSqlQuery query(m_database->connection());
-        query.prepare(QStringLiteral("SELECT COUNT(*) FROM activities WHERE file = :file"));
+        query.prepare(QStringLiteral("SELECT id FROM activities WHERE file = :file"));
         query.bindValue(QStringLiteral(":file"), fileName);
-        if (!query.exec() || !query.next()) {
+        if (!query.exec()) {
             qWarning() << "Cannot look up the activity" << fileName << query.lastError().text();
             return false;
         }
-        if (query.value(0).toInt() == 0)
+        if (!query.next())
             return false;
+        id = query.value(0).toLongLong();
     }
-    return Gpx::write(path, track, type);
+    if (!Gpx::write(path, track, type))
+        return false;
+
+    if (id >= 0) {
+        QSqlDatabase connection = m_database->connection();
+        connection.transaction();
+        if (!storeLandCover(id, distancesOf(track)) || !connection.commit())
+            connection.rollback();
+    }
+    emit activitiesChanged();
+    return true;
 }
 
 QObject *ActivityHistory::recording() const
@@ -285,4 +337,87 @@ QString ActivityHistory::newFileName(const QDateTime &start) const
     for (int n = 2; QFileInfo::exists(filePath(name)); ++n)
         name = QStringLiteral("%1-%2.gpx").arg(base).arg(n);
     return name;
+}
+
+/* Replaces the activity's rows. The land not known always has one, if only
+ * with 0: any row at all is what says the activity has been summed up. */
+bool ActivityHistory::storeLandCover(qint64 id, const std::vector<double> &distances)
+{
+    QSqlQuery query(m_database->connection());
+    query.prepare(QStringLiteral("DELETE FROM activity_land_cover WHERE activity = :activity"));
+    query.bindValue(QStringLiteral(":activity"), id);
+    bool stored = query.exec();
+    query.prepare(QStringLiteral("INSERT INTO activity_land_cover (activity, kind, distance) "
+                                 "VALUES (:activity, :kind, :distance)"));
+    const int kinds = std::min(int(distances.size()), int(LandCover::KindCount));
+    for (int kind = LandCover::Unknown; stored && kind < kinds; ++kind) {
+        const double distance = distances[std::size_t(kind)];
+        if (kind != LandCover::Unknown && !(distance > 0))
+            continue;
+        query.bindValue(QStringLiteral(":activity"), id);
+        query.bindValue(QStringLiteral(":kind"), QString::fromLatin1(LandCover::key(LandCover::Kind(kind))));
+        query.bindValue(QStringLiteral(":distance"), distance);
+        stored = query.exec();
+    }
+    if (!stored)
+        qWarning() << "Cannot store the land cover of activity" << id << query.lastError().text();
+    return stored;
+}
+
+/* The activities stored before their land cover went into the database. Read
+ * at most once each: the next start finds them summed up. */
+void ActivityHistory::readMissingLandCover()
+{
+    if (!m_database->isOpen())
+        return;
+    QSqlQuery query(m_database->connection());
+    if (!query.exec(QStringLiteral("SELECT id, file FROM activities "
+                                   "WHERE id NOT IN (SELECT activity FROM activity_land_cover)"))) {
+        qWarning() << "Cannot look up the activities' land cover" << query.lastError().text();
+        return;
+    }
+    std::vector<DistanceByLandCoverReader::Entry> entries;
+    while (query.next()) {
+        DistanceByLandCoverReader::Entry entry;
+        entry.id = query.value(0).toLongLong();
+        entry.filePath = filePath(query.value(1).toString());
+        entries.push_back(entry);
+    }
+    if (entries.empty())
+        return;
+    qInfo() << "Reading the land cover of" << entries.size() << "activities";
+    m_landCoverReader.setEntries(entries);
+    m_landCoverReader.start(QThread::LowPriority);
+}
+
+/* Into the activities still stored and still without - one replayed
+ * meanwhile may have had its land cover rewritten. A file that cannot be read
+ * counts as land not known, so that it is not read again at every start. */
+void ActivityHistory::handleMissingLandCover()
+{
+    if (!m_database->isOpen())
+        return;
+    QSqlDatabase connection = m_database->connection();
+    connection.transaction();
+    QSqlQuery query(connection);
+    query.prepare(QStringLiteral("SELECT distance FROM activities WHERE id = :id "
+                                 "AND id NOT IN (SELECT activity FROM activity_land_cover)"));
+    for (const DistanceByLandCoverReader::Entry &entry : m_landCoverReader.entries()) {
+        query.bindValue(QStringLiteral(":id"), entry.id);
+        if (!query.exec() || !query.next())
+            continue;
+        std::vector<double> distances = entry.distances;
+        if (!entry.read) {
+            distances.assign(LandCover::KindCount, 0.0);
+            distances[LandCover::Unknown] = query.value(0).toDouble();
+        }
+        query.finish();
+        storeLandCover(entry.id, distances);
+    }
+    if (!connection.commit()) {
+        qWarning() << "Cannot store the activities' land cover" << connection.lastError().text();
+        connection.rollback();
+        return;
+    }
+    emit activitiesChanged();
 }

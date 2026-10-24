@@ -15,8 +15,10 @@ SOURCES += \
     src/Activity.cpp \
     src/AutoPause.cpp \
     src/ActivityHistory.cpp \
+    src/ActivityStatistics.cpp \
     src/ChartLine.cpp \
     src/Database.cpp \
+    src/DistanceByLandCoverReader.cpp \
     src/Gpx.cpp \
     src/LandCover.cpp \
     src/LandCoverReader.cpp \
@@ -35,8 +37,10 @@ HEADERS += \
     src/Activity.h \
     src/AutoPause.h \
     src/ActivityHistory.h \
+    src/ActivityStatistics.h \
     src/ChartLine.h \
     src/Database.h \
+    src/DistanceByLandCoverReader.h \
     src/Gpx.h \
     src/LandCover.h \
     src/LandCoverReader.h \
@@ -57,6 +61,7 @@ DISTFILES += \
     qml/components/AboutLink.qml \
     qml/components/AboutParagraph.qml \
     qml/components/ActivityChart.qml \
+    qml/components/ActivityStatisticsSection.qml \
     qml/components/ActivityValue.qml \
     qml/components/BackgroundImage.qml \
     qml/components/HoldButton.qml \
@@ -67,6 +72,7 @@ DISTFILES += \
     qml/pages/AboutPage.qml \
     qml/pages/ActivityPage.qml \
     qml/pages/OverviewPage.qml \
+    qml/pages/StatisticsPage.qml \
     harbour-chronograph.desktop \
     $$files(images/*.svg) \
     rpm/harbour-chronograph.spec \

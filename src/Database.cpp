@@ -52,6 +52,28 @@ const char *const kSchema[] = {
         "file TEXT NOT NULL)",
     /* 3: the list is read newest first, a page at a time. */
     "CREATE INDEX activities_by_start ON activities (start, id)",
+    /* 4: how far each activity went over each land cover, in metres, by
+     * LandCover's keys - the land not known as an empty one, which every
+     * activity whose land cover has been summed up has, if only with 0. */
+    "CREATE TABLE activity_land_cover ("
+        "activity INTEGER NOT NULL, "
+        "kind TEXT NOT NULL, "
+        "distance REAL NOT NULL, "
+        "PRIMARY KEY (activity, kind))",
+    /* 5: the statistics page's totals, worked out from the activities each
+     * time one is stored, changed or deleted: per activity type, and for all
+     * of them together as type ''. Seconds and metres, as in activities. */
+    "CREATE TABLE statistics ("
+        "type TEXT PRIMARY KEY NOT NULL, "
+        "activities INTEGER NOT NULL, "
+        "duration REAL NOT NULL, "
+        "distance REAL NOT NULL)",
+    /* 6: and their distance over each land cover, keyed as in 4 and 5. */
+    "CREATE TABLE statistics_land_cover ("
+        "type TEXT NOT NULL, "
+        "kind TEXT NOT NULL, "
+        "distance REAL NOT NULL, "
+        "PRIMARY KEY (type, kind))",
 };
 const int kSchemaVersion = int(sizeof(kSchema) / sizeof(kSchema[0]));
 

@@ -27,6 +27,7 @@
 
 #include "Activity.h"
 #include "ActivityHistory.h"
+#include "ActivityStatistics.h"
 #include "ChartLine.h"
 #include "Database.h"
 #include "StepCounter.h"
@@ -67,6 +68,11 @@ int main(int argc, char *argv[])
     QObject::connect(&stepCounter, &StepCounter::stepsAdded,
                      &stepHistory, &StepHistory::addSteps);
     ActivityHistory activityHistory(&database, ActivityHistory::defaultDirectory());
+    // Worked out whenever an activity is stored, deleted or changed, and only
+    // read by the statistics page.
+    ActivityStatistics activityStatistics(&database);
+    QObject::connect(&activityHistory, &ActivityHistory::activitiesChanged,
+                     &activityStatistics, &ActivityStatistics::update);
     TileNetworkFactory tileNetworkFactory;
 
     QScopedPointer<QQuickView> view(SailfishApp::createView());
@@ -75,6 +81,7 @@ int main(int argc, char *argv[])
     view->rootContext()->setContextProperty(QStringLiteral("stepCounter"), &stepCounter);
     view->rootContext()->setContextProperty(QStringLiteral("stepHistory"), &stepHistory);
     view->rootContext()->setContextProperty(QStringLiteral("activityHistory"), &activityHistory);
+    view->rootContext()->setContextProperty(QStringLiteral("activityStatistics"), &activityStatistics);
     view->setSource(SailfishApp::pathToMainQml());
     view->show();
 

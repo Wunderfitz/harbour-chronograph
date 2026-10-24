@@ -20,11 +20,15 @@
 #ifndef ACTIVITYHISTORY_H
 #define ACTIVITYHISTORY_H
 
+#include "DistanceByLandCoverReader.h"
+
 #include <QAbstractListModel>
 #include <QDateTime>
 #include <QList>
 #include <QPointer>
 #include <QString>
+
+#include <vector>
 
 class Database;
 class Track;
@@ -44,6 +48,13 @@ class Track;
  * remove() deletes an activity again, row and file; the pages ask for it only
  * once their remorse timer has run out. rewrite() writes a stored activity's
  * file anew, with what has been learnt about it since: its land cover.
+ *
+ * Each activity's distance over each land cover goes into a table of its
+ * own as well, with the row and again with every rewrite, so that the
+ * statistics can be worked out without reading a single file. Activities
+ * stored before that table was there have it read off their files once, in
+ * a thread, as the history is made. activitiesChanged() says when any of
+ * this changed.
  *
  * It also knows the activity being recorded, if any, for the cover: the
  * activity page's Activity is QML's, and the cover cannot see into the page.
@@ -72,6 +83,7 @@ public:
     };
 
     ActivityHistory(Database *database, const QString &directory, QObject *parent = nullptr);
+    ~ActivityHistory() override;
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role) const override;
@@ -111,6 +123,9 @@ public:
 
 signals:
     void recordingChanged();
+    /* An activity stored, deleted, or its land cover changed - what the
+     * statistics are made of. */
+    void activitiesChanged();
 
 private:
     struct Entry {
@@ -123,6 +138,10 @@ private:
     };
 
     QString newFileName(const QDateTime &start) const;
+    /* Inside a transaction of the caller's. */
+    bool storeLandCover(qint64 id, const std::vector<double> &distances);
+    void readMissingLandCover();
+    void handleMissingLandCover();
 
     Database *m_database;
     QString m_directory;
@@ -130,6 +149,7 @@ private:
     /* Every row has been read. */
     bool m_complete = false;
     QPointer<QObject> m_recording;
+    DistanceByLandCoverReader m_landCoverReader;
 };
 
 #endif // ACTIVITYHISTORY_H

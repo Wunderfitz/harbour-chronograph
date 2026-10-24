@@ -21,9 +21,10 @@ import QtQuick 2.2
 import Sailfish.Silica 1.0
 import "../js/Units.js" as Units
 
-// How far an activity went over each land cover, the most first: the colour
+// How far an activity, or all of them, went over each land cover, the most first: the colour
 // the map paints it in, its name, the distance and its share of the whole.
 // The land not known - the map's tiles of it were never seen - comes last.
+// As tall as its rows, unless given a height.
 Item {
     id: landCover
 
@@ -32,6 +33,8 @@ Item {
     property alias label: captionLabel.text
     // Shown in place of the list while it is empty.
     property alias emptyText: emptyLabel.text
+
+    implicitHeight: rows.y + rows.height
 
     readonly property real total: {
         var sum = 0
@@ -55,6 +58,7 @@ Item {
     }
 
     Column {
+        id: rows
         anchors {
             top: captionLabel.bottom
             topMargin: Theme.paddingMedium

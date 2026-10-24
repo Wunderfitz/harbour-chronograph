@@ -29,6 +29,10 @@
   land cover at the current position shows below the values as well.
 - Map tiles are downloaded only while the map is on screen, as
   OpenStreetMap's tile usage policy asks, no longer with the display off.
+- A statistics page, from the main page's pulley menu: the distance, the
+  time and the land cover in kilometres and per cent of all activities
+  together, and of each activity type below them. Kept up to date in the
+  database as activities are stored, deleted or learn their land cover.
 - Asks for the Location and Internet permissions; no longer for Sensors, which
   Location includes.
 

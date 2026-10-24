@@ -24,7 +24,8 @@ import "../js/Units.js" as Units
 
 // The recorded activities, newest first, over the steps: today's count and the
 // three days before in the lower third - in landscape the right third. The
-// pulley starts a new activity; tapping one in the list replays it.
+// pulley starts a new activity or shows the statistics; tapping one in the
+// list replays it.
 Page {
     id: overviewPage
 
@@ -65,6 +66,10 @@ Page {
             MenuItem {
                 text: qsTr("About Chronograph")
                 onClicked: pageStack.push(Qt.resolvedUrl("AboutPage.qml"))
+            }
+            MenuItem {
+                text: qsTr("Statistics")
+                onClicked: pageStack.push(Qt.resolvedUrl("StatisticsPage.qml"))
             }
             MenuItem {
                 text: qsTr("Start activity")
