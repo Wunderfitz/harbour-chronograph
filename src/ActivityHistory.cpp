@@ -55,6 +55,12 @@ std::vector<double> distancesOf(const Track &track)
     return track.distanceByLandCover(int(track.size()) - 1, LandCover::KindCount);
 }
 
+/* Metres climbed, the whole track. */
+double climbOf(const Track &track)
+{
+    return track.stateAt(track.duration()).elevationGain;
+}
+
 } // namespace
 
 ActivityHistory::ActivityHistory(Database *database, const QString &directory, QObject *parent)
@@ -62,15 +68,15 @@ ActivityHistory::ActivityHistory(Database *database, const QString &directory, Q
     , m_database(database)
     , m_directory(directory)
 {
-    connect(&m_landCoverReader, &QThread::finished, this, &ActivityHistory::handleMissingLandCover);
+    connect(&m_summaryReader, &QThread::finished, this, &ActivityHistory::handleMissingSummaries);
     fetchMore(QModelIndex());
-    readMissingLandCover();
+    readMissingSummaries();
 }
 
 /* Files still being read are left for the next start. */
 ActivityHistory::~ActivityHistory()
 {
-    disconnect(&m_landCoverReader, nullptr, this, nullptr);
+    disconnect(&m_summaryReader, nullptr, this, nullptr);
 }
 
 int ActivityHistory::rowCount(const QModelIndex &parent) const
@@ -196,13 +202,14 @@ QString ActivityHistory::add(const QString &type, const Track &track)
         connection.transaction();
         QSqlQuery query(connection);
         query.prepare(QStringLiteral(
-                "INSERT INTO activities (type, start, duration, distance, file) "
-                "VALUES (:type, :start, :duration, :distance, :file)"));
+                "INSERT INTO activities (type, start, duration, distance, file, climb) "
+                "VALUES (:type, :start, :duration, :distance, :file, :climb)"));
         query.bindValue(QStringLiteral(":type"), entry.type);
         query.bindValue(QStringLiteral(":start"), startText(entry.start));
         query.bindValue(QStringLiteral(":duration"), entry.duration);
         query.bindValue(QStringLiteral(":distance"), entry.distance);
         query.bindValue(QStringLiteral(":file"), entry.fileName);
+        query.bindValue(QStringLiteral(":climb"), climbOf(track));
         if (query.exec()) {
             entry.id = query.lastInsertId().toLongLong();
             storeLandCover(entry.id, distancesOf(track));
@@ -300,7 +307,8 @@ bool ActivityHistory::rewrite(const QString &fileName, const QString &type, cons
     if (id >= 0) {
         QSqlDatabase connection = m_database->connection();
         connection.transaction();
-        if (!storeLandCover(id, distancesOf(track)) || !connection.commit())
+        if (!storeLandCover(id, distancesOf(track)) || !storeClimb(id, climbOf(track))
+                || !connection.commit())
             connection.rollback();
     }
     emit activitiesChanged();
@@ -364,58 +372,78 @@ bool ActivityHistory::storeLandCover(qint64 id, const std::vector<double> &dista
     return stored;
 }
 
-/* The activities stored before their land cover went into the database. Read
- * at most once each: the next start finds them summed up. */
-void ActivityHistory::readMissingLandCover()
+bool ActivityHistory::storeClimb(qint64 id, double climb)
+{
+    QSqlQuery query(m_database->connection());
+    query.prepare(QStringLiteral("UPDATE activities SET climb = :climb WHERE id = :id"));
+    query.bindValue(QStringLiteral(":climb"), climb);
+    query.bindValue(QStringLiteral(":id"), id);
+    if (!query.exec()) {
+        qWarning() << "Cannot store the climb of activity" << id << query.lastError().text();
+        return false;
+    }
+    return true;
+}
+
+/* The activities stored before their land cover or their climb went into the
+ * database. Read at most once each: the next start finds them summed up. */
+void ActivityHistory::readMissingSummaries()
 {
     if (!m_database->isOpen())
         return;
     QSqlQuery query(m_database->connection());
-    if (!query.exec(QStringLiteral("SELECT id, file FROM activities "
-                                   "WHERE id NOT IN (SELECT activity FROM activity_land_cover)"))) {
-        qWarning() << "Cannot look up the activities' land cover" << query.lastError().text();
+    if (!query.exec(QStringLiteral("SELECT id, file FROM activities WHERE climb IS NULL "
+                                   "OR id NOT IN (SELECT activity FROM activity_land_cover)"))) {
+        qWarning() << "Cannot look up the activities' land cover and climb" << query.lastError().text();
         return;
     }
-    std::vector<DistanceByLandCoverReader::Entry> entries;
+    std::vector<TrackSummaryReader::Entry> entries;
     while (query.next()) {
-        DistanceByLandCoverReader::Entry entry;
+        TrackSummaryReader::Entry entry;
         entry.id = query.value(0).toLongLong();
         entry.filePath = filePath(query.value(1).toString());
         entries.push_back(entry);
     }
     if (entries.empty())
         return;
-    qInfo() << "Reading the land cover of" << entries.size() << "activities";
-    m_landCoverReader.setEntries(entries);
-    m_landCoverReader.start(QThread::LowPriority);
+    qInfo() << "Reading the land cover and climb of" << entries.size() << "activities";
+    m_summaryReader.setEntries(entries);
+    m_summaryReader.start(QThread::LowPriority);
 }
 
 /* Into the activities still stored and still without - one replayed
- * meanwhile may have had its land cover rewritten. A file that cannot be read
- * counts as land not known, so that it is not read again at every start. */
-void ActivityHistory::handleMissingLandCover()
+ * meanwhile may have had its land cover rewritten, and its climb with it. A
+ * file that cannot be read counts as land not known and no climb, so that it
+ * is not read again at every start. */
+void ActivityHistory::handleMissingSummaries()
 {
     if (!m_database->isOpen())
         return;
     QSqlDatabase connection = m_database->connection();
     connection.transaction();
     QSqlQuery query(connection);
-    query.prepare(QStringLiteral("SELECT distance FROM activities WHERE id = :id "
-                                 "AND id NOT IN (SELECT activity FROM activity_land_cover)"));
-    for (const DistanceByLandCoverReader::Entry &entry : m_landCoverReader.entries()) {
+    query.prepare(QStringLiteral("SELECT distance, climb IS NULL, "
+                                 "id NOT IN (SELECT activity FROM activity_land_cover) "
+                                 "FROM activities WHERE id = :id"));
+    for (const TrackSummaryReader::Entry &entry : m_summaryReader.entries()) {
         query.bindValue(QStringLiteral(":id"), entry.id);
         if (!query.exec() || !query.next())
             continue;
+        const bool withoutClimb = query.value(1).toBool();
+        const bool withoutLandCover = query.value(2).toBool();
         std::vector<double> distances = entry.distances;
         if (!entry.read) {
             distances.assign(LandCover::KindCount, 0.0);
             distances[LandCover::Unknown] = query.value(0).toDouble();
         }
         query.finish();
-        storeLandCover(entry.id, distances);
+        if (withoutLandCover)
+            storeLandCover(entry.id, distances);
+        if (withoutClimb)
+            storeClimb(entry.id, entry.read ? entry.climb : 0.0);
     }
     if (!connection.commit()) {
-        qWarning() << "Cannot store the activities' land cover" << connection.lastError().text();
+        qWarning() << "Cannot store the activities' land cover and climb" << connection.lastError().text();
         connection.rollback();
         return;
     }

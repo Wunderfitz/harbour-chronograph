@@ -33,6 +33,10 @@ import "../js/Units.js" as Units
 //
 // Leaving the page while recording stops the activity and stores it: Activity
 // does that as it goes with the page. Once stored, the pulley deletes it.
+//
+// Achievement levels reached while recording or once stopped - by the
+// activity, its land cover learnt after the stop, or the steps meanwhile -
+// are shown over the page after the stop, one at a time, each until OK.
 Page {
     id: page
 
@@ -122,6 +126,50 @@ Page {
                 + Format.formatDate(start, Formatter.TimeValue)
     }
 
+    // Achievements reached, waiting to be shown: the first is shown once the
+    // activity is over. A category reached again before its turn keeps one
+    // place, with the higher level.
+    property var awards: []
+    // How many have been confirmed, to say which of how many comes.
+    property int awardsConfirmed: 0
+
+    function queueAwards(entries) {
+        var awards = page.awards.slice()
+        for (var i = 0; i < entries.length; ++i) {
+            var place = -1
+            // Not the one shown: that one stays until OK.
+            for (var j = awardOverlay.shown ? 1 : 0; j < awards.length; ++j) {
+                if (awards[j].key === entries[i].key)
+                    place = j
+            }
+            if (place === -1)
+                awards.push(entries[i])
+            else
+                awards[place] = entries[i]
+        }
+        page.awards = awards
+        showAward()
+    }
+
+    function showAward() {
+        if (!page.finished || page.awards.length === 0)
+            return
+        var total = page.awardsConfirmed + page.awards.length
+        awardOverlay.subheading = total > 1
+                //: Which of the achievements reached comes now, of how many
+                ? qsTr("%1 of %2").arg(page.awardsConfirmed + 1).arg(total) : ""
+        awardOverlay.show(page.awards[0])
+    }
+
+    // Only for an activity recorded here, never a replay. The levels its
+    // storing reached come before it is Finished, and wait for it.
+    Connections {
+        target: page.fileName === "" ? achievements : null
+        onAwarded: page.queueAwards(entries)
+    }
+
+    onFinishedChanged: showAward()
+
     function showWholeTrack() {
         var bounds = activity.bounds()
         if (bounds.width >= 0 && bounds.height >= 0)
@@ -148,6 +196,9 @@ Page {
         anchors.fill: parent
         contentHeight: height
         interactive: page.stored
+        // Faded out under an achievement altogether: even faint, the map
+        // reads through it as a band.
+        opacity: 1 - awardOverlay.opacity
 
         PullDownMenu {
             visible: page.stored
@@ -610,6 +661,21 @@ Page {
                 color: Theme.secondaryHighlightColor
                 text: qsTr("No position was good enough to record, so nothing was stored.")
             }
+        }
+    }
+
+    AchievementOverlay {
+        id: awardOverlay
+        anchors.fill: parent
+        confirmable: true
+        heading: qsTr("New achievement")
+        onConfirmed: {
+            page.awards = page.awards.slice(1)
+            ++page.awardsConfirmed
+            if (page.awards.length > 0)
+                page.showAward()
+            else
+                hide()
         }
     }
 }

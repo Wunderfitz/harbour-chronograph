@@ -17,8 +17,8 @@
     along with Chronograph. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef DISTANCEBYLANDCOVERREADER_H
-#define DISTANCEBYLANDCOVERREADER_H
+#ifndef TRACKSUMMARYREADER_H
+#define TRACKSUMMARYREADER_H
 
 #include <QString>
 #include <QThread>
@@ -26,17 +26,18 @@
 #include <vector>
 
 /**
- * Reads stored activities' GPX files for how far each went over each land
- * cover, away from the UI thread: a long activity's file takes a tenth of a
- * second and more on a phone, and this reads all of those whose distances
- * the database does not hold yet - the activities stored before it did.
- * Set the activities, start(), and read them back once finished() has come.
+ * Reads stored activities' GPX files for what the database does not hold of
+ * them yet - how far each went over each land cover, and how far it climbed
+ * - away from the UI thread: a long activity's file takes a tenth of a
+ * second and more on a phone, and this reads all of those stored before the
+ * database held either. Set the activities, start(), and read them back once
+ * finished() has come.
  */
-class DistanceByLandCoverReader : public QThread
+class TrackSummaryReader : public QThread
 {
     Q_OBJECT
     void run() Q_DECL_OVERRIDE {
-        readDistances();
+        readSummaries();
     }
 public:
     struct Entry {
@@ -46,10 +47,12 @@ public:
         bool read = false;
         /* Metres per LandCover::Kind; once read. */
         std::vector<double> distances;
+        /* Metres climbed; once read. */
+        double climb = 0;
     };
 
-    explicit DistanceByLandCoverReader(QObject *parent = nullptr);
-    ~DistanceByLandCoverReader() override;
+    explicit TrackSummaryReader(QObject *parent = nullptr);
+    ~TrackSummaryReader() override;
 
     /* Only while not running. */
     void setEntries(const std::vector<Entry> &entries);
@@ -57,9 +60,9 @@ public:
     const std::vector<Entry> &entries() const;
 
 private:
-    void readDistances();
+    void readSummaries();
 
     std::vector<Entry> m_entries;
 };
 
-#endif // DISTANCEBYLANDCOVERREADER_H
+#endif // TRACKSUMMARYREADER_H

@@ -122,6 +122,10 @@ Page {
             }
 
             AboutParagraph {
+                text: qsTr("Achievements, from the pulley menu, come in seven levels each, from Paper through Wood, Bronze, Silver, Gold and Platinum to Diamond: for the longest, the fastest and the farthest in all of each activity type, for the height climbed, the land gone through, the time, the weeks in a row and the steps. Driving counts for none of them. Levels an activity reaches are shown on its page once it is stopped. A level once reached stays, even should the activities that reached it be deleted.")
+            }
+
+            AboutParagraph {
                 text: qsTr("Steps are counted with the phone's accelerometer from the moment Chronograph starts, also while the display is off. Closing the app stops counting.")
             }
 

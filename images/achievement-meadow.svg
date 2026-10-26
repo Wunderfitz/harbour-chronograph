@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copyright (C) 2026 Sebastian J. Wolf and other contributors
+
+    This file is part of Chronograph.
+
+    Chronograph is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Chronograph is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Chronograph. If not, see <http://www.gnu.org/licenses/>.
+-->
+<!--
+    Meadows and parks, for the achievements: grass and a flower. White on
+    transparent: Silica's Icon tints it with the level's colour.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <g fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 58 Q10 46 6 36"/>
+    <path d="M14 58 Q14 44 22 36"/>
+    <path d="M22 58 Q20 50 14 46"/>
+    <path d="M44 58 L44 30"/>
+    <path d="M44 48 Q52 48 56 40 Q48 40 44 46"/>
+    <circle cx="44" cy="18" r="5"/>
+    <path d="M44 7 L44 9 M44 27 L44 29 M33 18 L35 18 M53 18 L55 18 M36.2 10.2 L37.6 11.6 M50.4 24.4 L51.8 25.8 M36.2 25.8 L37.6 24.4 M50.4 11.6 L51.8 10.2"/>
+    <path d="M4 58 L60 58"/>
+  </g>
+</svg>

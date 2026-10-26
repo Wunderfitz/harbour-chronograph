@@ -12,13 +12,14 @@ PKGCONFIG += keepalive
 
 SOURCES += \
     src/main.cpp \
+    src/AchievementCatalogue.cpp \
+    src/Achievements.cpp \
     src/Activity.cpp \
     src/AutoPause.cpp \
     src/ActivityHistory.cpp \
     src/ActivityStatistics.cpp \
     src/ChartLine.cpp \
     src/Database.cpp \
-    src/DistanceByLandCoverReader.cpp \
     src/Gpx.cpp \
     src/LandCover.cpp \
     src/LandCoverReader.cpp \
@@ -31,16 +32,18 @@ SOURCES += \
     src/TrackChart.cpp \
     src/TrackFilter.cpp \
     src/TrackLine.cpp \
-    src/TrackReader.cpp
+    src/TrackReader.cpp \
+    src/TrackSummaryReader.cpp
 
 HEADERS += \
+    src/AchievementCatalogue.h \
+    src/Achievements.h \
     src/Activity.h \
     src/AutoPause.h \
     src/ActivityHistory.h \
     src/ActivityStatistics.h \
     src/ChartLine.h \
     src/Database.h \
-    src/DistanceByLandCoverReader.h \
     src/Gpx.h \
     src/LandCover.h \
     src/LandCoverReader.h \
@@ -53,13 +56,16 @@ HEADERS += \
     src/TrackChart.h \
     src/TrackFilter.h \
     src/TrackLine.h \
-    src/TrackReader.h
+    src/TrackReader.h \
+    src/TrackSummaryReader.h
 
 DISTFILES += \
     qml/harbour-chronograph.qml \
     qml/cover/CoverPage.qml \
     qml/components/AboutLink.qml \
     qml/components/AboutParagraph.qml \
+    qml/components/AchievementMedal.qml \
+    qml/components/AchievementOverlay.qml \
     qml/components/ActivityChart.qml \
     qml/components/ActivityStatisticsSection.qml \
     qml/components/ActivityValue.qml \
@@ -70,6 +76,7 @@ DISTFILES += \
     qml/components/TileMap.qml \
     qml/js/Units.js \
     qml/pages/AboutPage.qml \
+    qml/pages/AchievementsPage.qml \
     qml/pages/ActivityPage.qml \
     qml/pages/OverviewPage.qml \
     qml/pages/StatisticsPage.qml \
@@ -86,6 +93,7 @@ DISTFILES += \
     tests/tst_autopause.cpp \
     tests/tst_landcover.cpp \
     tests/tst_activityhistory.cpp \
+    tests/tst_achievements.cpp \
     tests/replay_recording.cpp \
     README.md \
     CLAUDE.md

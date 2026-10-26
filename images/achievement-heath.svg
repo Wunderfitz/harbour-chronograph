@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copyright (C) 2026 Sebastian J. Wolf and other contributors
+
+    This file is part of Chronograph.
+
+    Chronograph is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Chronograph is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Chronograph. If not, see <http://www.gnu.org/licenses/>.
+-->
+<!--
+    Heath, scrub and rock, for the achievements: a boulder and a shrub.
+    White on transparent: Silica's Icon tints it with the level's colour.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <g fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 56 L7 36 L19 22 L33 22 L42 36 L42 56"/>
+    <path d="M20 30 L25 38 L21 46"/>
+    <path d="M52 56 L52 36 M52 49 L60 40 M52 45 L45 37 M52 40 L57 29 M52 39 L47 29"/>
+    <path d="M2 56 L62 56"/>
+  </g>
+</svg>

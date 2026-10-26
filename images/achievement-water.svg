@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copyright (C) 2026 Sebastian J. Wolf and other contributors
+
+    This file is part of Chronograph.
+
+    Chronograph is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Chronograph is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Chronograph. If not, see <http://www.gnu.org/licenses/>.
+-->
+<!--
+    Water, for the achievements: three waves. White on transparent: Silica's
+    Icon tints it with the level's colour.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <g fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 20 Q11.5 13 18 20 T31 20 T44 20 T57 20"/>
+    <path d="M5 34 Q11.5 27 18 34 T31 34 T44 34 T57 34"/>
+    <path d="M5 48 Q11.5 41 18 48 T31 48 T44 48 T57 48"/>
+  </g>
+</svg>

@@ -9,7 +9,8 @@ it and deletes it again. It also counts steps with the phone's accelerometer fro
 moment the app starts, also while the display is off, and keeps the steps of
 each day in a local database. The main page lists the activities, newest
 first, above today's steps and those of the three days before; the cover shows
-today's.
+today's. A statistics page totals the activities, and achievements in seven
+levels, from Paper to Diamond, mark the milestones reached.
 
 Map data © OpenStreetMap contributors, under the Open Database License.
 

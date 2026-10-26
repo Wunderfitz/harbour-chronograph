@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copyright (C) 2026 Sebastian J. Wolf and other contributors
+
+    This file is part of Chronograph.
+
+    Chronograph is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Chronograph is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Chronograph. If not, see <http://www.gnu.org/licenses/>.
+-->
+<!--
+    Forest, for the achievements: two fir trees. White on transparent:
+    Silica's Icon tints it with the level's colour.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <g fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 6 L9 25 L14 25 L5 42 L35 42 L26 25 L31 25 Z"/>
+    <path d="M20 42 L20 56"/>
+    <path d="M47 18 L39 31 L43 31 L37 44 L57 44 L51 31 L55 31 Z"/>
+    <path d="M47 44 L47 56"/>
+    <path d="M4 58 L60 58"/>
+  </g>
+</svg>

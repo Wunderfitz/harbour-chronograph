@@ -74,6 +74,20 @@ const char *const kSchema[] = {
         "kind TEXT NOT NULL, "
         "distance REAL NOT NULL, "
         "PRIMARY KEY (type, kind))",
+    /* 7: the metres each activity climbed, NULL until known - for those
+     * stored before, until it has been read off their files. */
+    "ALTER TABLE activities ADD COLUMN climb REAL",
+    /* 8: the achievements, one row per category by its key: the level
+     * reached (1 to 7), the local date it was reached on as yyyy-MM-dd, the
+     * best value ever and the value the activities come to now, in the
+     * category's own unit. Levels are never lowered, even should the
+     * activities that reached them be deleted. */
+    "CREATE TABLE achievements ("
+        "category TEXT PRIMARY KEY NOT NULL, "
+        "level INTEGER NOT NULL, "
+        "reached TEXT NOT NULL, "
+        "best REAL NOT NULL, "
+        "current REAL NOT NULL)",
 };
 const int kSchemaVersion = int(sizeof(kSchema) / sizeof(kSchema[0]));
 

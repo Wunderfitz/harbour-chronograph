@@ -17,35 +17,35 @@
     along with Chronograph. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "DistanceByLandCoverReader.h"
+#include "TrackSummaryReader.h"
 
 #include "Gpx.h"
 #include "LandCover.h"
 #include "Track.h"
 
-DistanceByLandCoverReader::DistanceByLandCoverReader(QObject *parent)
+TrackSummaryReader::TrackSummaryReader(QObject *parent)
     : QThread(parent)
 {
 }
 
 /* Files still to read are given up, and read at the next start. */
-DistanceByLandCoverReader::~DistanceByLandCoverReader()
+TrackSummaryReader::~TrackSummaryReader()
 {
     requestInterruption();
     wait();
 }
 
-void DistanceByLandCoverReader::setEntries(const std::vector<Entry> &entries)
+void TrackSummaryReader::setEntries(const std::vector<Entry> &entries)
 {
     m_entries = entries;
 }
 
-const std::vector<DistanceByLandCoverReader::Entry> &DistanceByLandCoverReader::entries() const
+const std::vector<TrackSummaryReader::Entry> &TrackSummaryReader::entries() const
 {
     return m_entries;
 }
 
-void DistanceByLandCoverReader::readDistances()
+void TrackSummaryReader::readSummaries()
 {
     for (Entry &entry : m_entries) {
         if (isInterruptionRequested())
@@ -54,5 +54,6 @@ void DistanceByLandCoverReader::readDistances()
         QString type;
         entry.read = Gpx::read(entry.filePath, &track, &type);
         entry.distances = track.distanceByLandCover(int(track.size()) - 1, LandCover::KindCount);
+        entry.climb = track.stateAt(track.duration()).elevationGain;
     }
 }

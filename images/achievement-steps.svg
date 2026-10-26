@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copyright (C) 2026 Sebastian J. Wolf and other contributors
+
+    This file is part of Chronograph.
+
+    Chronograph is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Chronograph is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Chronograph. If not, see <http://www.gnu.org/licenses/>.
+-->
+<!--
+    Steps, for the achievements: two footprints. White on transparent:
+    Silica's Icon tints it with the level's colour.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <g fill="#ffffff">
+    <ellipse cx="0" cy="0" rx="7.5" ry="11" transform="translate(20 34) rotate(-8)"/>
+    <ellipse cx="0" cy="0" rx="5.5" ry="5" transform="translate(22 53) rotate(-8)"/>
+    <ellipse cx="0" cy="0" rx="7.5" ry="11" transform="translate(44 14) rotate(8)"/>
+    <ellipse cx="0" cy="0" rx="5.5" ry="5" transform="translate(42 33) rotate(8)"/>
+  </g>
+</svg>

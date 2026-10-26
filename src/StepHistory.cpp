@@ -132,6 +132,7 @@ void StepHistory::save()
         return;
     }
     m_unsaved = false;
+    emit saved();
 }
 
 void StepHistory::checkDate()

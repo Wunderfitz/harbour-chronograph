@@ -23,9 +23,11 @@
  * read from other apps, and ActivityHistory's list, which is read a page at a
  * time, newest first, takes new activities at the top and lets them be deleted
  * again and their files rewritten - and names the activity being recorded.
- * Also each activity's distance over each land cover, stored with it or read
- * off the files of activities from before, and ActivityStatistics, which
- * works the totals out from both. Every track here is generated.
+ * Also each activity's distance over each land cover and its climb, stored
+ * with it or read off the files of activities from before, ActivityStatistics,
+ * which works the totals out from both, and Achievements, which works out the
+ * levels from them and the steps and keeps them. Every track here is
+ * generated.
  *
  * Like tst_stephistory this needs Qt with QtSql and its SQLite driver, so it
  * runs in the build engine against the i486 target, from that target's build
@@ -34,19 +36,22 @@
  *   cd ../build-harbour-chronograph-4.6.0.13-i486
  *   sfdk -c target=SailfishOS-4.6.0.13-i486 build-shell sh -c '
  *       S=../harbour-chronograph B=../build-tst_activityhistory && mkdir -p $B &&
- *       for h in ActivityHistory ActivityStatistics DistanceByLandCoverReader; do
+ *       for h in ActivityHistory ActivityStatistics Achievements TrackSummaryReader; do
  *           moc $S/src/$h.h -o $B/moc_$h.cpp || exit 1; done &&
  *       g++ -std=c++11 -Wall -Wextra -fPIC -I$S/src \
  *           $(pkg-config --cflags Qt5Sql | sed "s/-I/-isystem /g") \
  *           $S/tests/tst_activityhistory.cpp $S/src/ActivityHistory.cpp \
- *           $S/src/ActivityStatistics.cpp $S/src/DistanceByLandCoverReader.cpp \
+ *           $S/src/ActivityStatistics.cpp $S/src/Achievements.cpp \
+ *           $S/src/AchievementCatalogue.cpp $S/src/TrackSummaryReader.cpp \
  *           $S/src/Database.cpp $S/src/Gpx.cpp $S/src/LandCover.cpp $S/src/Track.cpp \
  *           $B/moc_ActivityHistory.cpp $B/moc_ActivityStatistics.cpp \
- *           $B/moc_DistanceByLandCoverReader.cpp $(pkg-config --libs Qt5Sql) \
- *           -o $B/tst_activityhistory &&
+ *           $B/moc_Achievements.cpp $B/moc_TrackSummaryReader.cpp \
+ *           $(pkg-config --libs Qt5Sql) -o $B/tst_activityhistory &&
  *       $B/tst_activityhistory'
  */
 
+#include "AchievementCatalogue.h"
+#include "Achievements.h"
 #include "ActivityHistory.h"
 #include "ActivityStatistics.h"
 #include "Database.h"
@@ -132,6 +137,18 @@ int landCoverRows(const Database &database, const QString &fileName)
                                            "WHERE a.file = '%1'").arg(fileName));
 }
 
+/* Metres climbed stored for an activity, named by its file; -1 for none,
+ * -2 for NULL. */
+double climbOf(const Database &database, const QString &fileName)
+{
+    QSqlQuery query(database.connection());
+    query.prepare(QStringLiteral("SELECT climb FROM activities WHERE file = :file"));
+    query.bindValue(QStringLiteral(":file"), fileName);
+    if (!query.exec() || !query.next())
+        return -1;
+    return query.value(0).isNull() ? -2 : query.value(0).toDouble();
+}
+
 /* Runs the event loop until the history says its activities changed, or
  * `timeout` ms have passed; whether it did. */
 bool waitForChanges(const ActivityHistory &history, int timeout = 10000)
@@ -194,6 +211,31 @@ double landCoverIn(const QVariantMap &statistics, const QString &kind)
             return entry.toMap().value(QStringLiteral("distance")).toDouble();
     }
     return -1;
+}
+
+/* One entry of Achievements::read(), by key; an empty map for none. */
+QVariantMap achievementOf(const QVariantList &achievements, const QString &key)
+{
+    for (const QVariant &entry : achievements) {
+        if (entry.toMap().value(QStringLiteral("key")).toString() == key)
+            return entry.toMap();
+    }
+    return QVariantMap();
+}
+
+int levelOf(const QVariantList &achievements, const QString &key)
+{
+    return achievementOf(achievements, key).value(QStringLiteral("level")).toInt();
+}
+
+/* A day's steps put straight into their table. */
+void storeSteps(const Database &database, const QString &day, int steps)
+{
+    QSqlQuery query(database.connection());
+    query.prepare(QStringLiteral("INSERT OR REPLACE INTO daily_steps (day, steps) VALUES (:day, :steps)"));
+    query.bindValue(QStringLiteral(":day"), day);
+    query.bindValue(QStringLiteral(":steps"), steps);
+    query.exec();
 }
 
 /* A run north at 3 m/s from `start`, one fix a second, with a pause of
@@ -260,7 +302,7 @@ void testMigration(const QString &directory)
 
     Database database(file);
     expect("a database from 0.2 opens", database.isOpen());
-    expectEqual("and is migrated to schema version 6", scalar(database, QStringLiteral("PRAGMA user_version")), 6);
+    expectEqual("and is migrated to schema version 8", scalar(database, QStringLiteral("PRAGMA user_version")), 8);
     expectEqual("its steps are kept", scalar(database, QStringLiteral("SELECT steps FROM daily_steps")), 5000);
     expectEqual("and it has an empty activities table",
                 scalar(database, QStringLiteral("SELECT COUNT(*) FROM activities")), 0);
@@ -269,6 +311,7 @@ void testMigration(const QString &directory)
     expectEqual("and empty ones for the statistics",
                 scalar(database, QStringLiteral("SELECT COUNT(*) FROM statistics"))
                 + scalar(database, QStringLiteral("SELECT COUNT(*) FROM statistics_land_cover")), 0);
+    expectEqual("and the achievements", scalar(database, QStringLiteral("SELECT COUNT(*) FROM achievements")), 0);
 }
 
 void testGpxRoundTrip(const QString &directory)
@@ -488,10 +531,15 @@ void testLandCoverRows(const QString &directory)
     expectEqual("nothing for the land it did not cross", landCoverRows(database, name), 3);
     expect("the test crosses all three", distances[LandCover::Forest] > 0 && distances[LandCover::Water] > 0
                                          && distances[LandCover::Unknown] > 0);
+    const double climb = track.stateAt(track.duration()).elevationGain;
+    expectEqual("its climb is stored with it", climbOf(database, name), climb, 0.001);
+    expect("the test climbs", climb > 0);
 
     setLandCover(&track, 0, track.size(), LandCover::Grassland);
+    QSqlQuery(database.connection()).exec(QStringLiteral("UPDATE activities SET climb = NULL"));
     history.rewrite(name, QStringLiteral("walking"), track);
     expect("a rewrite says so", changes == 2);
+    expectEqual("and stores the climb again", climbOf(database, name), climb, 0.001);
     expectEqual("and replaces it", landCoverOf(database, name, QStringLiteral("grassland")),
                 distancesOf(track)[LandCover::Grassland], 0.001);
     expectEqual("the land not known keeps its row at 0", landCoverOf(database, name, QString()), 0);
@@ -520,6 +568,11 @@ void testMissingLandCover(const QString &directory)
     storeOld(database, QStringLiteral("walking"), kStartTime + 3600, 123, QStringLiteral("gone.gpx"));
     Gpx::write(QDir(gpx).filePath(QStringLiteral("deleted.gpx")), track, QStringLiteral("running"));
     storeOld(database, QStringLiteral("running"), kStartTime + 7200, 456, QStringLiteral("deleted.gpx"));
+    // One that has its land cover but not its climb, as 0.3's last ones.
+    Gpx::write(QDir(gpx).filePath(QStringLiteral("summed.gpx")), track, QStringLiteral("running"));
+    storeOld(database, QStringLiteral("running"), kStartTime + 9000, 789, QStringLiteral("summed.gpx"));
+    QSqlQuery(database.connection()).exec(QStringLiteral(
+            "INSERT INTO activity_land_cover SELECT id, 'water', 789 FROM activities WHERE file = 'summed.gpx'"));
 
     ActivityHistory history(&database, gpx);
     // Before the files are read.
@@ -534,7 +587,17 @@ void testMissingLandCover(const QString &directory)
     expectEqual("one whose file is gone counts as not known",
                 landCoverOf(database, QStringLiteral("gone.gpx"), QString()), 123);
     expectEqual("one deleted meanwhile is not brought back",
-                scalar(database, QStringLiteral("SELECT COUNT(*) FROM activity_land_cover")), 3);
+                scalar(database, QStringLiteral("SELECT COUNT(*) FROM activity_land_cover")), 4);
+    expectEqual("its climb is read along", climbOf(database, QStringLiteral("old.gpx")),
+                track.stateAt(track.duration()).elevationGain, 0.01);
+    expectEqual("one whose file is gone climbed nothing", climbOf(database, QStringLiteral("gone.gpx")), 0);
+    expectEqual("one with its land cover has its climb read",
+                climbOf(database, QStringLiteral("summed.gpx")), track.stateAt(track.duration()).elevationGain,
+                0.01);
+    expectEqual("and keeps its land cover as it was",
+                landCoverOf(database, QStringLiteral("summed.gpx"), QStringLiteral("water")), 789);
+    expectEqual("without one of the land not known",
+                landCoverOf(database, QStringLiteral("summed.gpx"), QString()), -1);
 
     ActivityHistory again(&database, gpx);
     expect("a restart reads none again",
@@ -657,6 +720,150 @@ void testStatisticsCost(const QString &directory)
     expectEqual("their forest", landCoverIn(statisticsOf(read, QString()), QStringLiteral("forest")), 2e6, 0.01);
 }
 
+void testAchievements(const QString &directory)
+{
+    const QString gpx = QDir(directory).filePath(QStringLiteral("gpx-achievements"));
+    Database database(QDir(directory).filePath(QStringLiteral("achievements.db")));
+    ActivityHistory history(&database, gpx);
+    Achievements achievements(&database);
+    int updates = 0;
+    QObject::connect(&history, &ActivityHistory::activitiesChanged, &achievements, &Achievements::update);
+    QObject::connect(&achievements, &Achievements::updated, [&updates]() { ++updates; });
+    QVariantList awarded;
+    int awards = 0;
+    QObject::connect(&achievements, &Achievements::awarded, [&awarded, &awards](const QVariantList &entries) {
+        awarded = entries;
+        ++awards;
+    });
+
+    QVariantList read = achievements.read();
+    expectEqual("every category before anything is stored", read.size(),
+                double(AchievementCatalogue::categoryCount()));
+    expectText("in the catalogue's order", read.value(0).toMap().value(QStringLiteral("key")).toString(),
+               QString::fromLatin1(AchievementCatalogue::category(0).key));
+    expectEqual("with its thresholds", read.value(0).toMap().value(QStringLiteral("thresholds")).toList().size(),
+                AchievementCatalogue::kLevels);
+    expectEqual("and no level", levelOf(read, QStringLiteral("running-longest")), 0);
+
+    // 1.2 km, 400 s.
+    Track run = makeTrack(kStartTime, 400);
+    const double distance = run.stateAt(run.duration()).distance;
+    const QString name = history.add(QStringLiteral("running"), run);
+    expectEqual("worked out with the activity stored", updates, 1);
+    expectEqual("the levels it reached are announced, within the storing", awards, 1);
+    expectEqual("with the new level", levelOf(awarded, QStringLiteral("running-longest")), 1);
+    expectEqual("the first activity among them", levelOf(awarded, QStringLiteral("activities-count")), 1);
+    expect("and none it did not reach", achievementOf(awarded, QStringLiteral("walking-longest")).isEmpty()
+                                        && achievementOf(awarded, QStringLiteral("streak-weeks")).isEmpty());
+    expectEqual("with its value", achievementOf(awarded, QStringLiteral("running-longest"))
+                .value(QStringLiteral("best")).toDouble(), distance, 0.01);
+    read = achievements.read();
+    QVariantMap longest = achievementOf(read, QStringLiteral("running-longest"));
+    expectEqual("the first run reaches the first level", longest.value(QStringLiteral("level")).toInt(), 1);
+    expectEqual("with its distance as the best", longest.value(QStringLiteral("best")).toDouble(), distance, 0.01);
+    expectEqual("and as the value now", longest.value(QStringLiteral("current")).toDouble(), distance, 0.01);
+    expectText("reached on the day it was run", longest.value(QStringLiteral("reached")).toString(),
+               QDateTime::fromMSecsSinceEpoch(qint64(kStartTime) * 1000, Qt::UTC).toLocalTime().date()
+               .toString(QStringLiteral("yyyy-MM-dd")));
+    expectEqual("the first activity", levelOf(read, QStringLiteral("activities-count")), 1);
+    expectEqual("not a walk", levelOf(read, QStringLiteral("walking-longest")), 0);
+    QVariantMap pace = achievementOf(read, QStringLiteral("running-pace"));
+    expect("nor the fastest, too short to count", pace.value(QStringLiteral("level")).toInt() == 0
+                                                  && pace.value(QStringLiteral("current")).toDouble() == 0);
+    expectText("nothing reached, no date", pace.value(QStringLiteral("reached")).toString(), QString());
+
+    achievements.update();
+    expectEqual("worked out again with nothing new, nothing is written", updates, 1);
+    expectEqual("nor announced", awards, 1);
+
+    storeSteps(database, QStringLiteral("2026-10-15"), 3000);
+    storeSteps(database, QStringLiteral("2026-10-16"), 12000);
+    achievements.update();
+    expectEqual("the steps are worked out too", updates, 2);
+    expect("and their levels announced", awards == 2 && levelOf(awarded, QStringLiteral("steps-day")) == 4
+                                         && levelOf(awarded, QStringLiteral("steps-total")) == 1
+                                         && awarded.size() == 2);
+    read = achievements.read();
+    expectEqual("the best day's", levelOf(read, QStringLiteral("steps-day")), 4);
+    expectText("dated by that day", achievementOf(read, QStringLiteral("steps-day")).value(QStringLiteral("reached"))
+               .toString(), QStringLiteral("2026-10-16"));
+    expectEqual("and all days'", achievementOf(read, QStringLiteral("steps-total")).value(QStringLiteral("current"))
+                .toDouble(), 15000);
+
+    history.remove(name);
+    expectEqual("worked out again as the activity is deleted", updates, 3);
+    expectEqual("which announces nothing", awards, 2);
+    read = achievements.read();
+    longest = achievementOf(read, QStringLiteral("running-longest"));
+    expectEqual("its level stays", longest.value(QStringLiteral("level")).toInt(), 1);
+    expectEqual("and the best", longest.value(QStringLiteral("best")).toDouble(), distance, 0.01);
+    expectEqual("though nothing is run now", longest.value(QStringLiteral("current")).toDouble(), 0);
+    expectEqual("the activity still counted", levelOf(read, QStringLiteral("activities-count")), 1);
+
+    history.add(QStringLiteral("driving"), makeTrack(kStartTime + 86400, 2000));
+    read = achievements.read();
+    expectEqual("a drive counts for nothing", achievementOf(read, QStringLiteral("activities-count"))
+                .value(QStringLiteral("current")).toInt(), 0);
+
+    Achievements reopened(&database);
+    expect("a restart reads them as stored", reopened.read() == read);
+
+    const QString blocked = QDir(directory).filePath(QStringLiteral("achievements-blocked.db"));
+    QDir().mkpath(blocked);
+    Database none(blocked);
+    Achievements without(&none);
+    without.update();
+    read = without.read();
+    expect("without a database every category is there, at no level",
+           read.size() == int(AchievementCatalogue::categoryCount())
+           && levelOf(read, QStringLiteral("running-longest")) == 0);
+}
+
+/* What working them out costs, with more activities than anyone records and
+ * three years of steps. */
+void testAchievementsCost(const QString &directory)
+{
+    Database database(QDir(directory).filePath(QStringLiteral("achievements-cost.db")));
+    const char *const types[] = { "running", "walking", "cycling", "rowing", "driving" };
+    const char *const kinds[] = { "forest", "farmland", "builtup", "" };
+    database.connection().transaction();
+    QSqlQuery query(database.connection());
+    for (int i = 0; i < 2000; ++i) {
+        storeOld(database, QString::fromLatin1(types[i % 5]), kStartTime + i * 43200.0, 4000,
+                 QStringLiteral("cost.gpx"));
+        for (const char *kind : kinds)
+            query.exec(QStringLiteral("INSERT INTO activity_land_cover VALUES (%1, '%2', 1000)")
+                       .arg(i + 1).arg(QString::fromLatin1(kind)));
+    }
+    query.exec(QStringLiteral("UPDATE activities SET climb = 20"));
+    const QDate first(2023, 10, 1);
+    for (int day = 0; day < 1100; ++day)
+        storeSteps(database, first.addDays(day).toString(QStringLiteral("yyyy-MM-dd")), 8000);
+    database.connection().commit();
+
+    Achievements achievements(&database);
+    QElapsedTimer timer;
+    timer.start();
+    achievements.update();
+    const qint64 first_ = timer.elapsed();
+    storeSteps(database, first.addDays(1099).toString(QStringLiteral("yyyy-MM-dd")), 9000);
+    timer.restart();
+    achievements.update();
+    const qint64 again = timer.elapsed();
+    timer.restart();
+    const QVariantList read = achievements.read();
+    std::printf("INFO 2000 activities, 1100 days: worked out in %lld ms, again after a day's steps in %lld ms, "
+                "read in %lld ms\n", first_, again, qint64(timer.elapsed()));
+    expectEqual("1600 activities counted, drives aside",
+                achievementOf(read, QStringLiteral("activities-count")).value(QStringLiteral("current")).toInt(),
+                1600);
+    expectEqual("their forest", achievementOf(read, QStringLiteral("terrain-forest"))
+                .value(QStringLiteral("current")).toDouble(), 1.6e6, 0.01);
+    expectEqual("weeks in a row, every one of them",
+                achievementOf(read, QStringLiteral("streak-weeks")).value(QStringLiteral("current")).toInt(),
+                std::floor(2000 / 14.0), 2);
+}
+
 void testPaging(const QString &directory)
 {
     Database database(QDir(directory).filePath(QStringLiteral("paging.db")));
@@ -756,6 +963,8 @@ int main(int argc, char *argv[])
     testMissingLandCover(directory.path());
     testStatistics(directory.path());
     testStatisticsCost(directory.path());
+    testAchievements(directory.path());
+    testAchievementsCost(directory.path());
     testPaging(directory.path());
     testNoDatabase(directory.path());
     testRecording(directory.path());

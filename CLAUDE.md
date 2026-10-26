@@ -16,7 +16,11 @@ one is recorded, the cover shows it and pauses or resumes it. Auto-pause
 pauses and resumes a recording on its own: standing, too fast for the type,
 and after half an hour paused it stops it. A statistics page, from the main
 page's pulley, totals the distance, the time and the land cover of all
-activities together and of each type.
+activities together and of each type. An achievements page, from the same
+pulley, shows 26 categories of achievement - the longest, fastest and
+farthest per type, the climb, the land cover, the time, the weeks in a row,
+the steps - each with seven levels from Paper to Diamond, kept for good once
+reached.
 
 ## Ground rules
 
@@ -179,10 +183,16 @@ The same split as for steps:
   it the map's cached tiles, in `LandCoverReader`'s thread
   (`src/LandCoverReader.*`). See [Land cover](#land-cover-read-off-the-maps-tiles).
 - `ActivityStatistics` (`src/ActivityStatistics.*`) works out the statistics
-  page's totals and keeps them; `DistanceByLandCoverReader`
-  (`src/DistanceByLandCoverReader.*`) reads the land cover of activities
-  from before off their files, in a thread. See [The
+  page's totals and keeps them; `TrackSummaryReader`
+  (`src/TrackSummaryReader.*`) reads the land cover and the climb of
+  activities from before off their files, in a thread. See [The
   statistics](#the-statistics-worked-out-as-activities-change-read-when-shown).
+- `AchievementCatalogue` (`src/AchievementCatalogue.*`) is the achievements'
+  categories, their levels and how far the activities and the steps have
+  come, in plain C++11 without Qt; `tests/tst_achievements.cpp` drives it on
+  the host. `Achievements` (`src/Achievements.*`) reads the database for it
+  and keeps the levels. See [The
+  achievements](#the-achievements-seven-levels-kept-for-good).
 
 ### Positioning: QtPositioning in C++
 
@@ -563,10 +573,12 @@ only reads them.
   reading a single GPX file. The land not known always has its row, if only
   with 0 - any row says the activity has been summed up.
 - **Activities from before** (0.3 files on phones) have no rows. As the
-  history is made it reads those files in a `DistanceByLandCoverReader`
+  history is made it reads those files in a `TrackSummaryReader`
   thread, writes the rows of the ones still stored and still without, and
   says the activities changed; a file that cannot be read counts as land not
-  known, so it is not read at every start. Until then the statistics count
+  known, so it is not read at every start. The same thread reads the climb
+  of every activity whose row has none (see [The
+  achievements](#the-achievements-seven-levels-kept-for-good)). Until then the statistics count
   their whole distance as not known, so the kinds always add up.
 - **The land not known** is the activities' rows with an empty key plus the
   distance of any still waiting; the page lists it last, like an activity's
@@ -581,6 +593,126 @@ only reads them.
   left on the activity page), and the land cover below them.
 - Not shown, though stored: the number of activities (it decides which types
   get a section).
+
+### The achievements: seven levels, kept for good
+
+Decided 2026-10-26, at the project owner's request: achievements for
+milestones, in categories with stages like medals or wedding anniversaries,
+starting very easy and ending very hard; worked out whenever an activity is
+stored and kept in the database, **never taken away**, even when activities
+are deleted; a page of their own from the main page's pulley, each category
+with a pictogram, greyed out until reached, else tinted in its level's hue
+with the level named below; a tap shows what it measures, what has been
+achieved and what the next level takes. Extensible: more categories will
+come. The categories themselves were left to Claude.
+
+- **Seven levels**, by the order of a wedding's anniversaries and a
+  podium's medals: Paper, Wood, Bronze, Silver, Gold, Platinum, Diamond.
+  Every category has all seven, so the page, the table and the hues are the
+  same for all. `app.achievementLevelName()` and `app.achievementLevelColor()`
+  name and colour them, a light hue on a dark ambience, a darker one on a
+  light ambience.
+- **26 categories in 8 groups**, in `AchievementCatalogue.cpp`'s
+  `kCategories`, thresholds and all: per type that a body moves - running,
+  walking, cycling, rowing - the longest single activity, the distance in
+  all, and the fastest average (pace for running and walking, speed for
+  cycling and rowing) over an activity of at least 5, 3, 10 and 2 km;
+  the biggest climb in one activity and the climb in all; the distance in
+  all over forest, meadows and parks, farmland, heath and rock, water and
+  built-up land; the longest activity and the time in all; the number of
+  activities and the most calendar weeks in a row (Monday to Sunday, ISO)
+  with one; the most steps in a day and the steps in all. Paper comes with
+  the first try, or nearly; Diamond is a 100 km run, 3:20 per km over 5 km,
+  40,000 km cycled, 100 km of climb, two years of weeks in a row, 10
+  million steps. The single distances stop at 21 and 42 km rather than a
+  marathon's 21.1 and 42.2, as a receiver's distance may fall a little
+  short of a course. None of it is tuned on real activities.
+- **Driving counts for nothing**: no category of its own, and left out of
+  every one that takes all types. Rowing's land is mostly water; a run over
+  a bridge counts as the road on it, as for the land cover.
+- **Worked out whole, as the statistics are**: `Achievements::update()`
+  reads every activity (type, local day of its start, duration, distance,
+  climb), their land cover and every day's steps, and `AchievementCatalogue::
+  evaluate()` goes through them oldest first - so each level also gets the
+  **day it was reached**, that of the activity or the day that took it
+  there, even for history from before the achievements.
+- **Never taken away**: `achievements` keeps per category the level, the
+  day it was reached, the best value ever and the value now.
+  `AchievementCatalogue::merge()` keeps the higher of the level stored and
+  the level the activities come to, and the higher best value; a level
+  that rises is dated anew. So deleting the activity that reached a level
+  keeps the level and its value, while the value now drops - and the next
+  level needs the value now to reach it. Only rows that changed are
+  written, in one transaction.
+- **When**: `ActivityHistory::activitiesChanged()` (stored, deleted, or its
+  land cover or climb learnt), `StepHistory::saved()` (every save of
+  today's steps - 30 s after a walk, every 5 minutes during one), and once,
+  queued, as the app starts - so a category added in a later version is
+  worked out over everything stored before, and so are the steps of the
+  last run's final save. The page reads them as it opens and again on
+  `updated()`.
+- **Cost**: 2,000 activities, four land cover rows each, and 1,100 days of
+  steps took 10 ms in the build engine and **13-14 ms on the Jolla Phone
+  (2026)** (measured 2026-10-26 with `tst_activityhistory` built for
+  aarch64); the levels themselves take under a millisecond, the rest is
+  reading. So it stays on the UI thread, like the statistics. Reading was
+  twice that until SQLite worked out the local days (`julianday(start,
+  'localtime')`) instead of `QDateTime`, and the queries were made
+  forward-only.
+- **The climb of each activity** went into `activities` for this (`climb`,
+  schema 7), written with the row and at every rewrite; NULL until known.
+  Activities from before have it read off their files, in the same thread
+  and at the same first start as their land cover; a file that cannot be
+  read climbed 0. Until then they count as 0. The receiver's wander adds
+  a little climb to every activity (see [Smoothing the
+  fixes](#smoothing-the-fixes-a-kalman-filter-per-activity-type)), so the
+  climb's lowest levels come a little early.
+- **The page** (`AchievementsPage.qml`): a `PageHeader` with how many
+  categories have a level, then per group a `SectionHeader` and a grid,
+  three across in portrait, as many of that width as fit in landscape.
+  Each tile: the medal (`AchievementMedal.qml` - a round medal in the
+  level's hue, the pictogram on it, a badge at its lower right for a total
+  (sum sign) or the fastest (flash)), the name on two lines, the level or
+  "Not yet". Greyed out without a level.
+- **The overlay** (`AchievementOverlay.qml`), Fernschreiber's idiom - the
+  page dimmed and the content over it, a tap anywhere closes it (with
+  `confirmable`, only its OK button does, for the notice below): the medal
+  large, the name, the level, what it measures, then the value achieved and
+  the day it was reached, the value so far (where there is no level yet, or
+  deletions have taken the value now below the best), and the next level
+  with what it needs - or that this is the highest.
+- **Pictograms**: `images/achievement-<name>.svg`, 64 units, white on
+  transparent like the activity types', drawn for this; the per-type
+  categories reuse the activity type's. `Icon` tints them with the level's
+  hue. The badges, `achievement-badge-total.svg` and `-fastest.svg`, are
+  tinted black on a dark ambience and white on a light one, so they stand
+  out of the hue.
+- **Adding a category**: an entry in `kCategories` (a new kind of measure
+  also a `Metric`, worked out in `evaluate()`), its name and description in
+  `app.achievementName()` and `app.achievementDescription()`, a pictogram
+  if none fits, and a German translation. Keys are stored: never rename
+  one, and a category taken out leaves a harmless row. The next start
+  works it out over everything stored.
+- **The notice after an activity** (decided 2026-10-27, at the project
+  owner's request): the levels reached are shown on the activity page
+  after the stop, in the same overlay, one at a time, each **confirmed with
+  an OK button** - a tap elsewhere does nothing, unlike on the achievements
+  page. `Achievements::awarded()` names the categories whose level an
+  update raised, as `read()` has them. It comes within
+  `ActivityHistory::add()`, so before the activity is `Finished`: the page
+  queues what it hears from the moment it records (a replay listens to
+  nothing) and shows the queue once it is finished, with "New achievement"
+  over it and "1 of 3" where there are more. Also queued: levels reached
+  while recording (the steps) and after the stop while the page is open
+  (the land cover learnt, then rewritten). A category reached again before
+  its turn keeps its place with the higher level; a jump of several levels
+  shows only the last. The page behind is faded out, as the map would
+  read through.
+- **Not shown**: levels reached with no recording page open - steps
+  saved, the climb of older activities read at the first start - and those
+  of an activity stored by leaving its page (the page is gone). They are
+  on the achievements page as ever.
+- **Not done**, as not asked for: achievements for driving.
 
 ### Smoothing the fixes: a Kalman filter per activity type
 
@@ -775,8 +907,10 @@ the OS; like the sensorfw plugin it is not `Require`d, as Harbour would refuse i
 - **The classes that use a table own its queries**: `daily_steps` belongs to
   `StepHistory`, `activities` and `activity_land_cover` to `ActivityHistory`,
   `statistics` and `statistics_land_cover` to `ActivityStatistics` - which
-  reads `ActivityHistory`'s two to fill them, and nothing else does. Further
-  features get their own class and their own table.
+  reads `ActivityHistory`'s two to fill them - and `achievements` to
+  `Achievements`, which reads those two and `daily_steps`. Nothing else
+  reads another's tables. Further features get their own class and their
+  own table.
 - **`daily_steps`**: `day TEXT PRIMARY KEY` (the local date, `yyyy-MM-dd`, so
   text order is date order) and `steps INTEGER`, the whole day's count. Rows are
   written with `INSERT OR REPLACE`, which is fine while the count is the only
@@ -809,6 +943,14 @@ the OS; like the sensorfw plugin it is not `Require`d, as Harbour would refuse i
   together), `activities`, `duration` and `distance`; **`statistics_land_cover`**
   (schema 6): `type`, `kind` and `distance`. Derived, emptied and refilled
   at every change.
+- **`activities.climb`** (schema 7): metres climbed, as the page's
+  elevation gain at the end; NULL until known. The first column added to a
+  table rather than a table added: `ALTER TABLE ... ADD COLUMN`, which
+  SQLite does in place.
+- **`achievements`** (schema 8): `category` (the key in
+  `AchievementCatalogue`), `level` (0 to 7), `reached` (the local date,
+  `yyyy-MM-dd`, empty at 0), `best` and `current`, in the category's unit.
+  Written with `INSERT OR REPLACE`, never deleted.
 - **The GPX files** live in `gpx/` beside the database, named after the start
   in UTC in ISO 8601's basic format, `20261016T073000Z.gpx`: sorts by time,
   means the same in every time zone, and has no colons, so it survives being
@@ -849,7 +991,10 @@ src/AutoPause.*               when a recording pauses, resumes and stops on its 
 src/Activity.*                positioning, recording and replay: the activity page's facade
 src/ActivityHistory.*         the activities table as a paged list model, and the GPX files
 src/ActivityStatistics.*      the statistics page's totals, worked out and kept
-src/DistanceByLandCoverReader.* the land cover of older activities off their files, in a thread
+src/TrackSummaryReader.*      the land cover and climb of older activities off their files,
+                              in a thread
+src/AchievementCatalogue.*    the achievements' categories, levels and progress, Qt-free
+src/Achievements.*            the achievements' levels, worked out and kept for good
 src/Gpx.*                     Track to and from GPX 1.1
 src/TrackReader.*             reads a stored activity's GPX file, in a thread of its own
 src/TrackLine.*               the route, painted over the map
@@ -865,27 +1010,31 @@ tests/tst_trackfilter.cpp     host-side checks for TrackFilter, raw against filt
 tests/tst_trackchart.cpp      host-side checks for TrackChart
 tests/tst_autopause.cpp       host-side checks for AutoPause
 tests/tst_landcover.cpp       host-side checks for LandCover, on generated tiles
+tests/tst_achievements.cpp    host-side checks for AchievementCatalogue
 tests/tst_stephistory.cpp     Database and StepHistory, run in the build engine
-tests/tst_activityhistory.cpp the migration, Gpx, ActivityHistory and ActivityStatistics,
-                              in the build engine
+tests/tst_activityhistory.cpp the migration, Gpx, ActivityHistory, ActivityStatistics and
+                              Achievements, in the build engine
 tests/replay_recording.cpp    replays a phone recording through StepDetector
 tests/raw-data/               personal data, git-ignored, local only: the recordings,
                               their ground truth (README), parts, FINDINGS.md
-qml/harbour-chronograph.qml   ApplicationWindow; the activity types and the land covers, named
+qml/harbour-chronograph.qml   ApplicationWindow; the activity types, the land covers and the
+                              achievements, named
 qml/pages/OverviewPage        the activities above, the steps in the lower third; pulley menu
 qml/pages/ActivityPage        record or replay one activity: values, charts or land cover, map,
                               control;
                               pulley to delete a stored one
 qml/pages/StatisticsPage      distance, time and land cover of all activities, then per type
+qml/pages/AchievementsPage    every achievement by group, its level; a tap shows the details
 qml/pages/AboutPage           logo, version, what to know, credits
 qml/cover/CoverPage           today's count over the chronograph backdrop, or the activity
                               being recorded, with an action to pause or resume it
 qml/components/               BackgroundImage, AboutLink, AboutParagraph (from Lauscher);
                               TileMap, TileLayer, ActivityValue, ActivityChart, HoldButton,
-                              LandCoverList, ActivityStatisticsSection
+                              LandCoverList, ActivityStatisticsSection, AchievementMedal,
+                              AchievementOverlay
 qml/js/Units.js               durations, distances, paces and speeds as shown
-images/                       icon master, cover backdrops, heading arrow, activity type
-                              pictograms (SVG), installed whole
+images/                       icon master, cover backdrops, heading arrow, activity type and
+                              achievement pictograms (SVG), installed whole
 icons/<size>/                 the rendered launcher icon
 translations/                 German catalogue; the template is regenerated, untracked
 rpm/                          spec and changelog
@@ -1056,13 +1205,34 @@ three of the same second, an activity added between pages, deleting one
 rewriting one (with its land cover; not one deleted, unlisted or named with
 a path), no database; each activity's land cover rows as it is stored,
 rewritten and deleted, those of older activities read off their files (one
-whose file is gone, one deleted meanwhile, none read twice); and the
-statistics: all activities and per type, their land cover with the land not
-known last, worked out anew at each change, an activity still waiting
-counted as not known, read back as stored - and what working out 2,000
-costs. The build command is at the top of the file. Run it after any change to
-`Database`, `Gpx`, `Track`, `LandCover`, `ActivityHistory` or
-`ActivityStatistics`.
+whose file is gone, one deleted meanwhile, none read twice); each activity's
+climb, with its row, at a rewrite and read off the files of older ones (also
+one that has its land cover already); the statistics: all activities and per
+type, their land cover with the land not known last, worked out anew at each
+change, an activity still waiting counted as not known, read back as stored -
+and what working out 2,000 costs; and the achievements: every category before
+anything is stored, the first run's level, value and day, nothing written when
+nothing changed, the steps, a level kept after its activity is deleted, a
+drive counting for nothing, read back as stored, no database - and what
+2,000 activities and 1,100 days cost. The build command is at the top of the
+file. Run it after any change to `Database`, `Gpx`, `Track`, `LandCover`,
+`ActivityHistory`, `ActivityStatistics`, `Achievements` or
+`AchievementCatalogue`.
+
+**`tests/tst_achievements.cpp`** checks `AchievementCatalogue` on the host
+with generated activities and days: the catalogue (unique keys, rising
+thresholds, known units and badges, groups together), the level of a value,
+the single best and the totals with the types that count and those that do
+not (driving), the fastest with its minimum distance, the land cover, the
+weeks in a row (a gap, two in one week, a Sunday and the Monday after, an
+activity out of order), the steps, nothing at all, and that `merge()` never
+takes a level or the best value away and dates a level only as it rises. Run
+it after any change to `AchievementCatalogue`, also with `-O0`:
+
+```sh
+g++ -std=c++11 -Wall -Wextra -O2 -Isrc tests/tst_achievements.cpp \
+    src/AchievementCatalogue.cpp -o /tmp/tst_achievements && /tmp/tst_achievements
+```
 
 **Synthetic tests in place of recorded data** (decided 2026-10-14). Checked by
 breaking one rule of `StepDetector` at a time - 17 in all: each correction
@@ -1359,6 +1529,26 @@ cover read off their files at the start and not again at the next; the page
 showed all activities, then running, walking and driving, the types adding
 up to the whole. German, portrait, checked on screen.
 
+The achievements (2026-10-26) build for all five targets without warnings,
+stay Harbour-clean, pass `tst_achievements` (also at `-O0`), the activity
+history's tests (also run on the Jolla Phone (2026), for the cost) and the
+step history's, and in the emulator, sandboxed, with a patched-in timer: a
+generated database of 29 activities and 60 days of steps was migrated from
+schema 7 to 8 and its achievements worked out at the start - 22 of 26, each
+dated by the activity or day that reached it, the drive left out; the page,
+its groups, the greyed-out rowing and heath, and the overlay for a level
+reached, one not reached and the steps, German, portrait, checked on
+screen. Not checked: landscape, a light ambience, and the "So far" line
+after a deletion (the tests cover the value). On the Jolla Phone (2026),
+the project owner checked the overlay, landscape and a light ambience.
+
+The notice after an activity (2026-10-27) passes the activity history's
+tests (the levels announced within the storing, none when nothing rose)
+and in the emulator, which cannot record without a fix, with the wait for
+the stop patched out of the installed QML and a timer queueing three: shown
+one after another with "1 of 3" to "3 of 3", each going on at OK, the page
+back after the last. German, portrait, checked on screen.
+
 Still to confirm on the Jolla Phone (2026):
 
 - [ ] Steps are still counted with only `Location` and `Internet` granted -
@@ -1380,6 +1570,10 @@ Still to confirm on the Jolla Phone (2026):
       file is rewritten after the stop.
 - [ ] The statistics: the pulley's entry, and the land cover of the
       activities recorded before read at the first start.
+- [ ] The achievements: the climb of the activities recorded before read
+      at the first start, the levels of real activities - whether the first
+      levels come as easily as meant and the climb's wander lifts them
+      early - and the notice after a real stop, OK by touch.
 - [ ] Auto-pause on real activities: whether the filter's speed standing
       stays below the limits (a single second over restarts the count),
       whether steps resume a walk promptly, how late a bus or a car is

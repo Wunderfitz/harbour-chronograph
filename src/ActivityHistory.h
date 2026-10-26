@@ -20,7 +20,7 @@
 #ifndef ACTIVITYHISTORY_H
 #define ACTIVITYHISTORY_H
 
-#include "DistanceByLandCoverReader.h"
+#include "TrackSummaryReader.h"
 
 #include <QAbstractListModel>
 #include <QDateTime>
@@ -50,11 +50,11 @@ class Track;
  * file anew, with what has been learnt about it since: its land cover.
  *
  * Each activity's distance over each land cover goes into a table of its
- * own as well, with the row and again with every rewrite, so that the
- * statistics can be worked out without reading a single file. Activities
- * stored before that table was there have it read off their files once, in
- * a thread, as the history is made. activitiesChanged() says when any of
- * this changed.
+ * own as well, and its climb into its row, with the row and again with every
+ * rewrite, so that the statistics and the achievements can be worked out
+ * without reading a single file. Activities stored before the database held
+ * them have them read off their files once, in a thread, as the history is
+ * made. activitiesChanged() says when any of this changed.
  *
  * It also knows the activity being recorded, if any, for the cover: the
  * activity page's Activity is QML's, and the cover cannot see into the page.
@@ -140,8 +140,9 @@ private:
     QString newFileName(const QDateTime &start) const;
     /* Inside a transaction of the caller's. */
     bool storeLandCover(qint64 id, const std::vector<double> &distances);
-    void readMissingLandCover();
-    void handleMissingLandCover();
+    bool storeClimb(qint64 id, double climb);
+    void readMissingSummaries();
+    void handleMissingSummaries();
 
     Database *m_database;
     QString m_directory;
@@ -149,7 +150,7 @@ private:
     /* Every row has been read. */
     bool m_complete = false;
     QPointer<QObject> m_recording;
-    DistanceByLandCoverReader m_landCoverReader;
+    TrackSummaryReader m_summaryReader;
 };
 
 #endif // ACTIVITYHISTORY_H

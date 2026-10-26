@@ -25,6 +25,7 @@
 
 #include <sailfishapp.h>
 
+#include "Achievements.h"
 #include "Activity.h"
 #include "ActivityHistory.h"
 #include "ActivityStatistics.h"
@@ -73,6 +74,14 @@ int main(int argc, char *argv[])
     ActivityStatistics activityStatistics(&database);
     QObject::connect(&activityHistory, &ActivityHistory::activitiesChanged,
                      &activityStatistics, &ActivityStatistics::update);
+    /* Likewise, and as the steps are saved; once as well when the app has
+     * started, should it bring categories new to the activities and the
+     * steps stored before. */
+    Achievements achievements(&database);
+    QObject::connect(&activityHistory, &ActivityHistory::activitiesChanged,
+                     &achievements, &Achievements::update);
+    QObject::connect(&stepHistory, &StepHistory::saved, &achievements, &Achievements::update);
+    QMetaObject::invokeMethod(&achievements, "update", Qt::QueuedConnection);
     TileNetworkFactory tileNetworkFactory;
 
     QScopedPointer<QQuickView> view(SailfishApp::createView());
@@ -82,6 +91,7 @@ int main(int argc, char *argv[])
     view->rootContext()->setContextProperty(QStringLiteral("stepHistory"), &stepHistory);
     view->rootContext()->setContextProperty(QStringLiteral("activityHistory"), &activityHistory);
     view->rootContext()->setContextProperty(QStringLiteral("activityStatistics"), &activityStatistics);
+    view->rootContext()->setContextProperty(QStringLiteral("achievements"), &achievements);
     view->setSource(SailfishApp::pathToMainQml());
     view->show();
 

@@ -73,6 +73,8 @@ public slots:
 signals:
     void todayStepsChanged();
     void recentDaysChanged();
+    /* Today's count was written - what the achievements' steps are made of. */
+    void saved();
 
 private:
     void startDay(const QDate &day);
