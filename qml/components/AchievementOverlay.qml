@@ -19,19 +19,24 @@
 
 import QtQuick 2.2
 import Sailfish.Silica 1.0
+import "../js/Occasions.js" as Occasions
 import "../js/Units.js" as Units
 
 // One achievement over the page, as Fernschreiber lays its overlays: the
 // medal, what it measures, the level reached with its value and date, and
 // what the next level takes. A tap anywhere closes it - or, to announce a
 // level just reached, only its OK button does. Fill the page with it.
+//
+// A calendar category lists the days it has collected below - only those
+// it collected just now, to announce a level - but never one still to
+// collect: those are for finding out.
 Item {
     id: overlay
 
     // One entry of Achievements.read(); shown by show().
     property var achievement: ({ "key": "", "icon": "", "badge": "", "level": 0, "unit": "",
                                  "thresholds": [], "minimumDistance": 0, "best": 0, "current": 0,
-                                 "reached": "" })
+                                 "reached": "", "total": 0, "collected": [], "newlyCollected": [] })
     readonly property bool shown: opacity > 0
     // A level just reached: a heading over it, and closed by OK alone, which
     // says confirmed() and leaves the rest to the page.
@@ -43,6 +48,11 @@ Item {
     signal confirmed()
     readonly property int level: achievement.level
     readonly property bool highest: level >= achievement.thresholds.length
+    readonly property bool calendar: achievement.unit === "days"
+    // The days listed: what the announcement is for, or all collected.
+    readonly property var occasions: !calendar ? []
+                                     : confirmable ? (achievement.newlyCollected || [])
+                                     : (achievement.collected || [])
 
     function show(entry) {
         achievement = entry
@@ -88,6 +98,10 @@ Item {
             number = Math.round(value)
             return number === 1 ? qsTr("1 step")
                                 : qsTr("%1 steps").arg(Number(number).toLocaleString(Qt.locale(), "f", 0))
+        case "days":
+            number = Math.round(value)
+            //: Days a calendar achievement has collected or needs
+            return number === 1 ? qsTr("1 day") : qsTr("%1 days").arg(number)
         default:
             return Units.none
         }
@@ -186,7 +200,8 @@ Item {
                 wrapMode: Text.WordWrap
                 font.pixelSize: Theme.fontSizeSmall
                 color: Theme.highlightColor
-                text: app.achievementDescription(overlay.achievement.key, overlay.achievement.minimumDistance)
+                text: app.achievementDescription(overlay.achievement.key, overlay.achievement.minimumDistance,
+                                                 overlay.achievement.total)
             }
 
             Item { width: 1; height: Theme.paddingMedium }
@@ -196,8 +211,11 @@ Item {
 
                 DetailItem {
                     visible: overlay.level > 0
-                    label: qsTr("Best")
-                    value: overlay.format(overlay.achievement.best, false)
+                    label: overlay.calendar ? qsTr("Collected") : qsTr("Best")
+                    value: overlay.calendar
+                           //: Days a calendar achievement has collected, of how many there are
+                           ? qsTr("%1 of %2").arg(Math.round(overlay.achievement.best)).arg(overlay.achievement.total)
+                           : overlay.format(overlay.achievement.best, false)
                 }
 
                 DetailItem {
@@ -237,6 +255,50 @@ Item {
                 font.pixelSize: Theme.fontSizeSmall
                 color: Theme.secondaryHighlightColor
                 text: qsTr("The highest level there is")
+            }
+
+            // The days collected, each with what happened on it and the
+            // date of the activity that collected it.
+            Column {
+                visible: overlay.occasions.length > 0
+                width: parent.width
+                spacing: Theme.paddingSmall
+
+                Item { width: 1; height: Theme.paddingMedium }
+
+                Label {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.secondaryHighlightColor
+                    text: overlay.confirmable ? qsTr("Newly collected") : qsTr("Days collected")
+                }
+
+                Repeater {
+                    model: overlay.occasions
+
+                    Column {
+                        width: parent.width
+
+                        Label {
+                            width: parent.width
+                            horizontalAlignment: Text.AlignHCenter
+                            wrapMode: Text.WordWrap
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.highlightColor
+                            text: Occasions.title(modelData.key, modelData.year)
+                        }
+
+                        Label {
+                            width: parent.width
+                            horizontalAlignment: Text.AlignHCenter
+                            font.pixelSize: Theme.fontSizeExtraSmall
+                            color: Theme.secondaryHighlightColor
+                            text: overlay.formatDay(modelData.reached)
+                        }
+                    }
+                }
             }
 
             Item {

@@ -302,7 +302,7 @@ void testMigration(const QString &directory)
 
     Database database(file);
     expect("a database from 0.2 opens", database.isOpen());
-    expectEqual("and is migrated to schema version 8", scalar(database, QStringLiteral("PRAGMA user_version")), 8);
+    expectEqual("and is migrated to schema version 9", scalar(database, QStringLiteral("PRAGMA user_version")), 9);
     expectEqual("its steps are kept", scalar(database, QStringLiteral("SELECT steps FROM daily_steps")), 5000);
     expectEqual("and it has an empty activities table",
                 scalar(database, QStringLiteral("SELECT COUNT(*) FROM activities")), 0);
@@ -312,6 +312,8 @@ void testMigration(const QString &directory)
                 scalar(database, QStringLiteral("SELECT COUNT(*) FROM statistics"))
                 + scalar(database, QStringLiteral("SELECT COUNT(*) FROM statistics_land_cover")), 0);
     expectEqual("and the achievements", scalar(database, QStringLiteral("SELECT COUNT(*) FROM achievements")), 0);
+    expectEqual("and their occasions",
+                scalar(database, QStringLiteral("SELECT COUNT(*) FROM achievement_occasions")), 0);
 }
 
 void testGpxRoundTrip(const QString &directory)
@@ -772,6 +774,24 @@ void testAchievements(const QString &directory)
                                                   && pace.value(QStringLiteral("current")).toDouble() == 0);
     expectText("nothing reached, no date", pace.value(QStringLiteral("reached")).toString(), QString());
 
+    // Run on the day of the first operation under anaesthesia.
+    const QString runDay = QDateTime::fromMSecsSinceEpoch(qint64(kStartTime) * 1000, Qt::UTC).toLocalTime().date()
+                           .toString(QStringLiteral("yyyy-MM-dd"));
+    const QVariantMap firstOne = achievementOf(awarded, QStringLiteral("days-first-one"));
+    expectEqual("a calendar category is announced too", firstOne.value(QStringLiteral("level")).toInt(), 1);
+    const QVariantList newly = firstOne.value(QStringLiteral("newlyCollected")).toList();
+    expect("with the occasion that reached it", newly.size() == 1
+           && newly.value(0).toMap().value(QStringLiteral("key")).toString() == QStringLiteral("first-anaesthesia")
+           && newly.value(0).toMap().value(QStringLiteral("year")).toInt() == 1846
+           && newly.value(0).toMap().value(QStringLiteral("reached")).toString() == runDay);
+    QVariantMap collected = achievementOf(read, QStringLiteral("days-first-one"));
+    expectEqual("and lists it as collected", collected.value(QStringLiteral("collected")).toList().size(), 1);
+    expectEqual("of all there is", collected.value(QStringLiteral("total")).toInt(), 42);
+    expect("the others list nothing", !longest.contains(QStringLiteral("collected"))
+           && achievementOf(read, QStringLiteral("days-patriot")).value(QStringLiteral("collected")).toList().isEmpty());
+    expectEqual("stored as an occasion", scalar(database, QStringLiteral("SELECT COUNT(*) FROM achievement_occasions")),
+                1);
+
     achievements.update();
     expectEqual("worked out again with nothing new, nothing is written", updates, 1);
     expectEqual("nor announced", awards, 1);
@@ -799,6 +819,10 @@ void testAchievements(const QString &directory)
     expectEqual("and the best", longest.value(QStringLiteral("best")).toDouble(), distance, 0.01);
     expectEqual("though nothing is run now", longest.value(QStringLiteral("current")).toDouble(), 0);
     expectEqual("the activity still counted", levelOf(read, QStringLiteral("activities-count")), 1);
+    collected = achievementOf(read, QStringLiteral("days-first-one"));
+    expect("and its occasion is still collected", collected.value(QStringLiteral("level")).toInt() == 1
+           && collected.value(QStringLiteral("collected")).toList().size() == 1
+           && collected.value(QStringLiteral("current")).toInt() == 1);
 
     history.add(QStringLiteral("driving"), makeTrack(kStartTime + 86400, 2000));
     read = achievements.read();

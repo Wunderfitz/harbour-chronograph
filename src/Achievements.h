@@ -36,6 +36,9 @@ class Database;
  * are saved, and once as the app starts (update()).
  * Kept in a table of its own, achievements, which this class owns, and
  * merged into what is there: a level once reached is never taken away.
+ * The occasions the calendar categories have collected are kept for good
+ * as well, in achievement_occasions, which it also owns: their levels
+ * count those.
  */
 class Achievements : public QObject
 {
@@ -48,7 +51,10 @@ public:
      * unit, icon, badge, minimumDistance and thresholds (one per level) from
      * the catalogue, and level (0 for none), reached (the local date as
      * yyyy-MM-dd, empty for none), best and current - in the category's
-     * unit. Every level 0 without a database. */
+     * unit. A calendar category's also has total, the number of its
+     * occasions, and collected, those collected, each a map of key, year
+     * (0 for none, negative before Christ) and reached, the earliest first.
+     * Every level 0 without a database. */
     Q_INVOKABLE QVariantList read() const;
 
 public slots:
@@ -58,9 +64,11 @@ public slots:
 signals:
     void updated();
     /* Levels reached by an update, each an entry as read() has it with the
-     * new level, in the catalogue's order. Comes after updated(), within the
-     * call that caused it - for a stored activity, within
-     * ActivityHistory::add(), before the activity is Finished. */
+     * new level, in the catalogue's order - a calendar category's with
+     * newlyCollected as well, the occasions this update collected, as
+     * collected lists them. Comes after updated(), within the call that
+     * caused it - for a stored activity, within ActivityHistory::add(),
+     * before the activity is Finished. */
     void awarded(const QVariantList &entries);
 
 private:

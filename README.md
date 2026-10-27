@@ -10,7 +10,8 @@ moment the app starts, also while the display is off, and keeps the steps of
 each day in a local database. The main page lists the activities, newest
 first, above today's steps and those of the three days before; the cover shows
 today's. A statistics page totals the activities, and achievements in seven
-levels, from Paper to Diamond, mark the milestones reached.
+levels, from Paper to Diamond, mark the milestones reached - and the days of
+history and the holidays an activity fell on.
 
 Map data © OpenStreetMap contributors, under the Open Database License.
 

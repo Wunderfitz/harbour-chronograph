@@ -31,20 +31,78 @@
 #include <QVariant>
 #include <QVariantMap>
 
+#include <algorithm>
 #include <vector>
 
 namespace {
 
-/* What is kept of a category, and the value now. */
+/* What is kept of a category, and the value now; for a calendar category
+ * also the occasions collected. */
 struct Row {
     AchievementCatalogue::Award award;
     double current = 0;
+    std::vector<AchievementCatalogue::Collected> collected;
 };
 
 /* As stored, yyyy-MM-dd, for a Julian day number. */
 QString dayText(int day)
 {
     return QDate::fromJulianDay(day).toString(QStringLiteral("yyyy-MM-dd"));
+}
+
+int dayOf(const QString &text)
+{
+    return int(QDate::fromString(text, QStringLiteral("yyyy-MM-dd")).toJulianDay());
+}
+
+/* The calendar categories' occasions collected, into their rows. A key
+ * no longer in the catalogue is left out. */
+void readOccasions(const Database *database, QHash<QString, Row> *rows)
+{
+    QHash<QString, QHash<QString, std::size_t>> indices;
+    for (std::size_t i = 0; i < AchievementCatalogue::categoryCount(); ++i) {
+        const AchievementCatalogue::Category &category = AchievementCatalogue::category(i);
+        QHash<QString, std::size_t> &occasions = indices[QString::fromLatin1(category.key)];
+        for (std::size_t j = 0; j < category.occasionCount; ++j)
+            occasions.insert(QString::fromLatin1(category.occasions[j].key), j);
+    }
+    QSqlQuery query(database->connection());
+    query.setForwardOnly(true);
+    if (!query.exec(QStringLiteral("SELECT category, occasion, reached FROM achievement_occasions"))) {
+        qWarning() << "Cannot read the achievements' occasions" << query.lastError().text();
+        return;
+    }
+    while (query.next()) {
+        const QString category = query.value(0).toString();
+        const auto occasion = indices.value(category).constFind(query.value(1).toString());
+        if (occasion == indices.value(category).constEnd())
+            continue;
+        AchievementCatalogue::Collected collected;
+        collected.occasion = occasion.value();
+        collected.day = dayOf(query.value(2).toString());
+        (*rows)[category].collected.push_back(collected);
+    }
+}
+
+/* The occasions as QML lists them: key, year (0 for none, negative before
+ * Christ) and reached (yyyy-MM-dd), the earliest first. */
+QVariantList occasionsOf(const AchievementCatalogue::Category &category,
+                         std::vector<AchievementCatalogue::Collected> collected)
+{
+    std::sort(collected.begin(), collected.end(), [](const AchievementCatalogue::Collected &a,
+                                                     const AchievementCatalogue::Collected &b) {
+        return a.day < b.day || (a.day == b.day && a.occasion < b.occasion);
+    });
+    QVariantList occasions;
+    for (const AchievementCatalogue::Collected &occasion : collected) {
+        const AchievementCatalogue::Occasion &known = category.occasions[occasion.occasion];
+        QVariantMap entry;
+        entry.insert(QStringLiteral("key"), QString::fromLatin1(known.key));
+        entry.insert(QStringLiteral("year"), known.year);
+        entry.insert(QStringLiteral("reached"), dayText(occasion.day));
+        occasions.append(entry);
+    }
+    return occasions;
 }
 
 QHash<QString, Row> readRows(const Database *database)
@@ -59,17 +117,21 @@ QHash<QString, Row> readRows(const Database *database)
         Row row;
         row.award.level = query.value(1).toInt();
         if (row.award.level > 0)
-            row.award.day = int(QDate::fromString(query.value(2).toString(), QStringLiteral("yyyy-MM-dd"))
-                                .toJulianDay());
+            row.award.day = dayOf(query.value(2).toString());
         row.award.best = query.value(3).toDouble();
         row.current = query.value(4).toDouble();
         rows.insert(query.value(0).toString(), row);
     }
+    readOccasions(database, &rows);
     return rows;
 }
 
-/* One entry of read(): the catalogue's side of a category and what is kept. */
-QVariantMap entryOf(const AchievementCatalogue::Category &category, const Row &row)
+/* One entry of read(): the catalogue's side of a category and what is kept;
+ * for a level just reached in a calendar category also the occasions that
+ * came with it. */
+QVariantMap entryOf(const AchievementCatalogue::Category &category, const Row &row,
+                    const std::vector<AchievementCatalogue::Collected> &newlyCollected
+                        = std::vector<AchievementCatalogue::Collected>())
 {
     QVariantList thresholds;
     for (double threshold : category.thresholds)
@@ -86,6 +148,11 @@ QVariantMap entryOf(const AchievementCatalogue::Category &category, const Row &r
     entry.insert(QStringLiteral("reached"), row.award.level > 0 ? dayText(row.award.day) : QString());
     entry.insert(QStringLiteral("best"), row.award.best);
     entry.insert(QStringLiteral("current"), row.current);
+    if (category.metric == AchievementCatalogue::CalendarDays) {
+        entry.insert(QStringLiteral("total"), int(category.occasionCount));
+        entry.insert(QStringLiteral("collected"), occasionsOf(category, row.collected));
+        entry.insert(QStringLiteral("newlyCollected"), occasionsOf(category, newlyCollected));
+    }
     return entry;
 }
 
@@ -175,14 +242,35 @@ void Achievements::update()
     QVariantList reached;
     query.prepare(QStringLiteral("INSERT OR REPLACE INTO achievements (category, level, reached, best, current) "
                                  "VALUES (:category, :level, :reached, :best, :current)"));
+    QSqlQuery occasionQuery(connection);
+    occasionQuery.prepare(QStringLiteral("INSERT OR REPLACE INTO achievement_occasions (category, occasion, reached) "
+                                         "VALUES (:category, :occasion, :reached)"));
     for (std::size_t i = 0; i < progress.size(); ++i) {
         const AchievementCatalogue::Category &category = AchievementCatalogue::category(i);
         const QString key = QString::fromLatin1(category.key);
         const bool known = rows.contains(key);
         const Row kept = rows.value(key);
-        const AchievementCatalogue::Award award = AchievementCatalogue::merge(kept.award, progress[i]);
+        const AchievementCatalogue::Progress now = category.metric == AchievementCatalogue::CalendarDays
+                ? AchievementCatalogue::collect(category, progress[i], kept.collected) : progress[i];
+        const AchievementCatalogue::Award award = AchievementCatalogue::merge(kept.award, now);
+
+        // The occasions collected for the first time, and those collected
+        // on an earlier day than stored, as with the clock set back.
+        std::vector<AchievementCatalogue::Collected> newlyCollected;
+        std::vector<AchievementCatalogue::Collected> changed;
+        for (const AchievementCatalogue::Collected &occasion : now.collected) {
+            const auto before = std::find_if(kept.collected.begin(), kept.collected.end(),
+                                             [&occasion](const AchievementCatalogue::Collected &c) {
+                                                 return c.occasion == occasion.occasion;
+                                             });
+            if (before == kept.collected.end())
+                newlyCollected.push_back(occasion);
+            if (before == kept.collected.end() || before->day != occasion.day)
+                changed.push_back(occasion);
+        }
+
         if (known && award.level == kept.award.level && award.day == kept.award.day
-                && award.best == kept.award.best && progress[i].value == kept.current)
+                && award.best == kept.award.best && now.value == kept.current && changed.empty())
             continue;
         if (!writing) {
             connection.transaction();
@@ -192,17 +280,27 @@ void Achievements::update()
         query.bindValue(QStringLiteral(":level"), award.level);
         query.bindValue(QStringLiteral(":reached"), award.level > 0 ? dayText(award.day) : QStringLiteral(""));
         query.bindValue(QStringLiteral(":best"), award.best);
-        query.bindValue(QStringLiteral(":current"), progress[i].value);
-        if (!query.exec()) {
-            qWarning() << "Cannot store the achievement" << key << query.lastError().text();
+        query.bindValue(QStringLiteral(":current"), now.value);
+        bool stored = query.exec();
+        for (std::size_t j = 0; stored && j < changed.size(); ++j) {
+            occasionQuery.bindValue(QStringLiteral(":category"), key);
+            occasionQuery.bindValue(QStringLiteral(":occasion"),
+                                    QString::fromLatin1(category.occasions[changed[j].occasion].key));
+            occasionQuery.bindValue(QStringLiteral(":reached"), dayText(changed[j].day));
+            stored = occasionQuery.exec();
+        }
+        if (!stored) {
+            qWarning() << "Cannot store the achievement" << key << query.lastError().text()
+                       << occasionQuery.lastError().text();
             connection.rollback();
             return;
         }
         if (award.level > kept.award.level) {
-            Row now;
-            now.award = award;
-            now.current = progress[i].value;
-            reached.append(entryOf(category, now));
+            Row reachedNow;
+            reachedNow.award = award;
+            reachedNow.current = now.value;
+            reachedNow.collected = now.collected;
+            reached.append(entryOf(category, reachedNow, newlyCollected));
         }
     }
     if (!writing)

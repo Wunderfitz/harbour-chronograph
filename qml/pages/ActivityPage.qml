@@ -128,7 +128,7 @@ Page {
 
     // Achievements reached, waiting to be shown: the first is shown once the
     // activity is over. A category reached again before its turn keeps one
-    // place, with the higher level.
+    // place, with the higher level and every day it collected.
     property var awards: []
     // How many have been confirmed, to say which of how many comes.
     property int awardsConfirmed: 0
@@ -142,10 +142,16 @@ Page {
                 if (awards[j].key === entries[i].key)
                     place = j
             }
-            if (place === -1)
+            if (place === -1) {
                 awards.push(entries[i])
-            else
-                awards[place] = entries[i]
+            } else {
+                // A calendar category's days collected meanwhile stay
+                // with it.
+                var entry = entries[i]
+                if (awards[place].newlyCollected && entry.newlyCollected)
+                    entry.newlyCollected = awards[place].newlyCollected.concat(entry.newlyCollected)
+                awards[place] = entry
+            }
         }
         page.awards = awards
         showAward()

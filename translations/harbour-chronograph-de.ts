@@ -96,8 +96,8 @@
         <translation>Wenn Sie nach den Diagrammen weiterwischen, zeigt die Aktivitätsseite, wie weit Sie durch Wald, Ackerland, Wasser und anderes Gelände gekommen sind. Das wird aus den Kartenkacheln gelesen, und nur aus denen, die während oder nach der Aktivität auf dem Bildschirm zu sehen waren: Dafür wird nichts heruntergeladen. Gelände, dessen Kacheln nie zu sehen waren, gilt als unbekannt, bis sie es sind.</translation>
     </message>
     <message>
-        <source>Achievements, from the pulley menu, come in seven levels each, from Paper through Wood, Bronze, Silver, Gold and Platinum to Diamond: for the longest, the fastest and the farthest in all of each activity type, for the height climbed, the land gone through, the time, the weeks in a row and the steps. Driving counts for none of them. Levels an activity reaches are shown on its page once it is stopped. A level once reached stays, even should the activities that reached it be deleted.</source>
-        <translation>Erfolge, im Zugmenü, haben je sieben Stufen, von Papier über Holz, Bronze, Silber, Gold und Platin bis Diamant: für die längste, die schnellste und die insgesamt weiteste Aktivität jeder Art, für die erklommenen Höhenmeter, das durchquerte Gelände, die Zeit, die Wochen in Folge und die Schritte. Autofahrten zählen für keinen davon. Stufen, die eine Aktivität erreicht, zeigt ihre Seite nach dem Stopp an. Eine einmal erreichte Stufe bleibt, auch wenn die Aktivitäten, mit denen sie erreicht wurde, gelöscht werden.</translation>
+        <source>Achievements, from the pulley menu, come in seven levels each, from Paper through Wood, Bronze, Silver, Gold and Platinum to Diamond: for the longest, the fastest and the farthest in all of each activity type, for the height climbed, the land gone through, the time, the weeks in a row and the steps, and for the days collected by being active on them: national days, holy days, the days of wars, peace treaties, revolutions, conquests, discoveries, firsts and inventions, the death days of dictators and the birthdays of composers. Driving counts for none of them. Levels an activity reaches are shown on its page once it is stopped. A level once reached stays, as do the days collected, even should the activities that reached them be deleted.</source>
+        <translation>Erfolge, im Zugmenü, haben je sieben Stufen, von Papier über Holz, Bronze, Silber, Gold und Platin bis Diamant: für die längste, die schnellste und die insgesamt weiteste Aktivität jeder Art, für die erklommenen Höhenmeter, das durchquerte Gelände, die Zeit, die Wochen in Folge und die Schritte sowie für die Tage, die Sie sammeln, indem Sie an ihnen aktiv sind: Nationalfeiertage, religiöse Feiertage, die Tage von Kriegen, Friedensschlüssen, Revolutionen, Eroberungen, Entdeckungen, Premieren und Erfindungen, die Todestage von Diktatoren und die Geburtstage von Komponisten. Autofahrten zählen für keinen davon. Stufen, die eine Aktivität erreicht, zeigt ihre Seite nach dem Stopp an. Eine einmal erreichte Stufe bleibt, ebenso wie die gesammelten Tage, auch wenn die Aktivitäten, mit denen sie erreicht wurden, gelöscht werden.</translation>
     </message>
 </context>
 <context>
@@ -167,6 +167,32 @@
     <message>
         <source>OK</source>
         <translation>OK</translation>
+    </message>
+    <message>
+        <source>1 day</source>
+        <extracomment>Days a calendar achievement has collected or needs</extracomment>
+        <translation>1 Tag</translation>
+    </message>
+    <message>
+        <source>%1 days</source>
+        <translation>%1 Tage</translation>
+    </message>
+    <message>
+        <source>Collected</source>
+        <translation>Gesammelt</translation>
+    </message>
+    <message>
+        <source>%1 of %2</source>
+        <extracomment>Days a calendar achievement has collected, of how many there are</extracomment>
+        <translation>%1 von %2</translation>
+    </message>
+    <message>
+        <source>Newly collected</source>
+        <translation>Neu gesammelt</translation>
+    </message>
+    <message>
+        <source>Days collected</source>
+        <translation>Gesammelte Tage</translation>
     </message>
 </context>
 <context>
@@ -378,6 +404,1867 @@
         <source>%1%</source>
         <extracomment>A share of the activity&apos;s distance; %1 is the whole percent</extracomment>
         <translation>%1 %</translation>
+    </message>
+</context>
+<context>
+    <name>Occasions</name>
+    <message>
+        <source>%1 (%2)</source>
+        <extracomment>An occasion of a calendar achievement and the year it happened</extracomment>
+        <translation>%1 (%2)</translation>
+    </message>
+    <message>
+        <source>%1 (%2 BC)</source>
+        <extracomment>An occasion of a calendar achievement and the year before Christ it happened</extracomment>
+        <translation>%1 (%2 v. Chr.)</translation>
+    </message>
+    <message>
+        <source>Australia: Australia Day</source>
+        <translation>Australien: Australia Day</translation>
+    </message>
+    <message>
+        <source>New Zealand: Waitangi Day</source>
+        <translation>Neuseeland: Waitangi Day</translation>
+    </message>
+    <message>
+        <source>Japan: National Foundation Day</source>
+        <translation>Japan: Reichsgründungstag</translation>
+    </message>
+    <message>
+        <source>Estonia: Independence Day</source>
+        <translation>Estland: Unabhängigkeitstag</translation>
+    </message>
+    <message>
+        <source>South Korea: Independence Movement Day</source>
+        <translation>Südkorea: Tag der Unabhängigkeitsbewegung</translation>
+    </message>
+    <message>
+        <source>Ghana: Independence Day</source>
+        <translation>Ghana: Unabhängigkeitstag</translation>
+    </message>
+    <message>
+        <source>Ireland: Saint Patrick&apos;s Day</source>
+        <translation>Irland: St. Patrick&apos;s Day</translation>
+    </message>
+    <message>
+        <source>Greece: Independence Day</source>
+        <translation>Griechenland: Unabhängigkeitstag</translation>
+    </message>
+    <message>
+        <source>South Africa: Freedom Day</source>
+        <translation>Südafrika: Tag der Freiheit</translation>
+    </message>
+    <message>
+        <source>Norway: Constitution Day</source>
+        <translation>Norwegen: Verfassungstag</translation>
+    </message>
+    <message>
+        <source>Argentina: May Revolution Day</source>
+        <translation>Argentinien: Tag der Mairevolution</translation>
+    </message>
+    <message>
+        <source>Italy: Republic Day</source>
+        <translation>Italien: Tag der Republik</translation>
+    </message>
+    <message>
+        <source>Denmark: Constitution Day</source>
+        <translation>Dänemark: Verfassungstag</translation>
+    </message>
+    <message>
+        <source>Sweden: National Day</source>
+        <translation>Schweden: Nationalfeiertag</translation>
+    </message>
+    <message>
+        <source>Portugal: Portugal Day</source>
+        <translation>Portugal: Tag Portugals</translation>
+    </message>
+    <message>
+        <source>Russia: Russia Day</source>
+        <translation>Russland: Tag Russlands</translation>
+    </message>
+    <message>
+        <source>Canada: Canada Day</source>
+        <translation>Kanada: Canada Day</translation>
+    </message>
+    <message>
+        <source>United States: Independence Day</source>
+        <translation>Vereinigte Staaten: Unabhängigkeitstag</translation>
+    </message>
+    <message>
+        <source>France: Bastille Day</source>
+        <translation>Frankreich: Nationalfeiertag</translation>
+    </message>
+    <message>
+        <source>Colombia: Independence Day</source>
+        <translation>Kolumbien: Unabhängigkeitstag</translation>
+    </message>
+    <message>
+        <source>Belgium: National Day</source>
+        <translation>Belgien: Nationalfeiertag</translation>
+    </message>
+    <message>
+        <source>Egypt: Revolution Day</source>
+        <translation>Ägypten: Tag der Revolution</translation>
+    </message>
+    <message>
+        <source>Peru: Independence Day</source>
+        <translation>Peru: Unabhängigkeitstag</translation>
+    </message>
+    <message>
+        <source>Switzerland: National Day</source>
+        <translation>Schweiz: Bundesfeiertag</translation>
+    </message>
+    <message>
+        <source>Pakistan: Independence Day</source>
+        <translation>Pakistan: Unabhängigkeitstag</translation>
+    </message>
+    <message>
+        <source>India: Independence Day</source>
+        <translation>Indien: Unabhängigkeitstag</translation>
+    </message>
+    <message>
+        <source>Indonesia: Independence Day</source>
+        <translation>Indonesien: Unabhängigkeitstag</translation>
+    </message>
+    <message>
+        <source>Hungary: Saint Stephen&apos;s Day</source>
+        <translation>Ungarn: Stephanstag</translation>
+    </message>
+    <message>
+        <source>Ukraine: Independence Day</source>
+        <translation>Ukraine: Unabhängigkeitstag</translation>
+    </message>
+    <message>
+        <source>Vietnam: National Day</source>
+        <translation>Vietnam: Nationalfeiertag</translation>
+    </message>
+    <message>
+        <source>Brazil: Independence Day</source>
+        <translation>Brasilien: Unabhängigkeitstag</translation>
+    </message>
+    <message>
+        <source>Mexico: Independence Day</source>
+        <translation>Mexiko: Unabhängigkeitstag</translation>
+    </message>
+    <message>
+        <source>Chile: Independence Day</source>
+        <translation>Chile: Unabhängigkeitstag</translation>
+    </message>
+    <message>
+        <source>China: National Day</source>
+        <translation>China: Nationalfeiertag</translation>
+    </message>
+    <message>
+        <source>Germany: Day of German Unity</source>
+        <translation>Deutschland: Tag der Deutschen Einheit</translation>
+    </message>
+    <message>
+        <source>Spain: National Day</source>
+        <translation>Spanien: Nationalfeiertag</translation>
+    </message>
+    <message>
+        <source>Austria: National Day</source>
+        <translation>Österreich: Nationalfeiertag</translation>
+    </message>
+    <message>
+        <source>Czechia: Independence Day</source>
+        <translation>Tschechien: Tag der Staatsgründung</translation>
+    </message>
+    <message>
+        <source>Turkey: Republic Day</source>
+        <translation>Türkei: Tag der Republik</translation>
+    </message>
+    <message>
+        <source>Poland: Independence Day</source>
+        <translation>Polen: Unabhängigkeitstag</translation>
+    </message>
+    <message>
+        <source>Finland: Independence Day</source>
+        <translation>Finnland: Unabhängigkeitstag</translation>
+    </message>
+    <message>
+        <source>Kenya: Jamhuri Day</source>
+        <translation>Kenia: Jamhuri Day</translation>
+    </message>
+    <message>
+        <source>Christianity: Epiphany</source>
+        <translation>Christentum: Heilige Drei Könige</translation>
+    </message>
+    <message>
+        <source>Christianity: Orthodox Christmas</source>
+        <translation>Christentum: Orthodoxes Weihnachtsfest</translation>
+    </message>
+    <message>
+        <source>Hinduism: Makar Sankranti</source>
+        <translation>Hinduismus: Makar Sankranti</translation>
+    </message>
+    <message>
+        <source>Buddhism: Nirvana Day</source>
+        <translation>Buddhismus: Nirwana-Tag</translation>
+    </message>
+    <message>
+        <source>Islam: First day of Ramadan</source>
+        <translation>Islam: Erster Tag des Ramadan</translation>
+    </message>
+    <message>
+        <source>Hinduism: Maha Shivaratri</source>
+        <translation>Hinduismus: Maha Shivaratri</translation>
+    </message>
+    <message>
+        <source>Christianity: Ash Wednesday</source>
+        <translation>Christentum: Aschermittwoch</translation>
+    </message>
+    <message>
+        <source>Judaism: Purim</source>
+        <translation>Judentum: Purim</translation>
+    </message>
+    <message>
+        <source>Hinduism: Holi</source>
+        <translation>Hinduismus: Holi</translation>
+    </message>
+    <message>
+        <source>Islam: Night of Power</source>
+        <translation>Islam: Nacht der Bestimmung</translation>
+    </message>
+    <message>
+        <source>Islam: Eid al-Fitr</source>
+        <translation>Islam: Fest des Fastenbrechens</translation>
+    </message>
+    <message>
+        <source>Zoroastrianism and Bahá&apos;í: Nowruz</source>
+        <translation>Zoroastrismus und Bahai: Nouruz</translation>
+    </message>
+    <message>
+        <source>Judaism: Passover</source>
+        <translation>Judentum: Pessach</translation>
+    </message>
+    <message>
+        <source>Christianity: Good Friday</source>
+        <translation>Christentum: Karfreitag</translation>
+    </message>
+    <message>
+        <source>Christianity: Easter Sunday</source>
+        <translation>Christentum: Ostersonntag</translation>
+    </message>
+    <message>
+        <source>Christianity: Orthodox Easter</source>
+        <translation>Christentum: Orthodoxes Osterfest</translation>
+    </message>
+    <message>
+        <source>Sikhism: Vaisakhi</source>
+        <translation>Sikhismus: Vaisakhi</translation>
+    </message>
+    <message>
+        <source>Buddhism: Vesak</source>
+        <translation>Buddhismus: Vesakh</translation>
+    </message>
+    <message>
+        <source>Christianity: Ascension Day</source>
+        <translation>Christentum: Christi Himmelfahrt</translation>
+    </message>
+    <message>
+        <source>Judaism: Shavuot</source>
+        <translation>Judentum: Schawuot</translation>
+    </message>
+    <message>
+        <source>Christianity: Pentecost</source>
+        <translation>Christentum: Pfingstsonntag</translation>
+    </message>
+    <message>
+        <source>Islam: Day of Arafah</source>
+        <translation>Islam: Tag von Arafat</translation>
+    </message>
+    <message>
+        <source>Islam: Eid al-Adha</source>
+        <translation>Islam: Opferfest</translation>
+    </message>
+    <message>
+        <source>Christianity: Corpus Christi</source>
+        <translation>Christentum: Fronleichnam</translation>
+    </message>
+    <message>
+        <source>Islam: Islamic New Year</source>
+        <translation>Islam: Islamisches Neujahr</translation>
+    </message>
+    <message>
+        <source>Islam: Ashura</source>
+        <translation>Islam: Aschura</translation>
+    </message>
+    <message>
+        <source>Islam: The Prophet&apos;s Birthday</source>
+        <translation>Islam: Geburtstag des Propheten</translation>
+    </message>
+    <message>
+        <source>Christianity: Assumption of Mary</source>
+        <translation>Christentum: Mariä Himmelfahrt</translation>
+    </message>
+    <message>
+        <source>Hinduism: Krishna Janmashtami</source>
+        <translation>Hinduismus: Krishna Janmashtami</translation>
+    </message>
+    <message>
+        <source>Hinduism: Ganesh Chaturthi</source>
+        <translation>Hinduismus: Ganesh Chaturthi</translation>
+    </message>
+    <message>
+        <source>Judaism: Rosh Hashanah</source>
+        <translation>Judentum: Rosch ha-Schana</translation>
+    </message>
+    <message>
+        <source>Judaism: Yom Kippur</source>
+        <translation>Judentum: Jom Kippur</translation>
+    </message>
+    <message>
+        <source>Judaism: Sukkot</source>
+        <translation>Judentum: Sukkot</translation>
+    </message>
+    <message>
+        <source>Hinduism: First day of Navaratri</source>
+        <translation>Hinduismus: Erster Tag von Navaratri</translation>
+    </message>
+    <message>
+        <source>Hinduism: Dussehra</source>
+        <translation>Hinduismus: Dussehra</translation>
+    </message>
+    <message>
+        <source>Christianity: Reformation Day</source>
+        <translation>Christentum: Reformationstag</translation>
+    </message>
+    <message>
+        <source>Christianity: All Saints&apos; Day</source>
+        <translation>Christentum: Allerheiligen</translation>
+    </message>
+    <message>
+        <source>Hinduism: Diwali</source>
+        <translation>Hinduismus: Diwali</translation>
+    </message>
+    <message>
+        <source>Sikhism: Guru Nanak Gurpurab</source>
+        <translation>Sikhismus: Guru Nanak Gurpurab</translation>
+    </message>
+    <message>
+        <source>Judaism: First day of Hanukkah</source>
+        <translation>Judentum: Erster Tag von Chanukka</translation>
+    </message>
+    <message>
+        <source>Buddhism: Bodhi Day</source>
+        <translation>Buddhismus: Bodhi-Tag</translation>
+    </message>
+    <message>
+        <source>Christianity: Christmas Day</source>
+        <translation>Christentum: Erster Weihnachtstag</translation>
+    </message>
+    <message>
+        <source>Leopoldo Galtieri dies</source>
+        <translation>Leopoldo Galtieri stirbt</translation>
+    </message>
+    <message>
+        <source>Vladimir Lenin dies</source>
+        <translation>Wladimir Lenin stirbt</translation>
+    </message>
+    <message>
+        <source>Suharto dies</source>
+        <translation>Suharto stirbt</translation>
+    </message>
+    <message>
+        <source>Ioannis Metaxas dies</source>
+        <translation>Ioannis Metaxas stirbt</translation>
+    </message>
+    <message>
+        <source>Hosni Mubarak dies</source>
+        <translation>Hosni Mubarak stirbt</translation>
+    </message>
+    <message>
+        <source>Joseph Stalin dies</source>
+        <translation>Josef Stalin stirbt</translation>
+    </message>
+    <message>
+        <source>Julius Caesar is murdered</source>
+        <translation>Julius Cäsar wird ermordet</translation>
+    </message>
+    <message>
+        <source>Miguel Primo de Rivera dies</source>
+        <translation>Miguel Primo de Rivera stirbt</translation>
+    </message>
+    <message>
+        <source>Chiang Kai-shek dies</source>
+        <translation>Chiang Kai-shek stirbt</translation>
+    </message>
+    <message>
+        <source>Enver Hoxha dies</source>
+        <translation>Enver Hoxha stirbt</translation>
+    </message>
+    <message>
+        <source>Pol Pot dies</source>
+        <translation>Pol Pot stirbt</translation>
+    </message>
+    <message>
+        <source>François Duvalier dies</source>
+        <translation>François Duvalier stirbt</translation>
+    </message>
+    <message>
+        <source>Benito Mussolini is executed</source>
+        <translation>Benito Mussolini wird hingerichtet</translation>
+    </message>
+    <message>
+        <source>Adolf Hitler dies</source>
+        <translation>Adolf Hitler stirbt</translation>
+    </message>
+    <message>
+        <source>Josip Broz Tito dies</source>
+        <translation>Josip Broz Tito stirbt</translation>
+    </message>
+    <message>
+        <source>Jorge Rafael Videla dies</source>
+        <translation>Jorge Rafael Videla stirbt</translation>
+    </message>
+    <message>
+        <source>Erich Honecker dies</source>
+        <translation>Erich Honecker stirbt</translation>
+    </message>
+    <message>
+        <source>Rafael Trujillo is murdered</source>
+        <translation>Rafael Trujillo wird ermordet</translation>
+    </message>
+    <message>
+        <source>Ion Antonescu is executed</source>
+        <translation>Ion Antonescu wird hingerichtet</translation>
+    </message>
+    <message>
+        <source>Sani Abacha dies</source>
+        <translation>Sani Abacha stirbt</translation>
+    </message>
+    <message>
+        <source>Hafez al-Assad dies</source>
+        <translation>Hafis al-Assad stirbt</translation>
+    </message>
+    <message>
+        <source>Kim Il-sung dies</source>
+        <translation>Kim Il-sung stirbt</translation>
+    </message>
+    <message>
+        <source>António de Oliveira Salazar dies</source>
+        <translation>António de Oliveira Salazar stirbt</translation>
+    </message>
+    <message>
+        <source>Fulgencio Batista dies</source>
+        <translation>Fulgencio Batista stirbt</translation>
+    </message>
+    <message>
+        <source>Idi Amin dies</source>
+        <translation>Idi Amin stirbt</translation>
+    </message>
+    <message>
+        <source>Robert Mugabe dies</source>
+        <translation>Robert Mugabe stirbt</translation>
+    </message>
+    <message>
+        <source>Mobutu Sese Seko dies</source>
+        <translation>Mobutu Sese Seko stirbt</translation>
+    </message>
+    <message>
+        <source>Mao Zedong dies</source>
+        <translation>Mao Zedong stirbt</translation>
+    </message>
+    <message>
+        <source>Anastasio Somoza Debayle is killed</source>
+        <translation>Anastasio Somoza Debayle wird getötet</translation>
+    </message>
+    <message>
+        <source>Ferdinand Marcos dies</source>
+        <translation>Ferdinand Marcos stirbt</translation>
+    </message>
+    <message>
+        <source>Muammar al-Gaddafi is killed</source>
+        <translation>Muammar al-Gaddafi wird getötet</translation>
+    </message>
+    <message>
+        <source>Park Chung-hee is murdered</source>
+        <translation>Park Chung-hee wird ermordet</translation>
+    </message>
+    <message>
+        <source>Jean-Bédel Bokassa dies</source>
+        <translation>Jean-Bédel Bokassa stirbt</translation>
+    </message>
+    <message>
+        <source>Francisco Franco dies</source>
+        <translation>Francisco Franco stirbt</translation>
+    </message>
+    <message>
+        <source>Fidel Castro dies</source>
+        <translation>Fidel Castro stirbt</translation>
+    </message>
+    <message>
+        <source>Ne Win dies</source>
+        <translation>Ne Win stirbt</translation>
+    </message>
+    <message>
+        <source>Augusto Pinochet dies</source>
+        <translation>Augusto Pinochet stirbt</translation>
+    </message>
+    <message>
+        <source>Kim Jong-il dies</source>
+        <translation>Kim Jong-il stirbt</translation>
+    </message>
+    <message>
+        <source>Saparmurat Niyazov dies</source>
+        <translation>Saparmurat Nijasow stirbt</translation>
+    </message>
+    <message>
+        <source>Nicolae Ceaușescu is executed</source>
+        <translation>Nicolae Ceaușescu wird hingerichtet</translation>
+    </message>
+    <message>
+        <source>Ante Pavelić dies</source>
+        <translation>Ante Pavelić stirbt</translation>
+    </message>
+    <message>
+        <source>Saddam Hussein is executed</source>
+        <translation>Saddam Hussein wird hingerichtet</translation>
+    </message>
+    <message>
+        <source>The Russo-Japanese War begins</source>
+        <translation>Der Russisch-Japanische Krieg beginnt</translation>
+    </message>
+    <message>
+        <source>Russia invades Ukraine</source>
+        <translation>Russland überfällt die Ukraine</translation>
+    </message>
+    <message>
+        <source>The Syrian Civil War begins</source>
+        <translation>Der syrische Bürgerkrieg beginnt</translation>
+    </message>
+    <message>
+        <source>The Iraq War begins</source>
+        <translation>Der Irakkrieg beginnt</translation>
+    </message>
+    <message>
+        <source>NATO&apos;s air war over Kosovo begins</source>
+        <translation>Der NATO-Luftkrieg im Kosovo beginnt</translation>
+    </message>
+    <message>
+        <source>The Falklands War begins</source>
+        <translation>Der Falklandkrieg beginnt</translation>
+    </message>
+    <message>
+        <source>The War of the Pacific begins</source>
+        <translation>Der Salpeterkrieg beginnt</translation>
+    </message>
+    <message>
+        <source>The Bosnian War begins</source>
+        <translation>Der Bosnienkrieg beginnt</translation>
+    </message>
+    <message>
+        <source>The American Civil War begins</source>
+        <translation>Der Amerikanische Bürgerkrieg beginnt</translation>
+    </message>
+    <message>
+        <source>The American Revolutionary War begins</source>
+        <translation>Der Amerikanische Unabhängigkeitskrieg beginnt</translation>
+    </message>
+    <message>
+        <source>The Spanish-American War begins</source>
+        <translation>Der Spanisch-Amerikanische Krieg beginnt</translation>
+    </message>
+    <message>
+        <source>The Mexican-American War begins</source>
+        <translation>Der Mexikanisch-Amerikanische Krieg beginnt</translation>
+    </message>
+    <message>
+        <source>The War of the Spanish Succession is declared</source>
+        <translation>Der Spanische Erbfolgekrieg wird erklärt</translation>
+    </message>
+    <message>
+        <source>The Napoleonic Wars begin</source>
+        <translation>Die Napoleonischen Kriege beginnen</translation>
+    </message>
+    <message>
+        <source>The Thirty Years&apos; War begins</source>
+        <translation>Der Dreißigjährige Krieg beginnt</translation>
+    </message>
+    <message>
+        <source>The Six-Day War begins</source>
+        <translation>Der Sechstagekrieg beginnt</translation>
+    </message>
+    <message>
+        <source>The Austro-Prussian War begins</source>
+        <translation>Der Deutsche Krieg beginnt</translation>
+    </message>
+    <message>
+        <source>The War of 1812 begins</source>
+        <translation>Der Britisch-Amerikanische Krieg beginnt</translation>
+    </message>
+    <message>
+        <source>Germany invades the Soviet Union</source>
+        <translation>Deutschland überfällt die Sowjetunion</translation>
+    </message>
+    <message>
+        <source>The Korean War begins</source>
+        <translation>Der Koreakrieg beginnt</translation>
+    </message>
+    <message>
+        <source>The Nigerian Civil War begins</source>
+        <translation>Der Biafra-Krieg beginnt</translation>
+    </message>
+    <message>
+        <source>The Second Sino-Japanese War begins</source>
+        <translation>Der Zweite Japanisch-Chinesische Krieg beginnt</translation>
+    </message>
+    <message>
+        <source>The Spanish Civil War begins</source>
+        <translation>Der Spanische Bürgerkrieg beginnt</translation>
+    </message>
+    <message>
+        <source>The Franco-Prussian War begins</source>
+        <translation>Der Deutsch-Französische Krieg beginnt</translation>
+    </message>
+    <message>
+        <source>The First World War begins</source>
+        <translation>Der Erste Weltkrieg beginnt</translation>
+    </message>
+    <message>
+        <source>The Chinese Civil War begins</source>
+        <translation>Der Chinesische Bürgerkrieg beginnt</translation>
+    </message>
+    <message>
+        <source>Iraq invades Kuwait: the Gulf War begins</source>
+        <translation>Der Irak überfällt Kuwait: der Golfkrieg beginnt</translation>
+    </message>
+    <message>
+        <source>The Seven Years&apos; War begins</source>
+        <translation>Der Siebenjährige Krieg beginnt</translation>
+    </message>
+    <message>
+        <source>The Second World War begins</source>
+        <translation>Der Zweite Weltkrieg beginnt</translation>
+    </message>
+    <message>
+        <source>The First Opium War begins</source>
+        <translation>Der Erste Opiumkrieg beginnt</translation>
+    </message>
+    <message>
+        <source>The Iran-Iraq War begins</source>
+        <translation>Der Iran-Irak-Krieg beginnt</translation>
+    </message>
+    <message>
+        <source>The Yom Kippur War begins</source>
+        <translation>Der Jom-Kippur-Krieg beginnt</translation>
+    </message>
+    <message>
+        <source>The War in Afghanistan begins</source>
+        <translation>Der Krieg in Afghanistan beginnt</translation>
+    </message>
+    <message>
+        <source>The First Balkan War begins</source>
+        <translation>Der Erste Balkankrieg beginnt</translation>
+    </message>
+    <message>
+        <source>The Second Boer War begins</source>
+        <translation>Der Zweite Burenkrieg beginnt</translation>
+    </message>
+    <message>
+        <source>The Vietnam War begins</source>
+        <translation>Der Vietnamkrieg beginnt</translation>
+    </message>
+    <message>
+        <source>The Winter War begins</source>
+        <translation>Der Winterkrieg beginnt</translation>
+    </message>
+    <message>
+        <source>The Indo-Pakistani War of 1971 begins</source>
+        <translation>Der Indisch-Pakistanische Krieg von 1971 beginnt</translation>
+    </message>
+    <message>
+        <source>Japan attacks Pearl Harbor</source>
+        <translation>Japan greift Pearl Harbor an</translation>
+    </message>
+    <message>
+        <source>The War of the Austrian Succession begins</source>
+        <translation>Der Österreichische Erbfolgekrieg beginnt</translation>
+    </message>
+    <message>
+        <source>The First Indochina War begins</source>
+        <translation>Der Indochinakrieg beginnt</translation>
+    </message>
+    <message>
+        <source>The Soviet Union invades Afghanistan</source>
+        <translation>Die Sowjetunion marschiert in Afghanistan ein</translation>
+    </message>
+    <message>
+        <source>Treaty of Kiel</source>
+        <translation>Kieler Frieden</translation>
+    </message>
+    <message>
+        <source>Élysée Treaty of Franco-German friendship</source>
+        <translation>Élysée-Vertrag der deutsch-französischen Freundschaft</translation>
+    </message>
+    <message>
+        <source>Treaty of Karlowitz</source>
+        <translation>Frieden von Karlowitz</translation>
+    </message>
+    <message>
+        <source>Paris Peace Accords on Vietnam</source>
+        <translation>Pariser Friedensabkommen zu Vietnam</translation>
+    </message>
+    <message>
+        <source>Treaty of Guadalupe Hidalgo</source>
+        <translation>Vertrag von Guadalupe Hidalgo</translation>
+    </message>
+    <message>
+        <source>Treaty of Paris ends the Seven Years&apos; War</source>
+        <translation>Frieden von Paris beendet den Siebenjährigen Krieg</translation>
+    </message>
+    <message>
+        <source>Treaty of Brest-Litovsk</source>
+        <translation>Frieden von Brest-Litowsk</translation>
+    </message>
+    <message>
+        <source>Moscow Peace Treaty ends the Winter War</source>
+        <translation>Moskauer Frieden beendet den Winterkrieg</translation>
+    </message>
+    <message>
+        <source>Treaty of Paris ends the Crimean War</source>
+        <translation>Pariser Frieden beendet den Krimkrieg</translation>
+    </message>
+    <message>
+        <source>The Spanish Civil War ends</source>
+        <translation>Der Spanische Bürgerkrieg endet</translation>
+    </message>
+    <message>
+        <source>Surrender at Appomattox ends the American Civil War</source>
+        <translation>Kapitulation von Appomattox beendet den Amerikanischen Bürgerkrieg</translation>
+    </message>
+    <message>
+        <source>Good Friday Agreement for Northern Ireland</source>
+        <translation>Karfreitagsabkommen für Nordirland</translation>
+    </message>
+    <message>
+        <source>Peace of Utrecht</source>
+        <translation>Frieden von Utrecht</translation>
+    </message>
+    <message>
+        <source>The Second World War ends in Europe</source>
+        <translation>Der Zweite Weltkrieg endet in Europa</translation>
+    </message>
+    <message>
+        <source>Schuman Declaration</source>
+        <translation>Schuman-Erklärung</translation>
+    </message>
+    <message>
+        <source>Treaty of Frankfurt</source>
+        <translation>Frieden von Frankfurt</translation>
+    </message>
+    <message>
+        <source>Treaty of Vereeniging ends the Second Boer War</source>
+        <translation>Frieden von Vereeniging beendet den Zweiten Burenkrieg</translation>
+    </message>
+    <message>
+        <source>Treaty of Trianon</source>
+        <translation>Vertrag von Trianon</translation>
+    </message>
+    <message>
+        <source>Final Act of the Congress of Vienna</source>
+        <translation>Schlussakte des Wiener Kongresses</translation>
+    </message>
+    <message>
+        <source>Charter of the United Nations signed</source>
+        <translation>Charta der Vereinten Nationen unterzeichnet</translation>
+    </message>
+    <message>
+        <source>Treaty of Versailles</source>
+        <translation>Vertrag von Versailles</translation>
+    </message>
+    <message>
+        <source>Treaty of Lausanne</source>
+        <translation>Vertrag von Lausanne</translation>
+    </message>
+    <message>
+        <source>Korean Armistice Agreement</source>
+        <translation>Waffenstillstandsabkommen von Korea</translation>
+    </message>
+    <message>
+        <source>Peace of Breda</source>
+        <translation>Frieden von Breda</translation>
+    </message>
+    <message>
+        <source>Partial Nuclear Test Ban Treaty</source>
+        <translation>Vertrag über das Verbot von Kernwaffenversuchen</translation>
+    </message>
+    <message>
+        <source>Peace of Prague</source>
+        <translation>Prager Frieden</translation>
+    </message>
+    <message>
+        <source>Kellogg-Briand Pact outlaws war</source>
+        <translation>Briand-Kellogg-Pakt ächtet den Krieg</translation>
+    </message>
+    <message>
+        <source>Treaty of Nanking ends the First Opium War</source>
+        <translation>Vertrag von Nanking beendet den Ersten Opiumkrieg</translation>
+    </message>
+    <message>
+        <source>Japan surrenders: the Second World War ends</source>
+        <translation>Japan kapituliert: der Zweite Weltkrieg endet</translation>
+    </message>
+    <message>
+        <source>Treaty of Paris ends the American Revolutionary War</source>
+        <translation>Frieden von Paris beendet den Amerikanischen Unabhängigkeitskrieg</translation>
+    </message>
+    <message>
+        <source>Treaty of Portsmouth ends the Russo-Japanese War</source>
+        <translation>Vertrag von Portsmouth beendet den Russisch-Japanischen Krieg</translation>
+    </message>
+    <message>
+        <source>Two Plus Four Treaty</source>
+        <translation>Zwei-plus-Vier-Vertrag</translation>
+    </message>
+    <message>
+        <source>Oslo Accords</source>
+        <translation>Oslo-Abkommen</translation>
+    </message>
+    <message>
+        <source>Camp David Accords</source>
+        <translation>Abkommen von Camp David</translation>
+    </message>
+    <message>
+        <source>Peace of Augsburg</source>
+        <translation>Augsburger Religionsfrieden</translation>
+    </message>
+    <message>
+        <source>Treaty of Aix-la-Chapelle</source>
+        <translation>Frieden von Aachen</translation>
+    </message>
+    <message>
+        <source>Peace of Westphalia ends the Thirty Years&apos; War</source>
+        <translation>Westfälischer Frieden beendet den Dreißigjährigen Krieg</translation>
+    </message>
+    <message>
+        <source>Armistice ends the First World War</source>
+        <translation>Waffenstillstand beendet den Ersten Weltkrieg</translation>
+    </message>
+    <message>
+        <source>INF Treaty on intermediate-range missiles</source>
+        <translation>INF-Vertrag über Mittelstreckenraketen</translation>
+    </message>
+    <message>
+        <source>Universal Declaration of Human Rights</source>
+        <translation>Allgemeine Erklärung der Menschenrechte</translation>
+    </message>
+    <message>
+        <source>Dayton Agreement ends the Bosnian War</source>
+        <translation>Dayton-Abkommen beendet den Bosnienkrieg</translation>
+    </message>
+    <message>
+        <source>Treaty of Ghent ends the War of 1812</source>
+        <translation>Frieden von Gent beendet den Britisch-Amerikanischen Krieg</translation>
+    </message>
+    <message>
+        <source>The Cuban Revolution triumphs</source>
+        <translation>Die Kubanische Revolution siegt</translation>
+    </message>
+    <message>
+        <source>The Prague Spring begins</source>
+        <translation>Der Prager Frühling beginnt</translation>
+    </message>
+    <message>
+        <source>Bloody Sunday sets off the Russian Revolution of 1905</source>
+        <translation>Der Petersburger Blutsonntag löst die Russische Revolution von 1905 aus</translation>
+    </message>
+    <message>
+        <source>The Egyptian Revolution begins</source>
+        <translation>Die Revolution in Ägypten beginnt</translation>
+    </message>
+    <message>
+        <source>The Iranian Revolution triumphs</source>
+        <translation>Die Iranische Revolution siegt</translation>
+    </message>
+    <message>
+        <source>The February Revolution topples France&apos;s king</source>
+        <translation>Die Februarrevolution stürzt Frankreichs König</translation>
+    </message>
+    <message>
+        <source>People Power Revolution in the Philippines</source>
+        <translation>Revolution der Volksmacht auf den Philippinen</translation>
+    </message>
+    <message>
+        <source>The February Revolution begins in Russia</source>
+        <translation>Die Februarrevolution beginnt in Russland</translation>
+    </message>
+    <message>
+        <source>Gandhi sets off on the Salt March</source>
+        <translation>Gandhi bricht zum Salzmarsch auf</translation>
+    </message>
+    <message>
+        <source>The Hungarian Revolution of 1848 begins</source>
+        <translation>Die Ungarische Revolution von 1848 beginnt</translation>
+    </message>
+    <message>
+        <source>Barricades in Berlin: the March Revolution</source>
+        <translation>Barrikaden in Berlin: die Märzrevolution</translation>
+    </message>
+    <message>
+        <source>The Easter Rising in Dublin</source>
+        <translation>Der Osteraufstand in Dublin</translation>
+    </message>
+    <message>
+        <source>The Carnation Revolution in Portugal</source>
+        <translation>Die Nelkenrevolution in Portugal</translation>
+    </message>
+    <message>
+        <source>The Indian Rebellion begins</source>
+        <translation>Der Indische Aufstand beginnt</translation>
+    </message>
+    <message>
+        <source>The barons force King John to seal Magna Carta</source>
+        <translation>Die Barone zwingen König Johann zur Magna Carta</translation>
+    </message>
+    <message>
+        <source>The uprising in East Germany</source>
+        <translation>Der Volksaufstand in der DDR</translation>
+    </message>
+    <message>
+        <source>The Stonewall uprising</source>
+        <translation>Der Stonewall-Aufstand</translation>
+    </message>
+    <message>
+        <source>The storming of the Bastille</source>
+        <translation>Der Sturm auf die Bastille</translation>
+    </message>
+    <message>
+        <source>The July Revolution in Paris</source>
+        <translation>Die Julirevolution in Paris</translation>
+    </message>
+    <message>
+        <source>The First Defenestration of Prague</source>
+        <translation>Der Erste Prager Fenstersturz</translation>
+    </message>
+    <message>
+        <source>The Warsaw Uprising</source>
+        <translation>Der Warschauer Aufstand</translation>
+    </message>
+    <message>
+        <source>The Haitian Revolution begins</source>
+        <translation>Die Haitianische Revolution beginnt</translation>
+    </message>
+    <message>
+        <source>The Baltic Way</source>
+        <translation>Der Baltische Weg</translation>
+    </message>
+    <message>
+        <source>The Belgian Revolution begins</source>
+        <translation>Die Belgische Revolution beginnt</translation>
+    </message>
+    <message>
+        <source>The March on Washington</source>
+        <translation>Der Marsch auf Washington</translation>
+    </message>
+    <message>
+        <source>The Gdańsk Agreement makes way for Solidarity</source>
+        <translation>Das Danziger Abkommen ebnet der Solidarność den Weg</translation>
+    </message>
+    <message>
+        <source>The great Monday Demonstration in Leipzig</source>
+        <translation>Die große Montagsdemonstration in Leipzig</translation>
+    </message>
+    <message>
+        <source>The Wuchang Uprising begins the Xinhai Revolution</source>
+        <translation>Der Wuchang-Aufstand beginnt die Xinhai-Revolution</translation>
+    </message>
+    <message>
+        <source>The Hungarian Revolution of 1956 begins</source>
+        <translation>Der Ungarische Volksaufstand von 1956 beginnt</translation>
+    </message>
+    <message>
+        <source>Martin Luther publishes his 95 Theses</source>
+        <translation>Martin Luther veröffentlicht seine 95 Thesen</translation>
+    </message>
+    <message>
+        <source>The Kiel mutiny begins the German Revolution</source>
+        <translation>Der Kieler Matrosenaufstand beginnt die Novemberrevolution</translation>
+    </message>
+    <message>
+        <source>William of Orange lands: the Glorious Revolution</source>
+        <translation>Wilhelm von Oranien landet: die Glorreiche Revolution</translation>
+    </message>
+    <message>
+        <source>The October Revolution in Russia</source>
+        <translation>Die Oktoberrevolution in Russland</translation>
+    </message>
+    <message>
+        <source>The fall of the Berlin Wall</source>
+        <translation>Der Fall der Berliner Mauer</translation>
+    </message>
+    <message>
+        <source>The Velvet Revolution begins</source>
+        <translation>Die Samtene Revolution beginnt</translation>
+    </message>
+    <message>
+        <source>The Mexican Revolution begins</source>
+        <translation>Die Mexikanische Revolution beginnt</translation>
+    </message>
+    <message>
+        <source>The Orange Revolution begins</source>
+        <translation>Die Orange Revolution beginnt</translation>
+    </message>
+    <message>
+        <source>The November Uprising in Poland</source>
+        <translation>Der Novemberaufstand in Polen</translation>
+    </message>
+    <message>
+        <source>Rosa Parks refuses to give up her seat</source>
+        <translation>Rosa Parks weigert sich, ihren Sitzplatz zu räumen</translation>
+    </message>
+    <message>
+        <source>The Boston Tea Party</source>
+        <translation>Die Boston Tea Party</translation>
+    </message>
+    <message>
+        <source>The protests in Tunisia begin the Arab Spring</source>
+        <translation>Die Proteste in Tunesien beginnen den Arabischen Frühling</translation>
+    </message>
+    <message>
+        <source>The Romanian Revolution topples Ceaușescu</source>
+        <translation>Die Rumänische Revolution stürzt Ceaușescu</translation>
+    </message>
+    <message>
+        <source>Granada falls to Castile and Aragon</source>
+        <translation>Granada fällt an Kastilien und Aragón</translation>
+    </message>
+    <message>
+        <source>Caesar crosses the Rubicon</source>
+        <translation>Cäsar überschreitet den Rubikon</translation>
+    </message>
+    <message>
+        <source>The Kingdom of Hawaii is overthrown</source>
+        <translation>Das Königreich Hawaii wird gestürzt</translation>
+    </message>
+    <message>
+        <source>Paris surrenders to the German armies</source>
+        <translation>Paris kapituliert vor den deutschen Armeen</translation>
+    </message>
+    <message>
+        <source>Baghdad falls to the Mongols</source>
+        <translation>Bagdad fällt an die Mongolen</translation>
+    </message>
+    <message>
+        <source>Singapore falls to Japan</source>
+        <translation>Singapur fällt an Japan</translation>
+    </message>
+    <message>
+        <source>The Alamo falls</source>
+        <translation>Das Alamo fällt</translation>
+    </message>
+    <message>
+        <source>Germany annexes Austria</source>
+        <translation>Deutschland annektiert Österreich</translation>
+    </message>
+    <message>
+        <source>Germany occupies Prague</source>
+        <translation>Deutschland besetzt Prag</translation>
+    </message>
+    <message>
+        <source>The Mongols complete their conquest of China at Yamen</source>
+        <translation>Die Mongolen vollenden bei Yamen die Eroberung Chinas</translation>
+    </message>
+    <message>
+        <source>Germany invades Denmark and Norway</source>
+        <translation>Deutschland überfällt Dänemark und Norwegen</translation>
+    </message>
+    <message>
+        <source>Crusaders take Constantinople</source>
+        <translation>Kreuzfahrer erobern Konstantinopel</translation>
+    </message>
+    <message>
+        <source>Babur wins at Panipat and founds the Mughal Empire</source>
+        <translation>Babur siegt bei Panipat und gründet das Mogulreich</translation>
+    </message>
+    <message>
+        <source>Saigon falls</source>
+        <translation>Saigon fällt</translation>
+    </message>
+    <message>
+        <source>Berlin falls to the Red Army</source>
+        <translation>Berlin fällt an die Rote Armee</translation>
+    </message>
+    <message>
+        <source>Acre, the last crusader city, falls</source>
+        <translation>Akkon, die letzte Stadt der Kreuzfahrer, fällt</translation>
+    </message>
+    <message>
+        <source>Castile takes Toledo</source>
+        <translation>Kastilien erobert Toledo</translation>
+    </message>
+    <message>
+        <source>Constantinople falls to the Ottomans</source>
+        <translation>Konstantinopel fällt an die Osmanen</translation>
+    </message>
+    <message>
+        <source>German troops enter Paris</source>
+        <translation>Deutsche Truppen marschieren in Paris ein</translation>
+    </message>
+    <message>
+        <source>The British win Bengal at Plassey</source>
+        <translation>Die Briten gewinnen bei Plassey Bengalen</translation>
+    </message>
+    <message>
+        <source>Castile takes Córdoba</source>
+        <translation>Kastilien erobert Córdoba</translation>
+    </message>
+    <message>
+        <source>France takes Algiers</source>
+        <translation>Frankreich erobert Algier</translation>
+    </message>
+    <message>
+        <source>Crusaders take Jerusalem</source>
+        <translation>Kreuzfahrer erobern Jerusalem</translation>
+    </message>
+    <message>
+        <source>Tenochtitlan falls to Cortés</source>
+        <translation>Tenochtitlan fällt an Cortés</translation>
+    </message>
+    <message>
+        <source>The Visigoths sack Rome</source>
+        <translation>Die Westgoten plündern Rom</translation>
+    </message>
+    <message>
+        <source>The Ottomans win Hungary at Mohács</source>
+        <translation>Die Osmanen gewinnen bei Mohács Ungarn</translation>
+    </message>
+    <message>
+        <source>The last Western Roman emperor is deposed</source>
+        <translation>Der letzte weströmische Kaiser wird abgesetzt</translation>
+    </message>
+    <message>
+        <source>The British take Quebec</source>
+        <translation>Die Briten erobern Québec</translation>
+    </message>
+    <message>
+        <source>Napoleon enters Moscow</source>
+        <translation>Napoleon zieht in Moskau ein</translation>
+    </message>
+    <message>
+        <source>Italy takes Rome</source>
+        <translation>Italien erobert Rom</translation>
+    </message>
+    <message>
+        <source>Warsaw surrenders to Germany</source>
+        <translation>Warschau kapituliert vor Deutschland</translation>
+    </message>
+    <message>
+        <source>Alexander the Great defeats Persia at Gaugamela</source>
+        <translation>Alexander der Große besiegt Persien bei Gaugamela</translation>
+    </message>
+    <message>
+        <source>Saladin takes Jerusalem</source>
+        <translation>Saladin erobert Jerusalem</translation>
+    </message>
+    <message>
+        <source>Cyrus the Great takes Babylon</source>
+        <translation>Kyros der Große erobert Babylon</translation>
+    </message>
+    <message>
+        <source>William the Conqueror wins at Hastings</source>
+        <translation>Wilhelm der Eroberer siegt bei Hastings</translation>
+    </message>
+    <message>
+        <source>Portugal takes Lisbon</source>
+        <translation>Portugal erobert Lissabon</translation>
+    </message>
+    <message>
+        <source>Napoleon enters Vienna</source>
+        <translation>Napoleon zieht in Wien ein</translation>
+    </message>
+    <message>
+        <source>Pizarro captures the Inca emperor at Cajamarca</source>
+        <translation>Pizarro nimmt bei Cajamarca den Inka-Herrscher gefangen</translation>
+    </message>
+    <message>
+        <source>Castile takes Seville</source>
+        <translation>Kastilien erobert Sevilla</translation>
+    </message>
+    <message>
+        <source>Portugal takes Goa</source>
+        <translation>Portugal erobert Goa</translation>
+    </message>
+    <message>
+        <source>Kyiv falls to the Mongols</source>
+        <translation>Kiew fällt an die Mongolen</translation>
+    </message>
+    <message>
+        <source>Timur takes Delhi</source>
+        <translation>Timur erobert Delhi</translation>
+    </message>
+    <message>
+        <source>Piazzi discovers Ceres</source>
+        <translation>Piazzi entdeckt Ceres</translation>
+    </message>
+    <message>
+        <source>Cook is the first to cross the Antarctic Circle</source>
+        <translation>Cook überquert als Erster den südlichen Polarkreis</translation>
+    </message>
+    <message>
+        <source>Cook reaches Hawaii</source>
+        <translation>Cook erreicht Hawaii</translation>
+    </message>
+    <message>
+        <source>The first confirmed landing on Antarctica</source>
+        <translation>Die erste belegte Landung auf dem antarktischen Festland</translation>
+    </message>
+    <message>
+        <source>Dias rounds the Cape of Good Hope</source>
+        <translation>Dias umrundet das Kap der Guten Hoffnung</translation>
+    </message>
+    <message>
+        <source>Tombaugh discovers Pluto</source>
+        <translation>Tombaugh entdeckt Pluto</translation>
+    </message>
+    <message>
+        <source>Herschel discovers Uranus</source>
+        <translation>Herschel entdeckt Uranus</translation>
+    </message>
+    <message>
+        <source>Farmers find the Terracotta Army</source>
+        <translation>Bauern finden die Terrakotta-Armee</translation>
+    </message>
+    <message>
+        <source>Ponce de León reaches Florida</source>
+        <translation>Ponce de León erreicht Florida</translation>
+    </message>
+    <message>
+        <source>Roggeveen reaches Easter Island</source>
+        <translation>Roggeveen erreicht die Osterinsel</translation>
+    </message>
+    <message>
+        <source>Nansen comes closer to the North Pole than anyone before</source>
+        <translation>Nansen kommt dem Nordpol näher als je ein Mensch zuvor</translation>
+    </message>
+    <message>
+        <source>Cabral reaches Brazil</source>
+        <translation>Cabral erreicht Brasilien</translation>
+    </message>
+    <message>
+        <source>Cook lands at Botany Bay</source>
+        <translation>Cook landet in der Botany Bay</translation>
+    </message>
+    <message>
+        <source>De Soto reaches the Mississippi</source>
+        <translation>De Soto erreicht den Mississippi</translation>
+    </message>
+    <message>
+        <source>The airship Norge flies over the North Pole</source>
+        <translation>Das Luftschiff Norge überfliegt den Nordpol</translation>
+    </message>
+    <message>
+        <source>Vasco da Gama reaches India by sea</source>
+        <translation>Vasco da Gama erreicht Indien auf dem Seeweg</translation>
+    </message>
+    <message>
+        <source>Humboldt climbs higher on Chimborazo than anyone before</source>
+        <translation>Humboldt steigt am Chimborazo höher als je ein Mensch zuvor</translation>
+    </message>
+    <message>
+        <source>Champlain founds Quebec</source>
+        <translation>Champlain gründet Québec</translation>
+    </message>
+    <message>
+        <source>The Rosetta Stone is found</source>
+        <translation>Der Stein von Rosette wird gefunden</translation>
+    </message>
+    <message>
+        <source>Mackenzie crosses North America to the Pacific</source>
+        <translation>Mackenzie durchquert Nordamerika bis zum Pazifik</translation>
+    </message>
+    <message>
+        <source>Bingham reaches Machu Picchu</source>
+        <translation>Bingham erreicht Machu Picchu</translation>
+    </message>
+    <message>
+        <source>Speke finds the source of the Nile</source>
+        <translation>Speke findet die Quelle des Nils</translation>
+    </message>
+    <message>
+        <source>Burckhardt rediscovers Petra</source>
+        <translation>Burckhardt entdeckt Petra wieder</translation>
+    </message>
+    <message>
+        <source>Orellana sails the Amazon to the Atlantic</source>
+        <translation>Orellana befährt den Amazonas bis zum Atlantik</translation>
+    </message>
+    <message>
+        <source>Amundsen completes the Northwest Passage</source>
+        <translation>Amundsen bezwingt die Nordwestpassage</translation>
+    </message>
+    <message>
+        <source>The wreck of the Titanic is found</source>
+        <translation>Das Wrack der Titanic wird gefunden</translation>
+    </message>
+    <message>
+        <source>Elcano completes the first voyage around the world</source>
+        <translation>Elcano vollendet die erste Weltumsegelung</translation>
+    </message>
+    <message>
+        <source>Teenagers find the cave paintings of Lascaux</source>
+        <translation>Jugendliche finden die Höhlenmalereien von Lascaux</translation>
+    </message>
+    <message>
+        <source>Darwin reaches the Galápagos Islands</source>
+        <translation>Darwin erreicht die Galápagos-Inseln</translation>
+    </message>
+    <message>
+        <source>Hikers find Ötzi in the Alps</source>
+        <translation>Wanderer finden Ötzi in den Alpen</translation>
+    </message>
+    <message>
+        <source>Galle discovers Neptune</source>
+        <translation>Galle entdeckt Neptun</translation>
+    </message>
+    <message>
+        <source>Balboa sights the Pacific</source>
+        <translation>Balboa erblickt den Pazifik</translation>
+    </message>
+    <message>
+        <source>The first planet of a Sun-like star is found</source>
+        <translation>Der erste Planet eines sonnenähnlichen Sterns wird gefunden</translation>
+    </message>
+    <message>
+        <source>Columbus reaches the Americas</source>
+        <translation>Kolumbus erreicht Amerika</translation>
+    </message>
+    <message>
+        <source>Carter finds Tutankhamun&apos;s tomb</source>
+        <translation>Carter findet das Grab des Tutanchamun</translation>
+    </message>
+    <message>
+        <source>Lewis and Clark see the Pacific</source>
+        <translation>Lewis und Clark erblicken den Pazifik</translation>
+    </message>
+    <message>
+        <source>Stanley finds Livingstone</source>
+        <translation>Stanley findet Livingstone</translation>
+    </message>
+    <message>
+        <source>Livingstone reaches the Victoria Falls</source>
+        <translation>Livingstone erreicht die Victoriafälle</translation>
+    </message>
+    <message>
+        <source>Tasman reaches Tasmania</source>
+        <translation>Tasman erreicht Tasmanien</translation>
+    </message>
+    <message>
+        <source>Magellan sails into the Pacific</source>
+        <translation>Magellan segelt in den Pazifik</translation>
+    </message>
+    <message>
+        <source>Tasman sights New Zealand</source>
+        <translation>Tasman erblickt Neuseeland</translation>
+    </message>
+    <message>
+        <source>Amundsen reaches the South Pole</source>
+        <translation>Amundsen erreicht den Südpol</translation>
+    </message>
+    <message>
+        <source>Galileo sees the moons of Jupiter</source>
+        <translation>Galilei sieht die Monde des Jupiter</translation>
+    </message>
+    <message>
+        <source>The first dive to the deepest point of the ocean</source>
+        <translation>Der erste Tauchgang zur tiefsten Stelle des Ozeans</translation>
+    </message>
+    <message>
+        <source>Dolly, the first cloned mammal, is announced</source>
+        <translation>Dolly, das erste geklonte Säugetier, wird vorgestellt</translation>
+    </message>
+    <message>
+        <source>The first telephone call</source>
+        <translation>Das erste Telefongespräch</translation>
+    </message>
+    <message>
+        <source>The first spacewalk</source>
+        <translation>Der erste Weltraumausstieg</translation>
+    </message>
+    <message>
+        <source>The first image of a black hole</source>
+        <translation>Das erste Bild eines Schwarzen Lochs</translation>
+    </message>
+    <message>
+        <source>Gagarin is the first human in space</source>
+        <translation>Gagarin ist der erste Mensch im Weltraum</translation>
+    </message>
+    <message>
+        <source>The first atom split by accelerated particles</source>
+        <translation>Der erste Atomkern, durch beschleunigte Teilchen gespalten</translation>
+    </message>
+    <message>
+        <source>The first space station is launched</source>
+        <translation>Die erste Raumstation startet</translation>
+    </message>
+    <message>
+        <source>The double helix of DNA is published</source>
+        <translation>Die Doppelhelix der DNA wird veröffentlicht</translation>
+    </message>
+    <message>
+        <source>The first mile run in under four minutes</source>
+        <translation>Die erste Meile unter vier Minuten</translation>
+    </message>
+    <message>
+        <source>The Diamond Sutra, the oldest dated printed book</source>
+        <translation>Das Diamant-Sutra, das älteste datierte gedruckte Buch</translation>
+    </message>
+    <message>
+        <source>Jenner gives the first vaccination</source>
+        <translation>Jenner nimmt die erste Impfung vor</translation>
+    </message>
+    <message>
+        <source>Lindbergh flies the Atlantic alone</source>
+        <translation>Lindbergh überfliegt allein den Atlantik</translation>
+    </message>
+    <message>
+        <source>The first ascent of Mount Everest</source>
+        <translation>Die Erstbesteigung des Mount Everest</translation>
+    </message>
+    <message>
+        <source>The first nonstop flight across the Atlantic</source>
+        <translation>Der erste Nonstopflug über den Atlantik</translation>
+    </message>
+    <message>
+        <source>Tereshkova is the first woman in space</source>
+        <translation>Tereschkowa ist die erste Frau im Weltraum</translation>
+    </message>
+    <message>
+        <source>The first rocket reaches space</source>
+        <translation>Die erste Rakete erreicht den Weltraum</translation>
+    </message>
+    <message>
+        <source>The first draft of the human genome</source>
+        <translation>Der erste Entwurf des menschlichen Genoms</translation>
+    </message>
+    <message>
+        <source>Einstein submits his special theory of relativity</source>
+        <translation>Einstein reicht seine spezielle Relativitätstheorie ein</translation>
+    </message>
+    <message>
+        <source>Newton publishes his laws of motion and gravitation</source>
+        <translation>Newton veröffentlicht seine Gesetze der Bewegung und der Gravitation</translation>
+    </message>
+    <message>
+        <source>The first humans land on the Moon</source>
+        <translation>Die ersten Menschen landen auf dem Mond</translation>
+    </message>
+    <message>
+        <source>The first child conceived in a test tube is born</source>
+        <translation>Das erste im Reagenzglas gezeugte Kind wird geboren</translation>
+    </message>
+    <message>
+        <source>The first ascent of Mont Blanc</source>
+        <translation>Die Erstbesteigung des Mont Blanc</translation>
+    </message>
+    <message>
+        <source>The first flight of a jet aircraft</source>
+        <translation>Der erste Flug eines Düsenflugzeugs</translation>
+    </message>
+    <message>
+        <source>The first spacecraft reaches the Moon</source>
+        <translation>Die erste Raumsonde erreicht den Mond</translation>
+    </message>
+    <message>
+        <source>Gravitational waves are detected for the first time</source>
+        <translation>Gravitationswellen werden zum ersten Mal gemessen</translation>
+    </message>
+    <message>
+        <source>Fleming discovers penicillin</source>
+        <translation>Fleming entdeckt das Penicillin</translation>
+    </message>
+    <message>
+        <source>Sputnik, the first artificial satellite</source>
+        <translation>Sputnik, der erste künstliche Satellit</translation>
+    </message>
+    <message>
+        <source>The first flight faster than sound</source>
+        <translation>Der erste Flug schneller als der Schall</translation>
+    </message>
+    <message>
+        <source>The first public operation under anaesthesia</source>
+        <translation>Die erste öffentliche Operation unter Narkose</translation>
+    </message>
+    <message>
+        <source>Röntgen discovers X-rays</source>
+        <translation>Röntgen entdeckt die Röntgenstrahlen</translation>
+    </message>
+    <message>
+        <source>The first crewed balloon flight</source>
+        <translation>Die erste bemannte Ballonfahrt</translation>
+    </message>
+    <message>
+        <source>Darwin publishes On the Origin of Species</source>
+        <translation>Darwin veröffentlicht Über die Entstehung der Arten</translation>
+    </message>
+    <message>
+        <source>The first nuclear chain reaction</source>
+        <translation>Die erste nukleare Kettenreaktion</translation>
+    </message>
+    <message>
+        <source>The first heart transplant</source>
+        <translation>Die erste Herztransplantation</translation>
+    </message>
+    <message>
+        <source>The first Nobel Prizes are awarded</source>
+        <translation>Die ersten Nobelpreise werden verliehen</translation>
+    </message>
+    <message>
+        <source>The first radio signal across the Atlantic</source>
+        <translation>Das erste Funksignal über den Atlantik</translation>
+    </message>
+    <message>
+        <source>The Wright brothers make the first powered flight</source>
+        <translation>Die Brüder Wright gelingt der erste Motorflug</translation>
+    </message>
+    <message>
+        <source>An orbital rocket lands upright for the first time</source>
+        <translation>Eine Orbitalrakete landet zum ersten Mal aufrecht</translation>
+    </message>
+    <message>
+        <source>The first successful kidney transplant</source>
+        <translation>Die erste erfolgreiche Nierentransplantation</translation>
+    </message>
+    <message>
+        <source>The first humans orbit the Moon</source>
+        <translation>Die ersten Menschen umkreisen den Mond</translation>
+    </message>
+    <message>
+        <source>Watt patents his steam engine</source>
+        <translation>Watt erhält das Patent auf seine Dampfmaschine</translation>
+    </message>
+    <message>
+        <source>Photography by daguerreotype is announced</source>
+        <translation>Die Fotografie als Daguerreotypie wird vorgestellt</translation>
+    </message>
+    <message>
+        <source>Whittle files his patent for the jet engine</source>
+        <translation>Whittle meldet das Strahltriebwerk zum Patent an</translation>
+    </message>
+    <message>
+        <source>Baird demonstrates television</source>
+        <translation>Baird führt das Fernsehen vor</translation>
+    </message>
+    <message>
+        <source>Benz patents his motor car</source>
+        <translation>Benz meldet seinen Motorwagen zum Patent an</translation>
+    </message>
+    <message>
+        <source>ENIAC, an electronic computer, is unveiled</source>
+        <translation>ENIAC, ein elektronischer Computer, wird vorgestellt</translation>
+    </message>
+    <message>
+        <source>Edison patents the phonograph</source>
+        <translation>Edison erhält das Patent auf den Phonographen</translation>
+    </message>
+    <message>
+        <source>The first steam locomotive runs on rails</source>
+        <translation>Die erste Dampflokomotive fährt auf Schienen</translation>
+    </message>
+    <message>
+        <source>The first GPS satellite is launched</source>
+        <translation>Der erste GPS-Satellit startet</translation>
+    </message>
+    <message>
+        <source>Diesel is granted his patent for the engine</source>
+        <translation>Diesel erhält das Patent auf seinen Motor</translation>
+    </message>
+    <message>
+        <source>Nylon is first made</source>
+        <translation>Nylon wird zum ersten Mal hergestellt</translation>
+    </message>
+    <message>
+        <source>Bell is granted his patent for the telephone</source>
+        <translation>Bell erhält das Patent auf das Telefon</translation>
+    </message>
+    <message>
+        <source>Berners-Lee proposes the World Wide Web</source>
+        <translation>Berners-Lee schlägt das World Wide Web vor</translation>
+    </message>
+    <message>
+        <source>Whitney patents the cotton gin</source>
+        <translation>Whitney erhält das Patent auf die Baumwollentkörnungsmaschine</translation>
+    </message>
+    <message>
+        <source>Goddard launches the first liquid-fuelled rocket</source>
+        <translation>Goddard startet die erste Flüssigkeitsrakete</translation>
+    </message>
+    <message>
+        <source>Volta describes his battery</source>
+        <translation>Volta beschreibt seine Batterie</translation>
+    </message>
+    <message>
+        <source>The first call from a handheld mobile phone</source>
+        <translation>Das erste Gespräch von einem tragbaren Mobiltelefon</translation>
+    </message>
+    <message>
+        <source>Hunt patents the safety pin</source>
+        <translation>Hunt erhält das Patent auf die Sicherheitsnadel</translation>
+    </message>
+    <message>
+        <source>Nobel patents dynamite</source>
+        <translation>Nobel erhält das Patent auf das Dynamit</translation>
+    </message>
+    <message>
+        <source>Zuse presents the Z3, the first programmable computer</source>
+        <translation>Zuse stellt die Z3 vor, den ersten programmierbaren Computer</translation>
+    </message>
+    <message>
+        <source>Maiman builds the first laser</source>
+        <translation>Maiman baut den ersten Laser</translation>
+    </message>
+    <message>
+        <source>Strauss and Davis patent riveted jeans</source>
+        <translation>Strauss und Davis erhalten das Patent auf genietete Jeans</translation>
+    </message>
+    <message>
+        <source>Morse sends his first telegram over a long line</source>
+        <translation>Morse sendet sein erstes Telegramm über eine lange Leitung</translation>
+    </message>
+    <message>
+        <source>Marconi applies for his patent for the radio</source>
+        <translation>Marconi meldet die Funktechnik zum Patent an</translation>
+    </message>
+    <message>
+        <source>Drais rides his running machine, the bicycle&apos;s ancestor</source>
+        <translation>Drais fährt mit seiner Laufmaschine, dem Urahn des Fahrrads</translation>
+    </message>
+    <message>
+        <source>Sholes patents the typewriter</source>
+        <translation>Sholes erhält das Patent auf die Schreibmaschine</translation>
+    </message>
+    <message>
+        <source>The first Zeppelin takes off</source>
+        <translation>Der erste Zeppelin startet</translation>
+    </message>
+    <message>
+        <source>Telstar, the first active communications satellite</source>
+        <translation>Telstar, der erste aktive Nachrichtensatellit</translation>
+    </message>
+    <message>
+        <source>Hoffmann makes pure aspirin</source>
+        <translation>Hoffmann stellt reines Aspirin her</translation>
+    </message>
+    <message>
+        <source>Howe patents the sewing machine</source>
+        <translation>Howe erhält das Patent auf die Nähmaschine</translation>
+    </message>
+    <message>
+        <source>Kilby demonstrates the integrated circuit</source>
+        <translation>Kilby führt den integrierten Schaltkreis vor</translation>
+    </message>
+    <message>
+        <source>The barcode is patented</source>
+        <translation>Der Strichcode wird patentiert</translation>
+    </message>
+    <message>
+        <source>Spencer files his patent for the microwave oven</source>
+        <translation>Spencer meldet den Mikrowellenherd zum Patent an</translation>
+    </message>
+    <message>
+        <source>Edison&apos;s light bulb burns for hours</source>
+        <translation>Edisons Glühbirne brennt stundenlang</translation>
+    </message>
+    <message>
+        <source>The first message over the ARPANET, the internet&apos;s forerunner</source>
+        <translation>Die erste Nachricht über das ARPANET, den Vorläufer des Internets</translation>
+    </message>
+    <message>
+        <source>The first microprocessor goes on sale</source>
+        <translation>Der erste Mikroprozessor kommt auf den Markt</translation>
+    </message>
+    <message>
+        <source>Ford starts the moving assembly line</source>
+        <translation>Ford nimmt das Fließband in Betrieb</translation>
+    </message>
+    <message>
+        <source>The first text message is sent</source>
+        <translation>Die erste SMS wird verschickt</translation>
+    </message>
+    <message>
+        <source>Dunlop is granted his patent for the pneumatic tyre</source>
+        <translation>Dunlop erhält das Patent auf den Luftreifen</translation>
+    </message>
+    <message>
+        <source>Engelbart demonstrates the computer mouse</source>
+        <translation>Engelbart führt die Computermaus vor</translation>
+    </message>
+    <message>
+        <source>The first transistor works</source>
+        <translation>Der erste Transistor funktioniert</translation>
+    </message>
+    <message>
+        <source>The Lumière brothers show the first films to the public</source>
+        <translation>Die Brüder Lumière zeigen die ersten Filme öffentlich</translation>
+    </message>
+    <message>
+        <source>Elvis Presley is born</source>
+        <translation>Elvis Presley wird geboren</translation>
+    </message>
+    <message>
+        <source>Wolfgang Amadeus Mozart is born</source>
+        <translation>Wolfgang Amadeus Mozart wird geboren</translation>
+    </message>
+    <message>
+        <source>Franz Schubert is born</source>
+        <translation>Franz Schubert wird geboren</translation>
+    </message>
+    <message>
+        <source>Felix Mendelssohn is born</source>
+        <translation>Felix Mendelssohn Bartholdy wird geboren</translation>
+    </message>
+    <message>
+        <source>Bob Marley is born</source>
+        <translation>Bob Marley wird geboren</translation>
+    </message>
+    <message>
+        <source>George Frideric Handel is born</source>
+        <translation>Georg Friedrich Händel wird geboren</translation>
+    </message>
+    <message>
+        <source>Frédéric Chopin is born</source>
+        <translation>Frédéric Chopin wird geboren</translation>
+    </message>
+    <message>
+        <source>Bedřich Smetana is born</source>
+        <translation>Bedřich Smetana wird geboren</translation>
+    </message>
+    <message>
+        <source>Antonio Vivaldi is born</source>
+        <translation>Antonio Vivaldi wird geboren</translation>
+    </message>
+    <message>
+        <source>Maurice Ravel is born</source>
+        <translation>Maurice Ravel wird geboren</translation>
+    </message>
+    <message>
+        <source>Johann Sebastian Bach is born</source>
+        <translation>Johann Sebastian Bach wird geboren</translation>
+    </message>
+    <message>
+        <source>Béla Bartók is born</source>
+        <translation>Béla Bartók wird geboren</translation>
+    </message>
+    <message>
+        <source>Joseph Haydn is born</source>
+        <translation>Joseph Haydn wird geboren</translation>
+    </message>
+    <message>
+        <source>Sergei Rachmaninoff is born</source>
+        <translation>Sergei Rachmaninow wird geboren</translation>
+    </message>
+    <message>
+        <source>Duke Ellington is born</source>
+        <translation>Duke Ellington wird geboren</translation>
+    </message>
+    <message>
+        <source>Pyotr Ilyich Tchaikovsky is born</source>
+        <translation>Pjotr Iljitsch Tschaikowski wird geboren</translation>
+    </message>
+    <message>
+        <source>Claudio Monteverdi is baptised</source>
+        <translation>Claudio Monteverdi wird getauft</translation>
+    </message>
+    <message>
+        <source>Richard Wagner is born</source>
+        <translation>Richard Wagner wird geboren</translation>
+    </message>
+    <message>
+        <source>Edward Elgar is born</source>
+        <translation>Edward Elgar wird geboren</translation>
+    </message>
+    <message>
+        <source>Robert Schumann is born</source>
+        <translation>Robert Schumann wird geboren</translation>
+    </message>
+    <message>
+        <source>Richard Strauss is born</source>
+        <translation>Richard Strauss wird geboren</translation>
+    </message>
+    <message>
+        <source>Edvard Grieg is born</source>
+        <translation>Edvard Grieg wird geboren</translation>
+    </message>
+    <message>
+        <source>Igor Stravinsky is born</source>
+        <translation>Igor Strawinsky wird geboren</translation>
+    </message>
+    <message>
+        <source>Gustav Mahler is born</source>
+        <translation>Gustav Mahler wird geboren</translation>
+    </message>
+    <message>
+        <source>Louis Armstrong is born</source>
+        <translation>Louis Armstrong wird geboren</translation>
+    </message>
+    <message>
+        <source>Claude Debussy is born</source>
+        <translation>Claude Debussy wird geboren</translation>
+    </message>
+    <message>
+        <source>Leonard Bernstein is born</source>
+        <translation>Leonard Bernstein wird geboren</translation>
+    </message>
+    <message>
+        <source>Anton Bruckner is born</source>
+        <translation>Anton Bruckner wird geboren</translation>
+    </message>
+    <message>
+        <source>Freddie Mercury is born</source>
+        <translation>Freddie Mercury wird geboren</translation>
+    </message>
+    <message>
+        <source>Antonín Dvořák is born</source>
+        <translation>Antonín Dvořák wird geboren</translation>
+    </message>
+    <message>
+        <source>Clara Schumann is born</source>
+        <translation>Clara Schumann wird geboren</translation>
+    </message>
+    <message>
+        <source>Dmitri Shostakovich is born</source>
+        <translation>Dmitri Schostakowitsch wird geboren</translation>
+    </message>
+    <message>
+        <source>George Gershwin is born</source>
+        <translation>George Gershwin wird geboren</translation>
+    </message>
+    <message>
+        <source>John Lennon is born</source>
+        <translation>John Lennon wird geboren</translation>
+    </message>
+    <message>
+        <source>Giuseppe Verdi is born</source>
+        <translation>Giuseppe Verdi wird geboren</translation>
+    </message>
+    <message>
+        <source>Franz Liszt is born</source>
+        <translation>Franz Liszt wird geboren</translation>
+    </message>
+    <message>
+        <source>Johann Strauss II is born</source>
+        <translation>Johann Strauss (Sohn) wird geboren</translation>
+    </message>
+    <message>
+        <source>Niccolò Paganini is born</source>
+        <translation>Niccolò Paganini wird geboren</translation>
+    </message>
+    <message>
+        <source>Jean Sibelius is born</source>
+        <translation>Jean Sibelius wird geboren</translation>
+    </message>
+    <message>
+        <source>Hector Berlioz is born</source>
+        <translation>Hector Berlioz wird geboren</translation>
+    </message>
+    <message>
+        <source>Ludwig van Beethoven is born</source>
+        <translation>Ludwig van Beethoven wird geboren</translation>
+    </message>
+    <message>
+        <source>Giacomo Puccini is born</source>
+        <translation>Giacomo Puccini wird geboren</translation>
     </message>
 </context>
 <context>
@@ -730,6 +2617,107 @@
     <message>
         <source>All the steps counted, all days together.</source>
         <translation>Alle gezählten Schritte, alle Tage zusammen.</translation>
+    </message>
+    <message>
+        <source>Holidays</source>
+        <translation>Feiertage</translation>
+    </message>
+    <message>
+        <source>History</source>
+        <translation>Geschichte</translation>
+    </message>
+    <message>
+        <source>Patriot</source>
+        <translation>Patriot</translation>
+    </message>
+    <message>
+        <source>Worshipper</source>
+        <translation>Pilger</translation>
+    </message>
+    <message>
+        <source>Freedom Fighter</source>
+        <translation>Freiheitskämpfer</translation>
+    </message>
+    <message>
+        <source>Warmonger</source>
+        <translation>Kriegstreiber</translation>
+    </message>
+    <message>
+        <source>Peacemaker</source>
+        <translation>Friedensstifter</translation>
+    </message>
+    <message>
+        <source>Revolutionary</source>
+        <translation>Revolutionär</translation>
+    </message>
+    <message>
+        <source>Conqueror</source>
+        <translation>Eroberer</translation>
+    </message>
+    <message>
+        <source>Explorer</source>
+        <translation>Entdecker</translation>
+    </message>
+    <message>
+        <source>The First One</source>
+        <translation>Der Erste</translation>
+    </message>
+    <message>
+        <source>Innovator</source>
+        <translation>Tüftler</translation>
+    </message>
+    <message>
+        <source>Virtuoso</source>
+        <translation>Virtuose</translation>
+    </message>
+    <message>
+        <source>The national days of countries around the world.</source>
+        <translation>Die Nationalfeiertage von Ländern in aller Welt.</translation>
+    </message>
+    <message>
+        <source>The holy days of the world&apos;s major religions. Those that move with the moon or with Easter are known up to 2031, and may be a day off where you are.</source>
+        <translation>Die Feiertage der großen Weltreligionen. Die mit dem Mond oder mit Ostern wandernden sind bis 2031 bekannt und können dort, wo Sie sind, um einen Tag abweichen.</translation>
+    </message>
+    <message>
+        <source>The days well-known dictators died.</source>
+        <translation>Die Todestage bekannter Diktatoren.</translation>
+    </message>
+    <message>
+        <source>The days major wars began.</source>
+        <translation>Die Tage, an denen große Kriege begannen.</translation>
+    </message>
+    <message>
+        <source>The days wars ended and peace treaties were signed.</source>
+        <translation>Die Tage, an denen Kriege endeten und Friedensverträge geschlossen wurden.</translation>
+    </message>
+    <message>
+        <source>The days of revolutions and uprisings.</source>
+        <translation>Die Tage von Revolutionen und Aufständen.</translation>
+    </message>
+    <message>
+        <source>The days lands, countries and cities were conquered.</source>
+        <translation>Die Tage, an denen Länder, Reiche und Städte erobert wurden.</translation>
+    </message>
+    <message>
+        <source>The days of great discoveries and of the explorations of regions, countries and continents.</source>
+        <translation>Die Tage großer Entdeckungen und der Erkundung von Regionen, Ländern und Kontinenten.</translation>
+    </message>
+    <message>
+        <source>The days of great firsts and scientific breakthroughs: the oldest printed book, the first flight, the first rocket in space, the Moon landing.</source>
+        <translation>Die Tage großer Premieren und wissenschaftlicher Durchbrüche: das älteste gedruckte Buch, der erste Flug, die erste Rakete im Weltraum, die Mondlandung.</translation>
+    </message>
+    <message>
+        <source>The days of great inventions, from the steam engine to the text message.</source>
+        <translation>Die Tage großer Erfindungen, von der Dampfmaschine bis zur SMS.</translation>
+    </message>
+    <message>
+        <source>The birthdays of great composers and musicians.</source>
+        <translation>Die Geburtstage großer Komponisten und Musiker.</translation>
+    </message>
+    <message>
+        <source>An activity started on one of these %1 days collects it, in any year, driving aside. Each day counts once.</source>
+        <extracomment>How a calendar achievement collects its days; %1 is how many there are</extracomment>
+        <translation>Eine Aktivität, die an einem dieser %1 Tage beginnt, sammelt ihn, in jedem Jahr, Autofahrten ausgenommen. Jeder Tag zählt einmal.</translation>
     </message>
 </context>
 </TS>

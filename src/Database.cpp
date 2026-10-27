@@ -88,6 +88,15 @@ const char *const kSchema[] = {
         "reached TEXT NOT NULL, "
         "best REAL NOT NULL, "
         "current REAL NOT NULL)",
+    /* 9: the occasions the calendar achievements have collected, one row
+     * each by the category's key and the occasion's, with the local date of
+     * the first activity on it as yyyy-MM-dd. Kept for good, as the levels
+     * are, and what those levels count. */
+    "CREATE TABLE achievement_occasions ("
+        "category TEXT NOT NULL, "
+        "occasion TEXT NOT NULL, "
+        "reached TEXT NOT NULL, "
+        "PRIMARY KEY (category, occasion))",
 };
 const int kSchemaVersion = int(sizeof(kSchema) / sizeof(kSchema[0]));
 

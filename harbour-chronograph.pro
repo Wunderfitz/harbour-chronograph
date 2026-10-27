@@ -74,6 +74,7 @@ DISTFILES += \
     qml/components/LandCoverList.qml \
     qml/components/TileLayer.qml \
     qml/components/TileMap.qml \
+    qml/js/Occasions.js \
     qml/js/Units.js \
     qml/pages/AboutPage.qml \
     qml/pages/AchievementsPage.qml \

@@ -17,10 +17,12 @@ pauses and resumes a recording on its own: standing, too fast for the type,
 and after half an hour paused it stops it. A statistics page, from the main
 page's pulley, totals the distance, the time and the land cover of all
 activities together and of each type. An achievements page, from the same
-pulley, shows 26 categories of achievement - the longest, fastest and
+pulley, shows 37 categories of achievement - the longest, fastest and
 farthest per type, the climb, the land cover, the time, the weeks in a row,
-the steps - each with seven levels from Paper to Diamond, kept for good once
-reached.
+the steps, and days collected by being active on them: national and holy
+days, the days of wars, peace, revolutions, conquests, discoveries, firsts
+and inventions, dictators' deaths and composers' births - each with seven
+levels from Paper to Diamond, kept for good once reached.
 
 ## Ground rules
 
@@ -192,7 +194,8 @@ The same split as for steps:
   come, in plain C++11 without Qt; `tests/tst_achievements.cpp` drives it on
   the host. `Achievements` (`src/Achievements.*`) reads the database for it
   and keeps the levels. See [The
-  achievements](#the-achievements-seven-levels-kept-for-good).
+  achievements](#the-achievements-seven-levels-kept-for-good) and [the
+  calendar achievements](#the-calendar-achievements-days-collected-for-good).
 
 ### Positioning: QtPositioning in C++
 
@@ -612,8 +615,9 @@ come. The categories themselves were left to Claude.
   same for all. `app.achievementLevelName()` and `app.achievementLevelColor()`
   name and colour them, a light hue on a dark ambience, a darker one on a
   light ambience.
-- **26 categories in 8 groups**, in `AchievementCatalogue.cpp`'s
-  `kCategories`, thresholds and all: per type that a body moves - running,
+- **26 categories in 8 groups**, and 11 calendar ones in 2 more (see [the
+  calendar achievements](#the-calendar-achievements-days-collected-for-good)),
+  in `AchievementCatalogue.cpp`'s `kCategories`, thresholds and all: per type that a body moves - running,
   walking, cycling, rowing - the longest single activity, the distance in
   all, and the fastest average (pace for running and walking, speed for
   cycling and rowing) over an activity of at least 5, 3, 10 and 2 km;
@@ -690,7 +694,8 @@ come. The categories themselves were left to Claude.
 - **Adding a category**: an entry in `kCategories` (a new kind of measure
   also a `Metric`, worked out in `evaluate()`), its name and description in
   `app.achievementName()` and `app.achievementDescription()`, a pictogram
-  if none fits, and a German translation. Keys are stored: never rename
+  if none fits, and a German translation; a calendar category also its
+  occasions, named in `Occasions.js`. Keys are stored: never rename
   one, and a category taken out leaves a harmless row. The next start
   works it out over everything stored.
 - **The notice after an activity** (decided 2026-10-27, at the project
@@ -713,6 +718,77 @@ come. The categories themselves were left to Claude.
   of an activity stored by leaving its page (the page is gone). They are
   on the achievements page as ever.
 - **Not done**, as not asked for: achievements for driving.
+
+### The calendar achievements: days collected, for good
+
+Decided 2026-10-27, at the project owner's request: categories of calendar
+days, in the same seven levels, reached by being active on those days. The
+owner named eight - Patriot (national days), Worshipper (the major
+religions' holy days), Freedom Fighter (dictators' death days), Warmonger
+(the start of major wars), The First One (great firsts and scientific
+breakthroughs), Innovator (inventions), Conqueror (conquests of lands,
+countries and cities), Explorer (discoveries and explorations) - and left
+more to Claude: Peacemaker (ends of wars, peace treaties), Revolutionary
+(revolutions and uprisings) and Virtuoso (composers' and musicians'
+birthdays). Groups `holidays` (the first two) and `history`.
+
+- **Occasions, 42 per category** - the owner's limit, the answer to
+  everything - each an `Occasion` in `AchievementCatalogue.cpp`: a key, a
+  month and day (every year), the year it happened (negative before
+  Christ, 0 for a feast or a national day without one), or, for a feast
+  that moves, its dates. Chosen by importance and spread over the world
+  and the centuries; phrased factually (dictators "die" or "are executed").
+  Only the dead count as dictators, and only those widely called so.
+  **History is history** (the project owner's words, 2026-10-27): the
+  lists take in every side of it, wars, invasions and annexations as much
+  as peace treaties and discoveries.
+- **Each date only once within a category**, so an activity collects one
+  occasion at most - but for a feast that moves onto another's day in some
+  year (Hanukkah on Christmas Day 2027, Easter and Orthodox Easter in
+  2028), which collects both. Different categories share dates freely.
+- **The feasts that move are listed for 2026 to 2031**, the owner's "the
+  upcoming five years" and this one; up to 8 dates each (a lunar year's
+  feast comes twice in some solar years). Easter and the feasts it moves
+  by the computus (the test checks them against it), the Jewish ones by
+  the Hebrew calendar's rules (their first full day), the Islamic ones by
+  the Umm al-Qura calendar (hijri-calendars.com), the Hindu, Sikh and
+  Buddhist ones by Drik Panchang for New Delhi - so a day may differ
+  where the moon is sighted or the place is far from Delhi, which the
+  description says. **After 2031 they collect nothing until a later
+  version lists more** - append, never change a past date. Dates before
+  1582 are as history books give them, mostly Julian.
+- **Days, not activities, count** - one level per threshold of occasions
+  collected: 1, 3, 6, 12, 20, 30 and all 42. Two activities on one
+  occasion, or the same one in two years, count once. Diamond takes a
+  year of daily activity, and Worshipper's moving feasts in one year.
+- **Collected for good**, unlike the other categories' values: what was
+  collected stays even when its activities are deleted, and the level
+  counts what was ever collected (`AchievementCatalogue::collect()`), so
+  a deleted activity's day is not needed again for the next level. The
+  occasions go into `achievement_occasions` with the local date of the
+  first activity on each; an earlier one, as with the clock set back,
+  moves it there.
+- **The local day an activity started on**, as for the weeks in a row;
+  driving collects nothing, as everywhere.
+- **What the overlay shows**: on the achievements page, "Collected 5 of
+  42" in place of the best, the days still needed for the next level as
+  for any category, and every occasion collected - its name with the year
+  and the date of the activity that collected it, the earliest first. In
+  the notice after an activity, only the occasions this activity
+  collected (`newlyCollected` in `awarded()`; a category queued twice keeps
+  both lists). **Never an occasion not yet collected**, by the owner's
+  wish: finding them out is the game.
+- **Named in `qml/js/Occasions.js`**, the one place, `qsTr` in a JS file
+  (context `Occasions`) to keep 462 names out of `harbour-chronograph.qml`;
+  `title()` adds the year. Occasion keys are unique across all categories
+  and stored: never rename one. An occasion taken out leaves a harmless
+  row, which `read()` skips.
+- **Cost**: the occasions are found by binary search in a table per
+  category, made once. `evaluate()` over 2,000 activities took 0.3 ms
+  at `-O2` on the host (5 ms at `-O0`); the whole update in the build
+  engine stays at about 9 ms at `-O2` (21 ms at `-O0`, the test's default,
+  against 10 before), the first one writing up to 462 rows. Not measured
+  on the phone.
 
 ### Smoothing the fixes: a Kalman filter per activity type
 
@@ -907,8 +983,9 @@ the OS; like the sensorfw plugin it is not `Require`d, as Harbour would refuse i
 - **The classes that use a table own its queries**: `daily_steps` belongs to
   `StepHistory`, `activities` and `activity_land_cover` to `ActivityHistory`,
   `statistics` and `statistics_land_cover` to `ActivityStatistics` - which
-  reads `ActivityHistory`'s two to fill them - and `achievements` to
-  `Achievements`, which reads those two and `daily_steps`. Nothing else
+  reads `ActivityHistory`'s two to fill them - and `achievements` and
+  `achievement_occasions` to `Achievements`, which reads those two and
+  `daily_steps`. Nothing else
   reads another's tables. Further features get their own class and their
   own table.
 - **`daily_steps`**: `day TEXT PRIMARY KEY` (the local date, `yyyy-MM-dd`, so
@@ -951,6 +1028,10 @@ the OS; like the sensorfw plugin it is not `Require`d, as Harbour would refuse i
   `AchievementCatalogue`), `level` (0 to 7), `reached` (the local date,
   `yyyy-MM-dd`, empty at 0), `best` and `current`, in the category's unit.
   Written with `INSERT OR REPLACE`, never deleted.
+- **`achievement_occasions`** (schema 9): `category`, `occasion` (the
+  `Occasion`'s key) and `reached` (the local date of the first activity
+  on it), one row per occasion a calendar category has collected. Written
+  with `INSERT OR REPLACE`, never deleted.
 - **The GPX files** live in `gpx/` beside the database, named after the start
   in UTC in ISO 8601's basic format, `20261016T073000Z.gpx`: sorts by time,
   means the same in every time zone, and has no colons, so it survives being
@@ -1033,6 +1114,7 @@ qml/components/               BackgroundImage, AboutLink, AboutParagraph (from L
                               LandCoverList, ActivityStatisticsSection, AchievementMedal,
                               AchievementOverlay
 qml/js/Units.js               durations, distances, paces and speeds as shown
+qml/js/Occasions.js           the calendar achievements' occasions, named
 images/                       icon master, cover backdrops, heading arrow, activity type and
                               achievement pictograms (SVG), installed whole
 icons/<size>/                 the rendered launcher icon
@@ -1212,7 +1294,8 @@ type, their land cover with the land not known last, worked out anew at each
 change, an activity still waiting counted as not known, read back as stored -
 and what working out 2,000 costs; and the achievements: every category before
 anything is stored, the first run's level, value and day, nothing written when
-nothing changed, the steps, a level kept after its activity is deleted, a
+nothing changed, the steps, a level kept after its activity is deleted, the
+occasion a run collects announced, listed and kept after it is deleted, a
 drive counting for nothing, read back as stored, no database - and what
 2,000 activities and 1,100 days cost. The build command is at the top of the
 file. Run it after any change to `Database`, `Gpx`, `Track`, `LandCover`,
@@ -1226,7 +1309,14 @@ the single best and the totals with the types that count and those that do
 not (driving), the fastest with its minimum distance, the land cover, the
 weeks in a row (a gap, two in one week, a Sunday and the Monday after, an
 activity out of order), the steps, nothing at all, and that `merge()` never
-takes a level or the best value away and dates a level only as it rises. Run
+takes a level or the best value away and dates a level only as it rises.
+For the calendar categories: their occasions (keys unique, dates that exist
+and none on the 29th of February, none twice in a category, in the order of
+the year, every moving feast in every year to 2031, Easter and its feasts by
+the computus), the occasions of a day (every year's, a moving feast's only on
+its dates and not after 2031, two on one day), collecting (once each, a drive
+nothing, an activity out of order, every level from a year of daily walks)
+and `collect()` keeping what was collected after its activities are deleted. Run
 it after any change to `AchievementCatalogue`, also with `-O0`:
 
 ```sh
@@ -1541,6 +1631,16 @@ reached, one not reached and the steps, German, portrait, checked on
 screen. Not checked: landscape, a light ambience, and the "So far" line
 after a deletion (the tests cover the value). On the Jolla Phone (2026),
 the project owner checked the overlay, landscape and a light ambience.
+
+The calendar achievements (2026-10-27) build for all five targets without
+warnings, stay Harbour-clean, pass `tst_achievements` (also at `-O0`) and
+the activity history's and step history's tests, and in the emulator,
+sandboxed, with walks put into a database at schema 6 and a patched-in
+timer: migrated to 9, the two new groups on the page with their levels, the
+Patriot overlay listing its four days with their years, and the notice for
+The First One naming the Moon landing. German, portrait, checked on screen.
+On the Jolla Phone (2026), the project owner checked landscape and a light
+ambience. Not checked yet: a real stop on one of the days.
 
 The notice after an activity (2026-10-27) passes the activity history's
 tests (the levels announced within the storing, none when nothing rose)

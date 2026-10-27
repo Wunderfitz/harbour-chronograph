@@ -162,6 +162,10 @@ ApplicationWindow {
             return qsTr("Regularity")
         case "steps":
             return qsTr("Steps")
+        case "holidays":
+            return qsTr("Holidays")
+        case "history":
+            return qsTr("History")
         default:
             return activityTypeName(group)
         }
@@ -223,15 +227,38 @@ ApplicationWindow {
             return qsTr("Steps in a day")
         case "steps-total":
             return qsTr("Steps in all")
+        case "days-patriot":
+            return qsTr("Patriot")
+        case "days-worshipper":
+            return qsTr("Worshipper")
+        case "days-freedom-fighter":
+            return qsTr("Freedom Fighter")
+        case "days-warmonger":
+            return qsTr("Warmonger")
+        case "days-peacemaker":
+            return qsTr("Peacemaker")
+        case "days-revolutionary":
+            return qsTr("Revolutionary")
+        case "days-conqueror":
+            return qsTr("Conqueror")
+        case "days-explorer":
+            return qsTr("Explorer")
+        case "days-first-one":
+            return qsTr("The First One")
+        case "days-innovator":
+            return qsTr("Innovator")
+        case "days-virtuoso":
+            return qsTr("Virtuoso")
         default:
             return key
         }
     }
 
     // `minimumDistance`, in metres, is what an activity needs to count for
-    // the fastest.
-    function achievementDescription(key, minimumDistance) {
+    // the fastest; `total` how many occasions a calendar category has.
+    function achievementDescription(key, minimumDistance, total) {
         var kilometres = Number(minimumDistance / 1000).toLocaleString(Qt.locale(), "f", 0)
+        var occasions = key.indexOf("days-") === 0 ? " " + calendarDescription(total) : ""
         switch (key) {
         case "running-longest":
             return qsTr("The farthest you have run in a single activity.")
@@ -280,9 +307,37 @@ ApplicationWindow {
             return qsTr("The most steps counted in a single day. Steps are counted while Chronograph runs.")
         case "steps-total":
             return qsTr("All the steps counted, all days together.")
+        case "days-patriot":
+            return qsTr("The national days of countries around the world.") + occasions
+        case "days-worshipper":
+            return qsTr("The holy days of the world's major religions. Those that move with the moon or with Easter are known up to 2031, and may be a day off where you are.") + occasions
+        case "days-freedom-fighter":
+            return qsTr("The days well-known dictators died.") + occasions
+        case "days-warmonger":
+            return qsTr("The days major wars began.") + occasions
+        case "days-peacemaker":
+            return qsTr("The days wars ended and peace treaties were signed.") + occasions
+        case "days-revolutionary":
+            return qsTr("The days of revolutions and uprisings.") + occasions
+        case "days-conqueror":
+            return qsTr("The days lands, countries and cities were conquered.") + occasions
+        case "days-explorer":
+            return qsTr("The days of great discoveries and of the explorations of regions, countries and continents.") + occasions
+        case "days-first-one":
+            return qsTr("The days of great firsts and scientific breakthroughs: the oldest printed book, the first flight, the first rocket in space, the Moon landing.") + occasions
+        case "days-innovator":
+            return qsTr("The days of great inventions, from the steam engine to the text message.") + occasions
+        case "days-virtuoso":
+            return qsTr("The birthdays of great composers and musicians.") + occasions
         default:
             return ""
         }
+    }
+
+    // What every calendar category collects, after what its days are.
+    function calendarDescription(total) {
+        //: How a calendar achievement collects its days; %1 is how many there are
+        return qsTr("An activity started on one of these %1 days collects it, in any year, driving aside. Each day counts once.").arg(total)
     }
 
     // An achievement's pictogram or badge in images/, white on

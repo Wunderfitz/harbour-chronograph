@@ -38,14 +38,24 @@
  * says - and keeps a level once reached, whatever is deleted later: see
  * merge().
  *
+ * The calendar categories collect days instead: the national days, the
+ * days wars began, the birthdays of composers - each a list of occasions,
+ * collected by an activity on one of them, in any year. Their levels count
+ * the occasions ever collected, which collect() keeps.
+ *
  * A new category is an entry in kCategories (AchievementCatalogue.cpp), with
  * its name and description in harbour-chronograph.qml; a new kind of
- * measure is a Metric as well, worked out in evaluate().
+ * measure is a Metric as well, worked out in evaluate(). A calendar
+ * category's occasions are named in qml/js/Occasions.js.
  */
 namespace AchievementCatalogue {
 
 /* Paper, Wood, Bronze, Silver, Gold, Platinum, Diamond: 1 to 7. 0 is none. */
 const int kLevels = 7;
+
+/* The most dates a moving feast lists: one a year, seven for a lunar year's
+ * feast in six solar years. */
+const int kOccasionDates = 8;
 
 enum Metric {
     /* Metres, in a single activity. */
@@ -72,7 +82,25 @@ enum Metric {
     /* Steps, in a single day. */
     MostDailySteps,
     /* Steps, all days together. */
-    TotalSteps
+    TotalSteps,
+    /* The category's occasions with an activity on their day. */
+    CalendarDays
+};
+
+/* A day a calendar category collects: the same date every year, or a feast
+ * that moves, on the dates listed. */
+struct Occasion {
+    /* Stable: the database keeps what was collected by it, and QML names
+     * it by it. Unique across all categories. */
+    const char *key;
+    /* 1 to 12 and 1 to 31, every year; 0 for a feast that moves. */
+    int month;
+    int day;
+    /* The year it happened, negative before Christ; 0 for none, as for a
+     * feast or most national days. */
+    int year;
+    /* For a feast that moves: its dates as yyyymmdd, rising, then 0. */
+    int dates[kOccasionDates];
 };
 
 struct Category {
@@ -89,15 +117,19 @@ struct Category {
     /* For FastestSpeed: metres an activity must have to count. */
     double minimumDistance;
     /* How the page shows its values: "distance", "pace", "speed", "climb",
-     * "duration", "count", "weeks" or "steps". */
+     * "duration", "count", "weeks", "steps" or "days". */
     const char *unit;
     /* Its pictogram, images/<icon>.svg, and the badge on it, if any:
      * "total" or "fastest" (images/achievement-badge-<badge>.svg). */
     const char *icon;
     const char *badge;
     /* What each level takes, rising: metres, metres per second, seconds,
-     * activities, weeks or steps - as the metric counts. */
+     * activities, weeks, steps or occasions - as the metric counts. */
     double thresholds[kLevels];
+    /* For CalendarDays: what there is to collect. The last level takes
+     * all of it. */
+    const Occasion *occasions;
+    std::size_t occasionCount;
 };
 
 /* Every category, grouped and in the order the page shows them. */
@@ -128,6 +160,14 @@ struct DayRecord {
     double steps = 0;
 };
 
+/* An occasion of a calendar category, collected. */
+struct Collected {
+    /* Its index in the category's occasions. */
+    std::size_t occasion = 0;
+    /* The local date of the first activity on it, as a Julian day number. */
+    int day = 0;
+};
+
 /* How far one category has come. */
 struct Progress {
     /* As the metric counts. */
@@ -136,6 +176,8 @@ struct Progress {
     /* The day the level was reached, as a Julian day number: that of the
      * activity or the day that took it there. Meaningless at level 0. */
     int day = 0;
+    /* For CalendarDays: the occasions collected, by index. */
+    std::vector<Collected> collected;
 };
 
 /* The level a value comes to. */
@@ -145,6 +187,18 @@ int levelOf(const Category &category, double value);
  * days in the order they happened, oldest first. */
 std::vector<Progress> evaluate(const std::vector<ActivityRecord> &activities,
                                const std::vector<DayRecord> &days);
+
+/* A calendar category's progress with the occasions collected before as
+ * well: those of activities since deleted, or with the clock set
+ * differently. Each occasion counts once, from the earliest day it was
+ * collected on, and the level is dated by the occasion that reached it -
+ * so what was collected is never lost, and the level comes with the
+ * occasions themselves rather than the activities now stored. */
+Progress collect(const Category &category, const Progress &progress, const std::vector<Collected> &kept);
+
+/* The occasions of a calendar category on a local date, a Julian day
+ * number: their indices, rising. */
+std::vector<std::size_t> occasionsOn(const Category &category, int day);
 
 /* What is kept of a category: the level and when it was reached, and the
  * best value ever. */

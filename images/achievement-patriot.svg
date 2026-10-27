@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copyright (C) 2026 Sebastian J. Wolf and other contributors
+
+    This file is part of Chronograph.
+
+    Chronograph is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Chronograph is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Chronograph. If not, see <http://www.gnu.org/licenses/>.
+-->
+<!--
+    Patriot, for the achievements: a flag waving on its pole, a star
+    cut out of it. White on
+    transparent: Silica's Icon tints it with the level's colour.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <path fill="#ffffff" fill-rule="evenodd" d="M14 10 C22 4 30 4 36 10 C42 16 50 16 56 10 L56 36 C50 42 42 42 36 36 C30 30 22 30 14 36 Z
+           M35 13 L37.6 19.4 L44.5 19.9 L39.2 24.4 L40.9 31.1 L35 27.5 L29.1 31.1 L30.8 24.4 L25.5 19.9 L32.4 19.4 Z"/>
+  <path fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" d="M12 60 L12 6"/>
+</svg>

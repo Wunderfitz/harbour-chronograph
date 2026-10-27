@@ -124,7 +124,7 @@ void testFreshDatabase(const QString &directory)
 {
     Database database(QDir(directory).filePath(QStringLiteral("fresh.db")));
     expect("a new database opens", database.isOpen());
-    expectEqual("a new database is at schema version 8", schemaVersion(database), 8);
+    expectEqual("a new database is at schema version 9", schemaVersion(database), 9);
 
     TestClock time;
     StepHistory history(&database, time.clock());
@@ -157,7 +157,7 @@ void testSaving(const QString &directory)
     {
         Database database(file);
         expectEqual("closing saves what was left unsaved", storedSteps(database, "2026-03-10"), 15);
-        expectEqual("reopening keeps the schema version", schemaVersion(database), 8);
+        expectEqual("reopening keeps the schema version", schemaVersion(database), 9);
 
         time.now = time.now.addSecs(3600);
         StepHistory history(&database, time.clock());
@@ -224,12 +224,12 @@ void testNewerSchema(const QString &directory)
     {
         Database database(file);
         QSqlQuery query(database.connection());
-        query.exec(QStringLiteral("PRAGMA user_version = 9"));
+        query.exec(QStringLiteral("PRAGMA user_version = 10"));
         store(database, QStringLiteral("2026-03-10"), 42);
     }
     Database database(file);
     expect("a database from a newer version still opens", database.isOpen());
-    expectEqual("and is left at its version", schemaVersion(database), 9);
+    expectEqual("and is left at its version", schemaVersion(database), 10);
     TestClock time;
     StepHistory history(&database, time.clock());
     expectEqual("and its steps are read", history.todaySteps(), 42);

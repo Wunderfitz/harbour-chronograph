@@ -21,7 +21,10 @@
  * Host-side checks for AchievementCatalogue: the catalogue itself, the level
  * of a value, each metric with the activities and days that count for it and
  * those that do not, the day a level was reached, and that a level once
- * reached is kept. Every activity here is generated. Build and run from the
+ * reached is kept. For the calendar categories also their occasions (dates
+ * that exist, none twice, Easter by the computus), the occasions of a day,
+ * collecting them and keeping what was collected. Every activity here is
+ * generated. Build and run from the
  * project root:
  *
  *   g++ -std=c++11 -Wall -Wextra -O2 -Isrc tests/tst_achievements.cpp \
@@ -44,6 +47,60 @@ namespace {
 
 /* 2026-10-12, a Monday, as a Julian day number. */
 const int kMonday = 2461326;
+
+/* A Gregorian date's Julian day number. */
+int julianDay(int year, int month, int day)
+{
+    const int a = (14 - month) / 12;
+    const int y = year + 4800 - a;
+    const int m = month + 12 * a - 3;
+    return day + (153 * m + 2) / 5 + 365 * y + y / 4 - y / 100 + y / 400 - 32045;
+}
+
+int daysIn(int year, int month)
+{
+    static const int days[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    const bool leap = (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
+    return month == 2 && leap ? 29 : days[month - 1];
+}
+
+/* Easter Sunday as yyyymmdd: the Gregorian computus (Meeus), or the Julian
+ * one moved onto the Gregorian calendar, which holds from 1900 to 2099. */
+int easter(int year, bool orthodox)
+{
+    int month;
+    int day;
+    if (orthodox) {
+        const int d = (19 * (year % 19) + 15) % 30;
+        const int e = (2 * (year % 4) + 4 * (year % 7) - d + 34) % 7;
+        month = (d + e + 114) / 31;
+        day = (d + e + 114) % 31 + 1 + 13;
+        if (day > daysIn(year, month)) {
+            day -= daysIn(year, month);
+            ++month;
+        }
+    } else {
+        const int a = year % 19, b = year / 100, c = year % 100, d = b / 4, e = b % 4;
+        const int f = (b + 8) / 25, g = (b - f + 1) / 3, h = (19 * a + b - d - g + 15) % 30;
+        const int i = c / 4, k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = (a + 11 * h + 22 * l) / 451;
+        month = (h + l - 7 * m + 114) / 31;
+        day = (h + l - 7 * m + 114) % 31 + 1;
+    }
+    return year * 10000 + month * 100 + day;
+}
+
+/* yyyymmdd moved by some days. */
+int datePlus(int date, int days)
+{
+    int day = julianDay(date / 10000, date / 100 % 100, date % 100) + days;
+    for (int year = date / 10000 - 1; ; ++year) {
+        for (int month = 1; month <= 12; ++month) {
+            const int first = julianDay(year, month, 1);
+            if (day >= first && day < first + daysIn(year, month))
+                return year * 10000 + month * 100 + day - first + 1;
+        }
+    }
+}
 
 int g_failures = 0;
 
@@ -119,7 +176,8 @@ void testCatalogue()
         rising = rising && c.thresholds[0] > 0;
         const std::string unit = c.unit;
         known = known && (unit == "distance" || unit == "pace" || unit == "speed" || unit == "climb"
-                          || unit == "duration" || unit == "count" || unit == "weeks" || unit == "steps");
+                          || unit == "duration" || unit == "count" || unit == "weeks" || unit == "steps"
+                          || unit == "days");
         const std::string badge = c.badge;
         known = known && (badge.empty() || badge == "total" || badge == "fastest");
         if (c.group != group) {
@@ -130,6 +188,11 @@ void testCatalogue()
             known = known && c.minimumDistance > 0;
         if (c.metric == LandCoverDistance)
             known = known && c.landCover > LandCover::Unknown && c.landCover < LandCover::KindCount;
+        if (c.metric == CalendarDays)
+            known = known && c.occasions && c.thresholds[0] == 1 && c.thresholds[kLevels - 1] == c.occasionCount
+                    && unit == "days";
+        else
+            known = known && !c.occasions && c.occasionCount == 0;
     }
     expect("every category has a key of its own", keys.size() == categoryCount());
     expect("every threshold rises above the one before", rising);
@@ -331,6 +394,208 @@ void testKeeping()
     expect("a higher one takes over, dated anew", award.level == 5 && award.day == kMonday + 9 && award.best == 22000);
 }
 
+
+/* The index of an occasion in its category, or the count if not there. */
+std::size_t occasionOf(const Category &c, const char *key)
+{
+    for (std::size_t i = 0; i < c.occasionCount; ++i) {
+        if (std::strcmp(c.occasions[i].key, key) == 0)
+            return i;
+    }
+    std::printf("FAIL no occasion %s in %s\n", key, c.key);
+    ++g_failures;
+    return c.occasionCount;
+}
+
+bool collectedHas(const Progress &progress, std::size_t occasion, int day)
+{
+    for (const Collected &c : progress.collected) {
+        if (c.occasion == occasion)
+            return c.day == day;
+    }
+    return false;
+}
+
+void testOccasions()
+{
+    std::set<std::string> keys;
+    std::size_t total = 0;
+    bool exist = true;
+    bool once = true;
+    bool listed = true;
+    bool ordered = true;
+    for (std::size_t i = 0; i < categoryCount(); ++i) {
+        const Category &c = category(i);
+        std::set<int> fixed;
+        int previous = 0;
+        for (std::size_t j = 0; j < c.occasionCount; ++j) {
+            const Occasion &o = c.occasions[j];
+            keys.insert(o.key);
+            ++total;
+            if (o.month > 0) {
+                exist = exist && o.month <= 12 && o.day >= 1 && o.day <= daysIn(2000, o.month)
+                        && !(o.month == 2 && o.day == 29) && o.dates[0] == 0;
+                once = once && fixed.insert(o.month * 100 + o.day).second;
+                ordered = ordered && o.month * 100 + o.day > previous;
+                previous = o.month * 100 + o.day;
+                continue;
+            }
+            std::set<int> years;
+            int last = 0;
+            for (int k = 0; k < kOccasionDates && o.dates[k] != 0; ++k) {
+                const int date = o.dates[k];
+                const int month = date / 100 % 100;
+                exist = exist && month >= 1 && month <= 12 && date % 100 >= 1
+                        && date % 100 <= daysIn(date / 10000, month) && date > last;
+                last = date;
+                years.insert(date / 10000);
+            }
+            for (int year = 2026; year <= 2031; ++year)
+                listed = listed && years.count(year) == 1;
+            listed = listed && o.year == 0;
+        }
+    }
+    expect("every occasion has a key of its own", keys.size() == total);
+    expect("every date of every occasion exists, none on the 29th of February", exist);
+    expect("no date of every year twice in a category", once);
+    expect("and those in the order of the year", ordered);
+    expect("every feast that moves is listed for each year from 2026 to 2031", listed);
+
+    const Category &worshipper = categoryOf("days-worshipper");
+    const struct { const char *key; int offset; bool orthodox; } easterDays[] = {
+        { "ash-wednesday", -46, false }, { "good-friday", -2, false }, { "easter", 0, false },
+        { "orthodox-easter", 0, true }, { "ascension", 39, false }, { "pentecost", 49, false },
+        { "corpus-christi", 60, false },
+    };
+    bool computus = true;
+    for (const auto &feast : easterDays) {
+        const Occasion &o = worshipper.occasions[occasionOf(worshipper, feast.key)];
+        for (int k = 0; k < 6; ++k)
+            computus = computus && o.dates[k] == datePlus(easter(2026 + k, feast.orthodox), feast.offset);
+        computus = computus && o.dates[6] == 0;
+    }
+    expect("Easter and the feasts it moves follow the computus", computus);
+    const Occasion &ramadan = worshipper.occasions[occasionOf(worshipper, "ramadan")];
+    expect("a lunar year's feast comes twice in some solar years", ramadan.dates[6] != 0);
+}
+
+void testOccasionsOn()
+{
+    expectEqual("the test's Julian days are SQLite's and QDate's", julianDay(2026, 10, 12), kMonday);
+    const Category &first = categoryOf("days-first-one");
+    const std::vector<std::size_t> moon = occasionsOn(first, julianDay(2027, 7, 20));
+    expect("a date of every year, in any year", moon.size() == 1 && moon[0] == occasionOf(first, "moon-landing"));
+    expect("the day before is none", occasionsOn(first, julianDay(2027, 7, 19)).empty());
+    expect("nor is it another category's", occasionsOn(categoryOf("days-virtuoso"), julianDay(2027, 7, 20)).empty());
+    expect("an occasion of the first of January", occasionsOn(categoryOf("days-explorer"), julianDay(2030, 1, 1)).size() == 1);
+    expect("and of the 31st of December", occasionsOn(categoryOf("days-freedom-fighter"),
+                                                      julianDay(2029, 12, 30)).size() == 1);
+
+    const Category &worshipper = categoryOf("days-worshipper");
+    const std::vector<std::size_t> easter2028 = occasionsOn(worshipper, julianDay(2028, 4, 16));
+    expect("two feasts that move onto one day", easter2028.size() == 2
+           && easter2028[0] == occasionOf(worshipper, "easter")
+           && easter2028[1] == occasionOf(worshipper, "orthodox-easter"));
+    expect("a feast that moves only on its dates", occasionsOn(worshipper, julianDay(2027, 4, 16)).empty());
+    expect("not after the years listed", occasionsOn(worshipper, julianDay(2032, 3, 28)).empty());
+    expect("while one of every year still is",
+           occasionsOn(worshipper, julianDay(2032, 12, 25)).size() == 1);
+    // Hanukkah begins on Christmas Day 2027.
+    expect("one that moves onto one of every year", occasionsOn(worshipper, julianDay(2027, 12, 25)).size() == 2);
+}
+
+void testCalendar()
+{
+    std::vector<ActivityRecord> activities;
+    activities.push_back(activity("walking", julianDay(2026, 12, 25), 3000, 1800));
+    // The same occasions a year later.
+    activities.push_back(activity("running", julianDay(2027, 12, 25), 5000, 1800));
+    activities.push_back(activity("driving", julianDay(2027, 7, 4), 50000, 3600));
+    activities.push_back(activity("cycling", julianDay(2028, 4, 16), 20000, 3600));
+    // The clock set back: an earlier day, out of order.
+    activities.push_back(activity("rowing", julianDay(2026, 12, 6), 2000, 1200));
+    activities.push_back(activity("rowing", julianDay(2026, 7, 4), 2000, 1200));
+    const std::vector<Progress> progress = evaluate(activities, std::vector<DayRecord>());
+
+    const Category &worshipper = categoryOf("days-worshipper");
+    const Progress feasts = progressOf(progress, "days-worshipper");
+    // Christmas 2026, Christmas and Hanukkah 2027, Easter and Orthodox Easter 2028.
+    expectEqual("each occasion counts once", feasts.value, 4);
+    expectEqual("to a level", feasts.level, 2);
+    expectEqual("reached by the third occasion", feasts.day, julianDay(2028, 4, 16));
+    expect("dated by the first activity on it",
+           collectedHas(feasts, occasionOf(worshipper, "christmas"), julianDay(2026, 12, 25)));
+    expect("and collected in order of occasion", feasts.collected.size() == 4
+           && feasts.collected[0].occasion < feasts.collected[3].occasion);
+
+    const Category &patriot = categoryOf("days-patriot");
+    const Progress patriotic = progressOf(progress, "days-patriot");
+    expectEqual("a drive collects nothing", patriotic.value, 2);
+    expect("an activity out of order is the earliest of its occasion",
+           collectedHas(patriotic, occasionOf(patriot, "united-states-independence-day"), julianDay(2026, 7, 4))
+           && collectedHas(patriotic, occasionOf(patriot, "finland-independence-day"), julianDay(2026, 12, 6)));
+    expectEqual("the first occasion is the first level", patriotic.level, 1);
+    expectEqual("on the earliest day", patriotic.day, julianDay(2026, 7, 4));
+    expectEqual("a category without any", progressOf(progress, "days-virtuoso").level, 0);
+
+    // A walk every day of 2027 collects every occasion there is.
+    std::vector<ActivityRecord> year;
+    for (int day = julianDay(2027, 1, 1); day <= julianDay(2027, 12, 31); ++day)
+        year.push_back(activity("walking", day, 2000, 1200));
+    const std::vector<Progress> all = evaluate(year, std::vector<DayRecord>());
+    bool every = true;
+    for (std::size_t i = 0; i < categoryCount(); ++i) {
+        if (category(i).metric == CalendarDays)
+            every = every && all[i].value == category(i).occasionCount && all[i].level == kLevels;
+    }
+    expect("every day of a year is every level of every category", every);
+    expectEqual("the last national day is Kenya's", progressOf(all, "days-patriot").day, julianDay(2027, 12, 12));
+    expectEqual("the last feast of 2027 Christmas, with Hanukkah", progressOf(all, "days-worshipper").day,
+                julianDay(2027, 12, 25));
+}
+
+void testCollecting()
+{
+    const Category &explorer = categoryOf("days-explorer");
+    const std::size_t pole = occasionOf(explorer, "south-pole");
+    const std::size_t americas = occasionOf(explorer, "columbus-americas");
+    std::vector<ActivityRecord> activities;
+    activities.push_back(activity("walking", julianDay(2027, 12, 14), 3000, 1800));
+    Progress now = progressOf(evaluate(activities, std::vector<DayRecord>()), "days-explorer");
+
+    std::vector<Collected> kept;
+    Collected columbus;
+    columbus.occasion = americas;
+    columbus.day = julianDay(2026, 10, 12);
+    kept.push_back(columbus);
+    // Collected later than the activity now says: the activity's day wins.
+    Collected later;
+    later.occasion = pole;
+    later.day = julianDay(2028, 12, 14);
+    kept.push_back(later);
+    // A key gone from the catalogue would not be read; an index past the
+    // end is left out all the same.
+    Collected gone;
+    gone.occasion = explorer.occasionCount + 3;
+    gone.day = julianDay(2026, 1, 1);
+    kept.push_back(gone);
+
+    const Progress merged = collect(explorer, now, kept);
+    expectEqual("what was collected before counts with what the activities collect", merged.value, 2);
+    expect("each from the earliest day", collectedHas(merged, americas, julianDay(2026, 10, 12))
+           && collectedHas(merged, pole, julianDay(2027, 12, 14)));
+    expectEqual("the level from the occasions", merged.level, 1);
+    expectEqual("dated by the first", merged.day, julianDay(2026, 10, 12));
+    expectEqual("nothing collected keeps nothing", collect(explorer, Progress(), std::vector<Collected>()).value, 0);
+
+    // The activities deleted: the occasions stay.
+    const Progress deleted = collect(explorer, progressOf(evaluate(std::vector<ActivityRecord>(),
+                                                                   std::vector<DayRecord>()), "days-explorer"),
+                                     merged.collected);
+    expect("what was collected stays when its activities are deleted",
+           deleted.value == 2 && deleted.level == 1 && deleted.collected.size() == 2);
+}
+
 } // namespace
 
 int main()
@@ -345,6 +610,10 @@ int main()
     testSteps();
     testNothing();
     testKeeping();
+    testOccasions();
+    testOccasionsOn();
+    testCalendar();
+    testCollecting();
 
     std::printf("%s\n", g_failures ? "FAILED" : "All passed");
     return g_failures ? 1 : 0;
