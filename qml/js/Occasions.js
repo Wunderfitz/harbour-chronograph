@@ -206,6 +206,32 @@ function name(key) {
     case "christmas":
         return qsTr("Christianity: Christmas Day")
 
+    // werewolf
+    case "wolf-moon":
+        return qsTr("Wolf Moon, the full moon of January")
+    case "snow-moon":
+        return qsTr("Snow Moon, the full moon of February")
+    case "worm-moon":
+        return qsTr("Worm Moon, the full moon of March")
+    case "pink-moon":
+        return qsTr("Pink Moon, the full moon of April")
+    case "flower-moon":
+        return qsTr("Flower Moon, the full moon of May")
+    case "strawberry-moon":
+        return qsTr("Strawberry Moon, the full moon of June")
+    case "buck-moon":
+        return qsTr("Buck Moon, the full moon of July")
+    case "sturgeon-moon":
+        return qsTr("Sturgeon Moon, the full moon of August")
+    case "corn-moon":
+        return qsTr("Corn Moon, the full moon of September")
+    case "hunters-moon":
+        return qsTr("Hunter's Moon, the full moon of October")
+    case "beaver-moon":
+        return qsTr("Beaver Moon, the full moon of November")
+    case "cold-moon":
+        return qsTr("Cold Moon, the full moon of December")
+
     // freedom-fighter
     case "death-galtieri":
         return qsTr("Leopoldo Galtieri dies")
@@ -979,6 +1005,178 @@ function name(key) {
         return qsTr("Ludwig van Beethoven is born")
     case "birth-puccini":
         return qsTr("Giacomo Puccini is born")
+
+    // force-of-nature
+    case "haiti-earthquake":
+        return qsTr("An earthquake devastates Haiti")
+    case "hunga-tonga-eruption":
+        return qsTr("Hunga Tonga erupts and sends a tsunami across the Pacific")
+    case "grote-mandrenke":
+        return qsTr("The Grote Mandrenke floods the North Sea coast and drowns Rungholt")
+    case "kobe-earthquake":
+        return qsTr("An earthquake strikes Kobe")
+    case "shaanxi-earthquake":
+        return qsTr("The deadliest earthquake on record strikes Shaanxi")
+    case "north-sea-flood":
+        return qsTr("A storm surge floods the Netherlands and the coasts of the North Sea")
+    case "turkey-syria-earthquake":
+        return qsTr("Earthquakes strike Turkey and Syria")
+    case "hamburg-storm-flood":
+        return qsTr("A storm surge floods Hamburg")
+    case "tohoku-earthquake":
+        return qsTr("An earthquake and tsunami strike Tōhoku, Japan")
+    case "alaska-earthquake":
+        return qsTr("The Good Friday earthquake strikes Alaska")
+    case "tambora-eruption":
+        return qsTr("Tambora erupts, bringing the year without a summer")
+    case "san-francisco-earthquake":
+        return qsTr("An earthquake and fire destroy San Francisco")
+    case "nepal-earthquake":
+        return qsTr("An earthquake strikes Nepal")
+    case "cyclone-nargis":
+        return qsTr("Cyclone Nargis strikes Myanmar")
+    case "mount-pelee-eruption":
+        return qsTr("Mount Pelée erupts and destroys Saint-Pierre, Martinique")
+    case "sichuan-earthquake":
+        return qsTr("An earthquake strikes Sichuan")
+    case "mount-st-helens-eruption":
+        return qsTr("Mount St. Helens erupts")
+    case "valdivia-earthquake":
+        return qsTr("The strongest earthquake on record strikes Valdivia, Chile")
+    case "ancash-earthquake":
+        return qsTr("An earthquake strikes Peru and an avalanche buries Yungay")
+    case "laki-eruption":
+        return qsTr("Laki begins to erupt in Iceland")
+    case "pinatubo-eruption":
+        return qsTr("Mount Pinatubo erupts in the Philippines")
+    case "ahr-valley-flood":
+        return qsTr("Floods devastate the Ahr valley and western Europe")
+    case "tangshan-earthquake":
+        return qsTr("An earthquake destroys Tangshan")
+    case "lake-nyos-disaster":
+        return qsTr("Lake Nyos releases a cloud of carbon dioxide in Cameroon")
+    case "vesuvius-eruption":
+        return qsTr("Vesuvius erupts and buries Pompeii")
+    case "krakatoa-eruption":
+        return qsTr("Krakatoa explodes")
+    case "hurricane-katrina":
+        return qsTr("Hurricane Katrina strikes New Orleans")
+    case "kanto-earthquake":
+        return qsTr("The Great Kantō earthquake strikes Tokyo and Yokohama")
+    case "galveston-hurricane":
+        return qsTr("A hurricane destroys Galveston")
+    case "mexico-city-earthquake":
+        return qsTr("An earthquake strikes Mexico City")
+    case "kashmir-earthquake":
+        return qsTr("An earthquake strikes Kashmir")
+    case "great-hurricane-1780":
+        return qsTr("The Great Hurricane strikes the Caribbean")
+    case "basel-earthquake":
+        return qsTr("An earthquake destroys Basel")
+    case "hurricane-mitch":
+        return qsTr("Hurricane Mitch strikes Central America")
+    case "lisbon-earthquake":
+        return qsTr("An earthquake, a tsunami and fire destroy Lisbon")
+    case "typhoon-haiyan":
+        return qsTr("Typhoon Haiyan strikes the Philippines")
+    case "bhola-cyclone":
+        return qsTr("The Bhola cyclone strikes East Pakistan, now Bangladesh")
+    case "nevado-del-ruiz-eruption":
+        return qsTr("Nevado del Ruiz erupts and its mudflows bury Armero")
+    case "st-elizabeths-flood":
+        return qsTr("The St. Elizabeth's flood breaks the dykes of Holland")
+    case "haiyuan-earthquake":
+        return qsTr("An earthquake strikes Haiyuan, China")
+    case "indian-ocean-tsunami":
+        return qsTr("An earthquake sends a tsunami across the Indian Ocean")
+    case "messina-earthquake":
+        return qsTr("An earthquake and tsunami destroy Messina and Reggio Calabria")
+
+    // shadow-chaser
+    case "eclipse-1925":
+        return qsTr("An eclipse darkens New York City")
+    case "eclipse-1961":
+        return qsTr("A total eclipse crosses southern Europe from France to Russia")
+    case "eclipse-1980":
+        return qsTr("A total eclipse crosses Africa and India")
+    case "eclipse-1979":
+        return qsTr("The last total eclipse over the mainland United States for 38 years")
+    case "eclipse-1970":
+        return qsTr("A total eclipse crosses Mexico and the American east coast")
+    case "eclipse-2016":
+        return qsTr("A total eclipse crosses Indonesia")
+    case "eclipse-2015":
+        return qsTr("A total eclipse darkens the Faroe Islands and Svalbard")
+    case "eclipse-2006":
+        return qsTr("A total eclipse crosses the Sahara and Turkey")
+    case "eclipse-2024":
+        return qsTr("A total eclipse crosses Mexico, the United States and Canada")
+    case "eclipse-1185":
+        return qsTr("An eclipse darkens Prince Igor's campaign against the Cumans")
+    case "eclipse-1715":
+        return qsTr("Halley's eclipse crosses England, as he foretold")
+    case "eclipse-840":
+        return qsTr("An eclipse darkens the Frankish empire weeks before Louis the Pious dies")
+    case "eclipse-585bc":
+        return qsTr("An eclipse ends the battle of the Halys, as Thales foretold")
+    case "eclipse-1919":
+        return qsTr("Eddington's eclipse confirms Einstein's general relativity")
+    case "eclipse-1239":
+        return qsTr("A total eclipse crosses Europe from Spain to Italy")
+    case "eclipse-763bc":
+        return qsTr("Assyrian scribes record the eclipse that dates the ancient Near East")
+    case "eclipse-1806":
+        return qsTr("Tenskwatawa, the Shawnee Prophet, foretells an eclipse")
+    case "eclipse-1955":
+        return qsTr("The longest total eclipse of the 20th century crosses South-East Asia")
+    case "eclipse-2001":
+        return qsTr("The first total eclipse of the millennium crosses southern Africa")
+    case "eclipse-1927":
+        return qsTr("England sees its first total eclipse in two hundred years")
+    case "eclipse-1973":
+        return qsTr("Concorde chases an eclipse's shadow across Africa for 74 minutes")
+    case "eclipse-2019":
+        return qsTr("A total eclipse crosses Chile and Argentina")
+    case "eclipse-1842":
+        return qsTr("A total eclipse crosses Europe and shows the Sun's prominences")
+    case "eclipse-1991":
+        return qsTr("The eclipse of the century crosses Hawaii and Mexico")
+    case "eclipse-1860":
+        return qsTr("Photographs in Spain show that the prominences belong to the Sun")
+    case "eclipse-2009":
+        return qsTr("The longest total eclipse of the 21st century crosses India and China")
+    case "eclipse-1851":
+        return qsTr("The first photograph of a total eclipse is taken in Königsberg")
+    case "eclipse-1878":
+        return qsTr("Edison and astronomers watch an eclipse in the Rocky Mountains")
+    case "eclipse-2008":
+        return qsTr("A total eclipse crosses Siberia and China")
+    case "eclipse-1133":
+        return qsTr("An eclipse darkens England as Henry I leaves for Normandy")
+    case "eclipse-1869":
+        return qsTr("Harkness and Young find the corona's green line")
+    case "eclipse-1999":
+        return qsTr("The last total eclipse of the millennium crosses Europe")
+    case "eclipse-2026":
+        return qsTr("A total eclipse crosses Greenland, Iceland and Spain")
+    case "eclipse-1868":
+        return qsTr("Janssen sees an unknown line in the Sun's light, later named helium")
+    case "eclipse-1887":
+        return qsTr("Mendeleev rises above the clouds in a balloon to watch an eclipse")
+    case "eclipse-2017":
+        return qsTr("The Great American Eclipse crosses the United States")
+    case "eclipse-1922":
+        return qsTr("An eclipse at Wallal, Australia, confirms relativity again")
+    case "eclipse-1995":
+        return qsTr("A total eclipse crosses India and South-East Asia")
+    case "eclipse-2012":
+        return qsTr("A total eclipse darkens northern Australia")
+    case "eclipse-2021":
+        return qsTr("A total eclipse darkens Antarctica")
+    case "eclipse-2020":
+        return qsTr("A total eclipse darkens Patagonia")
+    case "eclipse-968":
+        return qsTr("Leo the Deacon describes the corona from Constantinople")
     default:
         return key
     }

@@ -122,7 +122,7 @@ Page {
             }
 
             AboutParagraph {
-                text: qsTr("Achievements, from the pulley menu, come in seven levels each, from Paper through Wood, Bronze, Silver, Gold and Platinum to Diamond: for the longest, the fastest and the farthest in all of each activity type, for the height climbed, the land gone through, the time, the weeks in a row and the steps, and for the days collected by being active on them: national days, holy days, the days of wars, peace treaties, revolutions, conquests, discoveries, firsts and inventions, the death days of dictators and the birthdays of composers. Driving counts for none of them. Levels an activity reaches are shown on its page once it is stopped. A level once reached stays, as do the days collected, even should the activities that reached them be deleted.")
+                text: qsTr("Achievements, from the pulley menu, come in seven levels each, from Paper through Wood, Bronze, Silver, Gold and Platinum to Diamond: for the longest, the fastest and the farthest in all of each activity type, for the height climbed, the land gone through, the time, the weeks in a row and the steps, and for the days collected by being active on them: national days, holy days, full moons, the days of wars, peace treaties, revolutions, conquests, discoveries, firsts, inventions, natural disasters and total solar eclipses, the death days of dictators and the birthdays of composers. Driving counts for none of them. Levels an activity reaches are shown on its page once it is stopped. A level once reached stays, as do the days collected, even should the activities that reached them be deleted.")
             }
 
             AboutParagraph {

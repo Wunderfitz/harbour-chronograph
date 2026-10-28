@@ -231,6 +231,8 @@ ApplicationWindow {
             return qsTr("Patriot")
         case "days-worshipper":
             return qsTr("Worshipper")
+        case "days-werewolf":
+            return qsTr("Werewolf")
         case "days-freedom-fighter":
             return qsTr("Freedom Fighter")
         case "days-warmonger":
@@ -249,6 +251,10 @@ ApplicationWindow {
             return qsTr("Innovator")
         case "days-virtuoso":
             return qsTr("Virtuoso")
+        case "days-force-of-nature":
+            return qsTr("Force of Nature")
+        case "days-shadow-chaser":
+            return qsTr("Shadow Chaser")
         default:
             return key
         }
@@ -311,6 +317,8 @@ ApplicationWindow {
             return qsTr("The national days of countries around the world.") + occasions
         case "days-worshipper":
             return qsTr("The holy days of the world's major religions. Those that move with the moon or with Easter are known up to 2031, and may be a day off where you are.") + occasions
+        case "days-werewolf":
+            return qsTr("The days of the full moon, each month's under its traditional name. Known up to 2031, by the moment of the full moon in UTC, so the day may be one off where you are.") + occasions
         case "days-freedom-fighter":
             return qsTr("The days well-known dictators died.") + occasions
         case "days-warmonger":
@@ -329,6 +337,10 @@ ApplicationWindow {
             return qsTr("The days of great inventions, from the steam engine to the text message.") + occasions
         case "days-virtuoso":
             return qsTr("The birthdays of great composers and musicians.") + occasions
+        case "days-force-of-nature":
+            return qsTr("The days of great natural disasters: earthquakes, eruptions, floods, storms and tsunamis.") + occasions
+        case "days-shadow-chaser":
+            return qsTr("The days of historic total solar eclipses, when the Moon's shadow crossed the Earth.") + occasions
         default:
             return ""
         }

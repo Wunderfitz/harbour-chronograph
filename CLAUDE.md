@@ -17,12 +17,13 @@ pauses and resumes a recording on its own: standing, too fast for the type,
 and after half an hour paused it stops it. A statistics page, from the main
 page's pulley, totals the distance, the time and the land cover of all
 activities together and of each type. An achievements page, from the same
-pulley, shows 37 categories of achievement - the longest, fastest and
+pulley, shows 40 categories of achievement - the longest, fastest and
 farthest per type, the climb, the land cover, the time, the weeks in a row,
 the steps, and days collected by being active on them: national and holy
-days, the days of wars, peace, revolutions, conquests, discoveries, firsts
-and inventions, dictators' deaths and composers' births - each with seven
-levels from Paper to Diamond, kept for good once reached.
+days, full moons, the days of wars, peace, revolutions, conquests, discoveries, firsts,
+inventions, natural disasters and total solar eclipses, dictators' deaths
+and composers' births - each with seven levels from Paper to Diamond, kept
+for good once reached.
 
 ## Ground rules
 
@@ -615,7 +616,7 @@ come. The categories themselves were left to Claude.
   same for all. `app.achievementLevelName()` and `app.achievementLevelColor()`
   name and colour them, a light hue on a dark ambience, a darker one on a
   light ambience.
-- **26 categories in 8 groups**, and 11 calendar ones in 2 more (see [the
+- **26 categories in 8 groups**, and 14 calendar ones in 2 more (see [the
   calendar achievements](#the-calendar-achievements-days-collected-for-good)),
   in `AchievementCatalogue.cpp`'s `kCategories`, thresholds and all: per type that a body moves - running,
   walking, cycling, rowing - the longest single activity, the distance in
@@ -730,7 +731,14 @@ breakthroughs), Innovator (inventions), Conqueror (conquests of lands,
 countries and cities), Explorer (discoveries and explorations) - and left
 more to Claude: Peacemaker (ends of wars, peace treaties), Revolutionary
 (revolutions and uprisings) and Virtuoso (composers' and musicians'
-birthdays). Groups `holidays` (the first two) and `history`.
+birthdays). Force of Nature (great natural disasters: earthquakes,
+eruptions, floods, storms and tsunamis) came on 2026-10-28, the owner's
+idea, its name Claude's, and Shadow Chaser (historic total solar
+eclipses, the latest of 12 August 2026 included) on 2026-10-29, the same
+way. Werewolf (the full moons) came on 2026-10-29 as well, with
+Worshipper's mechanics at the owner's wish - dates for 2026 to 2031 -
+and the name the owner suggested. Groups `holidays` (Patriot, Worshipper
+and Werewolf) and `history`.
 
 - **Occasions, 42 per category** - the owner's limit, the answer to
   everything - each an `Occasion` in `AchievementCatalogue.cpp`: a key, a
@@ -742,6 +750,15 @@ birthdays). Groups `holidays` (the first two) and `history`.
   **History is history** (the project owner's words, 2026-10-27): the
   lists take in every side of it, wars, invasions and annexations as much
   as peace treaties and discoveries.
+- **But twelve full moons**, decided with the owner (2026-10-29): some 75
+  full moons fall in 2026 to 2031, more than 42 single dates could hold,
+  and 42 would have run out in 2029. So each month's full moon is one
+  occasion, named as the almanacs name it (Wolf Moon for January to Cold
+  Moon for December; Corn Moon rather than Harvest Moon for September,
+  as the Harvest Moon is the one nearest the equinox, in October some
+  years), with its dates for each year - a second full moon in a month
+  is that month's moon again. Their levels come at 1, 2, 3, 5, 7, 9 and
+  12, so Diamond is a full moon activity in every month.
 - **Each date only once within a category**, so an activity collects one
   occasion at most - but for a feast that moves onto another's day in some
   year (Hanukkah on Christmas Day 2027, Easter and Orthodox Easter in
@@ -756,9 +773,18 @@ birthdays). Groups `holidays` (the first two) and `history`.
   where the moon is sighted or the place is far from Delhi, which the
   description says. **After 2031 they collect nothing until a later
   version lists more** - append, never change a past date. Dates before
-  1582 are as history books give them, mostly Julian.
+  1582 are as history books give them, mostly Julian. A disaster that
+  lasted for days is dated by the day it struck hardest: an eruption's
+  climax, a storm's landfall, a flood's worst night. An eclipse is dated
+  in UTC, by its greatest eclipse: the Moon's shadow may cross the date
+  line. A full moon is dated by its moment in UTC, worked out with Meeus'
+  algorithm (*Astronomical Algorithms*, chapter 49) and checked against
+  the lunar eclipses of those years; the closest to midnight, 29 June
+  2026 at 23:56 and 3 September 2028 at 23:47, are well within its minute
+  of error. The test checks that they come 29 or 30 days apart.
 - **Days, not activities, count** - one level per threshold of occasions
-  collected: 1, 3, 6, 12, 20, 30 and all 42. Two activities on one
+  collected: 1, 3, 6, 12, 20, 30 and all 42 (Werewolf's above apart).
+  Two activities on one
   occasion, or the same one in two years, count once. Diamond takes a
   year of daily activity, and Worshipper's moving feasts in one year.
 - **Collected for good**, unlike the other categories' values: what was
@@ -779,7 +805,7 @@ birthdays). Groups `holidays` (the first two) and `history`.
   both lists). **Never an occasion not yet collected**, by the owner's
   wish: finding them out is the game.
 - **Named in `qml/js/Occasions.js`**, the one place, `qsTr` in a JS file
-  (context `Occasions`) to keep 462 names out of `harbour-chronograph.qml`;
+  (context `Occasions`) to keep 558 names out of `harbour-chronograph.qml`;
   `title()` adds the year. Occasion keys are unique across all categories
   and stored: never rename one. An occasion taken out leaves a harmless
   row, which `read()` skips.
@@ -787,7 +813,7 @@ birthdays). Groups `holidays` (the first two) and `history`.
   category, made once. `evaluate()` over 2,000 activities took 0.3 ms
   at `-O2` on the host (5 ms at `-O0`); the whole update in the build
   engine stays at about 9 ms at `-O2` (21 ms at `-O0`, the test's default,
-  against 10 before), the first one writing up to 462 rows. Not measured
+  against 10 before), the first one writing up to 558 rows. Not measured
   on the phone.
 
 ### Smoothing the fixes: a Kalman filter per activity type
@@ -1313,7 +1339,7 @@ takes a level or the best value away and dates a level only as it rises.
 For the calendar categories: their occasions (keys unique, dates that exist
 and none on the 29th of February, none twice in a category, in the order of
 the year, every moving feast in every year to 2031, Easter and its feasts by
-the computus), the occasions of a day (every year's, a moving feast's only on
+the computus, the full moons a synodic month apart), the occasions of a day (every year's, a moving feast's only on
 its dates and not after 2031, two on one day), collecting (once each, a drive
 nothing, an activity out of order, every level from a year of daily walks)
 and `collect()` keeping what was collected after its activities are deleted. Run

@@ -33,12 +33,13 @@
   time and the land cover in kilometres and per cent of all activities
   together, and of each activity type below them. Kept up to date in the
   database as activities are stored, deleted or learn their land cover.
-- Achievements, from the main page's pulley menu: 26 categories - the
+- Achievements, from the main page's pulley menu: 40 categories - the
   longest, the fastest and the distance in all of running, walking, cycling
   and rowing, the biggest climb and the climb in all, the distance through
   forest, meadows, farmland, heath, water and built-up land, the longest
   activity and the time in all, the number of activities, weeks in a row
-  with one, and the steps in a day and in all - each with seven levels from
+  with one, the steps in a day and in all, and fourteen of calendar days
+  (below) - each with seven levels from
   Paper through Wood, Bronze, Silver, Gold and Platinum to Diamond. Worked
   out as activities are stored and steps saved, including those from
   before, and kept in the database; a level once reached stays, even when
@@ -46,6 +47,16 @@
   achieved and when, and what the next level takes. Levels reached by an
   activity are shown on its page after the stop, one at a time, each
   until OK is tapped.
+- Fourteen of the categories collect calendar days by being active on
+  them, 42 each: national days, holy days, the days of wars, peace
+  treaties, revolutions, conquests, discoveries, firsts, inventions,
+  natural disasters and total solar eclipses, the death days of dictators
+  and the birthdays of composers - and twelve full moons, each month's
+  under its traditional name, from the Wolf Moon to the Cold Moon.
+  An activity started on one of the days collects it, in any year, driving
+  aside, and each day counts once; the days collected stay, even when
+  their activities are deleted. Feasts that move and full moons are known
+  up to 2031.
 - Asks for the Location and Internet permissions; no longer for Sensors, which
   Location includes.
 

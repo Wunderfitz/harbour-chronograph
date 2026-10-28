@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copyright (C) 2026 Sebastian J. Wolf and other contributors
+
+    This file is part of Chronograph.
+
+    Chronograph is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Chronograph is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Chronograph. If not, see <http://www.gnu.org/licenses/>.
+-->
+<!--
+    Werewolf, for the achievements: the full moon, its craters cut out.
+    White on transparent: Silica's Icon tints it with the level's colour.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <path fill="#ffffff" fill-rule="evenodd" d="M5 32 a27 27 0 1 0 54 0 a27 27 0 1 0 -54 0 Z M16 23 a7 7 0 1 0 14 0 a7 7 0 1 0 -14 0 Z M32 37 a9 9 0 1 0 18 0 a9 9 0 1 0 -18 0 Z M17.5 44 a4.5 4.5 0 1 0 9 0 a4.5 4.5 0 1 0 -9 0 Z M38.5 17 a3.5 3.5 0 1 0 7 0 a3.5 3.5 0 1 0 -7 0 Z"/>
+</svg>

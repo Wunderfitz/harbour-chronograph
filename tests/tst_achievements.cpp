@@ -34,6 +34,7 @@
 #include "AchievementCatalogue.h"
 #include "LandCover.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -477,6 +478,21 @@ void testOccasions()
     expect("Easter and the feasts it moves follow the computus", computus);
     const Occasion &ramadan = worshipper.occasions[occasionOf(worshipper, "ramadan")];
     expect("a lunar year's feast comes twice in some solar years", ramadan.dates[6] != 0);
+
+    // Every full moon, whichever month's: a synodic month apart, none left out.
+    const Category &werewolf = categoryOf("days-werewolf");
+    std::vector<int> fullMoons;
+    for (std::size_t j = 0; j < werewolf.occasionCount; ++j) {
+        const Occasion &o = werewolf.occasions[j];
+        for (int k = 0; k < kOccasionDates && o.dates[k] != 0; ++k)
+            fullMoons.push_back(julianDay(o.dates[k] / 10000, o.dates[k] / 100 % 100, o.dates[k] % 100));
+    }
+    std::sort(fullMoons.begin(), fullMoons.end());
+    bool synodic = !fullMoons.empty();
+    for (std::size_t j = 1; j < fullMoons.size(); ++j)
+        synodic = synodic && fullMoons[j] - fullMoons[j - 1] >= 29 && fullMoons[j] - fullMoons[j - 1] <= 30;
+    expect("the full moons follow each other by 29 or 30 days", synodic);
+    expectEqual("from the first of 2026 to the last of 2031", int(fullMoons.size()), 75);
 }
 
 void testOccasionsOn()
@@ -487,7 +503,14 @@ void testOccasionsOn()
     expect("a date of every year, in any year", moon.size() == 1 && moon[0] == occasionOf(first, "moon-landing"));
     expect("the day before is none", occasionsOn(first, julianDay(2027, 7, 19)).empty());
     expect("nor is it another category's", occasionsOn(categoryOf("days-virtuoso"), julianDay(2027, 7, 20)).empty());
-    expect("an occasion of the first of January", occasionsOn(categoryOf("days-explorer"), julianDay(2030, 1, 1)).size() == 1);
+    expect("a disaster of the first century", occasionsOn(categoryOf("days-force-of-nature"),
+                                                          julianDay(2026, 8, 24)).size() == 1);
+    expect("an eclipse before Christ", occasionsOn(categoryOf("days-shadow-chaser"), julianDay(2027, 5, 28)).size() == 1);
+    const Category &werewolf = categoryOf("days-werewolf");
+    const std::vector<std::size_t> blue = occasionsOn(werewolf, julianDay(2028, 12, 31));
+    expect("a second full moon in a month is that month's again",
+           blue.size() == 1 && blue[0] == occasionOf(werewolf, "cold-moon"));
+    expect("an occasion of the first of January",occasionsOn(categoryOf("days-explorer"), julianDay(2030, 1, 1)).size() == 1);
     expect("and of the 31st of December", occasionsOn(categoryOf("days-freedom-fighter"),
                                                       julianDay(2029, 12, 30)).size() == 1);
 

@@ -37,9 +37,10 @@ constexpr double hours(double count) { return count * 3600; }
 
 /* The calendar categories' occasions, each in the order of the year, the
  * feasts that move by their first date. 42 each, which is the answer, and
- * the most a category takes: the last level is all of them. Each date only
- * once within a category, so that every activity collects one occasion at
- * most - but for a feast that moves onto another's day in some year.
+ * the most a category takes: the last level is all of them - but for the
+ * twelve full moons, one a month. Each date only once within a category, so
+ * that every activity collects one occasion at most - but for a feast that
+ * moves onto another's day in some year.
  *
  * The dates of the feasts that move are listed for 2026 to 2031, for the
  * main day where there are several; a later version lists more. Easter and
@@ -47,11 +48,17 @@ constexpr double hours(double count) { return count * 3600; }
  * holidays by the Hebrew calendar's rules (the first day; they begin on the
  * evening before), the Islamic ones by the Umm al-Qura calendar, the Hindu,
  * Sikh and Buddhist ones by Drik Panchang's for New Delhi - where the moon
- * is sighted, or the place is far from Delhi, a day may differ.
+ * is sighted, or the place is far from Delhi, a day may differ. A full moon
+ * is dated by its moment in UTC, worked out by Meeus' algorithm, and named
+ * by its month: the Wolf Moon is January's, a second in one month is the
+ * same moon again.
  *
  * Dates before 1582, and in Russia before 1918, are as history books give
  * them, mostly in the Julian calendar of the time. Birthdays are those
- * usually celebrated. */
+ * usually celebrated. A disaster that lasted for days is dated by the day
+ * it struck hardest: an eruption's climax, a storm's landfall. An eclipse
+ * is dated by its greatest eclipse in UTC, as the Moon's shadow may cross
+ * the date line. */
 const Occasion kPatriot[] = {
     { "australia-day", 1, 26, 1788, {} },
     { "new-zealand-waitangi-day", 2, 6, 1840, {} },
@@ -140,6 +147,21 @@ const Occasion kWorshipper[] = {
     { "hanukkah", 0, 0, 0, { 20261205, 20271225, 20281213, 20291202, 20301221, 20311210 } },
     { "bodhi-day", 12, 8, 0, {} },
     { "christmas", 12, 25, 0, {} },
+};
+
+const Occasion kWerewolf[] = {
+    { "wolf-moon", 0, 0, 0, { 20260103, 20270122, 20280112, 20290130, 20300119, 20310108 } },
+    { "snow-moon", 0, 0, 0, { 20260201, 20270220, 20280210, 20290228, 20300218, 20310207 } },
+    { "worm-moon", 0, 0, 0, { 20260303, 20270322, 20280311, 20290330, 20300319, 20310309 } },
+    { "pink-moon", 0, 0, 0, { 20260402, 20270420, 20280409, 20290428, 20300418, 20310407 } },
+    { "flower-moon", 0, 0, 0, { 20260501, 20260531, 20270520, 20280508, 20290527, 20300517, 20310507 } },
+    { "strawberry-moon", 0, 0, 0, { 20260629, 20270619, 20280607, 20290626, 20300615, 20310605 } },
+    { "buck-moon", 0, 0, 0, { 20260729, 20270718, 20280706, 20290725, 20300715, 20310704 } },
+    { "sturgeon-moon", 0, 0, 0, { 20260828, 20270817, 20280805, 20290824, 20300813, 20310803 } },
+    { "corn-moon", 0, 0, 0, { 20260926, 20270915, 20280903, 20290922, 20300911, 20310901, 20310930 } },
+    { "hunters-moon", 0, 0, 0, { 20261026, 20271015, 20281003, 20291022, 20301011, 20311030 } },
+    { "beaver-moon", 0, 0, 0, { 20261124, 20271114, 20281102, 20291121, 20301110, 20311128 } },
+    { "cold-moon", 0, 0, 0, { 20261224, 20271213, 20281202, 20281231, 20291220, 20301209, 20311228 } },
 };
 
 const Occasion kFreedomFighter[] = {
@@ -546,6 +568,96 @@ const Occasion kVirtuoso[] = {
     { "birth-beethoven", 12, 16, 1770, {} },
     { "birth-puccini", 12, 22, 1858, {} },
 };
+
+const Occasion kForceOfNature[] = {
+    { "haiti-earthquake", 1, 12, 2010, {} },
+    { "hunga-tonga-eruption", 1, 15, 2022, {} },
+    { "grote-mandrenke", 1, 16, 1362, {} },
+    { "kobe-earthquake", 1, 17, 1995, {} },
+    { "shaanxi-earthquake", 1, 23, 1556, {} },
+    { "north-sea-flood", 2, 1, 1953, {} },
+    { "turkey-syria-earthquake", 2, 6, 2023, {} },
+    { "hamburg-storm-flood", 2, 16, 1962, {} },
+    { "tohoku-earthquake", 3, 11, 2011, {} },
+    { "alaska-earthquake", 3, 27, 1964, {} },
+    { "tambora-eruption", 4, 10, 1815, {} },
+    { "san-francisco-earthquake", 4, 18, 1906, {} },
+    { "nepal-earthquake", 4, 25, 2015, {} },
+    { "cyclone-nargis", 5, 2, 2008, {} },
+    { "mount-pelee-eruption", 5, 8, 1902, {} },
+    { "sichuan-earthquake", 5, 12, 2008, {} },
+    { "mount-st-helens-eruption", 5, 18, 1980, {} },
+    { "valdivia-earthquake", 5, 22, 1960, {} },
+    { "ancash-earthquake", 5, 31, 1970, {} },
+    { "laki-eruption", 6, 8, 1783, {} },
+    { "pinatubo-eruption", 6, 15, 1991, {} },
+    { "ahr-valley-flood", 7, 14, 2021, {} },
+    { "tangshan-earthquake", 7, 28, 1976, {} },
+    { "lake-nyos-disaster", 8, 21, 1986, {} },
+    { "vesuvius-eruption", 8, 24, 79, {} },
+    { "krakatoa-eruption", 8, 27, 1883, {} },
+    { "hurricane-katrina", 8, 29, 2005, {} },
+    { "kanto-earthquake", 9, 1, 1923, {} },
+    { "galveston-hurricane", 9, 8, 1900, {} },
+    { "mexico-city-earthquake", 9, 19, 1985, {} },
+    { "kashmir-earthquake", 10, 8, 2005, {} },
+    { "great-hurricane-1780", 10, 10, 1780, {} },
+    { "basel-earthquake", 10, 18, 1356, {} },
+    { "hurricane-mitch", 10, 29, 1998, {} },
+    { "lisbon-earthquake", 11, 1, 1755, {} },
+    { "typhoon-haiyan", 11, 8, 2013, {} },
+    { "bhola-cyclone", 11, 12, 1970, {} },
+    { "nevado-del-ruiz-eruption", 11, 13, 1985, {} },
+    { "st-elizabeths-flood", 11, 18, 1421, {} },
+    { "haiyuan-earthquake", 12, 16, 1920, {} },
+    { "indian-ocean-tsunami", 12, 26, 2004, {} },
+    { "messina-earthquake", 12, 28, 1908, {} },
+};
+
+const Occasion kShadowChaser[] = {
+    { "eclipse-1925", 1, 24, 1925, {} },
+    { "eclipse-1961", 2, 15, 1961, {} },
+    { "eclipse-1980", 2, 16, 1980, {} },
+    { "eclipse-1979", 2, 26, 1979, {} },
+    { "eclipse-1970", 3, 7, 1970, {} },
+    { "eclipse-2016", 3, 9, 2016, {} },
+    { "eclipse-2015", 3, 20, 2015, {} },
+    { "eclipse-2006", 3, 29, 2006, {} },
+    { "eclipse-2024", 4, 8, 2024, {} },
+    { "eclipse-1185", 5, 1, 1185, {} },
+    { "eclipse-1715", 5, 3, 1715, {} },
+    { "eclipse-840", 5, 5, 840, {} },
+    { "eclipse-585bc", 5, 28, -585, {} },
+    { "eclipse-1919", 5, 29, 1919, {} },
+    { "eclipse-1239", 6, 3, 1239, {} },
+    { "eclipse-763bc", 6, 15, -763, {} },
+    { "eclipse-1806", 6, 16, 1806, {} },
+    { "eclipse-1955", 6, 20, 1955, {} },
+    { "eclipse-2001", 6, 21, 2001, {} },
+    { "eclipse-1927", 6, 29, 1927, {} },
+    { "eclipse-1973", 6, 30, 1973, {} },
+    { "eclipse-2019", 7, 2, 2019, {} },
+    { "eclipse-1842", 7, 8, 1842, {} },
+    { "eclipse-1991", 7, 11, 1991, {} },
+    { "eclipse-1860", 7, 18, 1860, {} },
+    { "eclipse-2009", 7, 22, 2009, {} },
+    { "eclipse-1851", 7, 28, 1851, {} },
+    { "eclipse-1878", 7, 29, 1878, {} },
+    { "eclipse-2008", 8, 1, 2008, {} },
+    { "eclipse-1133", 8, 2, 1133, {} },
+    { "eclipse-1869", 8, 7, 1869, {} },
+    { "eclipse-1999", 8, 11, 1999, {} },
+    { "eclipse-2026", 8, 12, 2026, {} },
+    { "eclipse-1868", 8, 18, 1868, {} },
+    { "eclipse-1887", 8, 19, 1887, {} },
+    { "eclipse-2017", 8, 21, 2017, {} },
+    { "eclipse-1922", 9, 21, 1922, {} },
+    { "eclipse-1995", 10, 24, 1995, {} },
+    { "eclipse-2012", 11, 13, 2012, {} },
+    { "eclipse-2021", 12, 4, 2021, {} },
+    { "eclipse-2020", 12, 14, 2020, {} },
+    { "eclipse-968", 12, 22, 968, {} },
+};
 /* The number of occasions in a category's list. */
 template <std::size_t N>
 constexpr std::size_t countOf(const Occasion (&)[N]) { return N; }
@@ -629,6 +741,9 @@ const Category kCategories[] = {
       "achievement-patriot", "", { 1, 3, 6, 12, 20, 30, 42 }, kPatriot, countOf(kPatriot) },
     { "days-worshipper", "holidays", CalendarDays, nullptr, 0, 0, "days",
       "achievement-worshipper", "", { 1, 3, 6, 12, 20, 30, 42 }, kWorshipper, countOf(kWorshipper) },
+    /* Twelve moons, one a month: Diamond takes a full moon in every month. */
+    { "days-werewolf", "holidays", CalendarDays, nullptr, 0, 0, "days",
+      "achievement-werewolf", "", { 1, 2, 3, 5, 7, 9, 12 }, kWerewolf, countOf(kWerewolf) },
     { "days-freedom-fighter", "history", CalendarDays, nullptr, 0, 0, "days",
       "achievement-freedom-fighter", "", { 1, 3, 6, 12, 20, 30, 42 }, kFreedomFighter, countOf(kFreedomFighter) },
     { "days-warmonger", "history", CalendarDays, nullptr, 0, 0, "days",
@@ -647,6 +762,10 @@ const Category kCategories[] = {
       "achievement-innovator", "", { 1, 3, 6, 12, 20, 30, 42 }, kInnovator, countOf(kInnovator) },
     { "days-virtuoso", "history", CalendarDays, nullptr, 0, 0, "days",
       "achievement-virtuoso", "", { 1, 3, 6, 12, 20, 30, 42 }, kVirtuoso, countOf(kVirtuoso) },
+    { "days-force-of-nature", "history", CalendarDays, nullptr, 0, 0, "days",
+      "achievement-force-of-nature", "", { 1, 3, 6, 12, 20, 30, 42 }, kForceOfNature, countOf(kForceOfNature) },
+    { "days-shadow-chaser", "history", CalendarDays, nullptr, 0, 0, "days",
+      "achievement-shadow-chaser", "", { 1, 3, 6, 12, 20, 30, 42 }, kShadowChaser, countOf(kShadowChaser) },
 };
 const std::size_t kCategoryCount = sizeof(kCategories) / sizeof(kCategories[0]);
 

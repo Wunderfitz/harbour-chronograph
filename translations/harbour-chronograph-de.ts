@@ -96,8 +96,8 @@
         <translation>Wenn Sie nach den Diagrammen weiterwischen, zeigt die Aktivitätsseite, wie weit Sie durch Wald, Ackerland, Wasser und anderes Gelände gekommen sind. Das wird aus den Kartenkacheln gelesen, und nur aus denen, die während oder nach der Aktivität auf dem Bildschirm zu sehen waren: Dafür wird nichts heruntergeladen. Gelände, dessen Kacheln nie zu sehen waren, gilt als unbekannt, bis sie es sind.</translation>
     </message>
     <message>
-        <source>Achievements, from the pulley menu, come in seven levels each, from Paper through Wood, Bronze, Silver, Gold and Platinum to Diamond: for the longest, the fastest and the farthest in all of each activity type, for the height climbed, the land gone through, the time, the weeks in a row and the steps, and for the days collected by being active on them: national days, holy days, the days of wars, peace treaties, revolutions, conquests, discoveries, firsts and inventions, the death days of dictators and the birthdays of composers. Driving counts for none of them. Levels an activity reaches are shown on its page once it is stopped. A level once reached stays, as do the days collected, even should the activities that reached them be deleted.</source>
-        <translation>Erfolge, im Zugmenü, haben je sieben Stufen, von Papier über Holz, Bronze, Silber, Gold und Platin bis Diamant: für die längste, die schnellste und die insgesamt weiteste Aktivität jeder Art, für die erklommenen Höhenmeter, das durchquerte Gelände, die Zeit, die Wochen in Folge und die Schritte sowie für die Tage, die Sie sammeln, indem Sie an ihnen aktiv sind: Nationalfeiertage, religiöse Feiertage, die Tage von Kriegen, Friedensschlüssen, Revolutionen, Eroberungen, Entdeckungen, Premieren und Erfindungen, die Todestage von Diktatoren und die Geburtstage von Komponisten. Autofahrten zählen für keinen davon. Stufen, die eine Aktivität erreicht, zeigt ihre Seite nach dem Stopp an. Eine einmal erreichte Stufe bleibt, ebenso wie die gesammelten Tage, auch wenn die Aktivitäten, mit denen sie erreicht wurden, gelöscht werden.</translation>
+        <source>Achievements, from the pulley menu, come in seven levels each, from Paper through Wood, Bronze, Silver, Gold and Platinum to Diamond: for the longest, the fastest and the farthest in all of each activity type, for the height climbed, the land gone through, the time, the weeks in a row and the steps, and for the days collected by being active on them: national days, holy days, full moons, the days of wars, peace treaties, revolutions, conquests, discoveries, firsts, inventions, natural disasters and total solar eclipses, the death days of dictators and the birthdays of composers. Driving counts for none of them. Levels an activity reaches are shown on its page once it is stopped. A level once reached stays, as do the days collected, even should the activities that reached them be deleted.</source>
+        <translation>Erfolge, im Zugmenü, haben je sieben Stufen, von Papier über Holz, Bronze, Silber, Gold und Platin bis Diamant: für die längste, die schnellste und die insgesamt weiteste Aktivität jeder Art, für die erklommenen Höhenmeter, das durchquerte Gelände, die Zeit, die Wochen in Folge und die Schritte sowie für die Tage, die Sie sammeln, indem Sie an ihnen aktiv sind: Nationalfeiertage, religiöse Feiertage, Vollmonde, die Tage von Kriegen, Friedensschlüssen, Revolutionen, Eroberungen, Entdeckungen, Premieren, Erfindungen, Naturkatastrophen und totalen Sonnenfinsternissen, die Todestage von Diktatoren und die Geburtstage von Komponisten. Autofahrten zählen für keinen davon. Stufen, die eine Aktivität erreicht, zeigt ihre Seite nach dem Stopp an. Eine einmal erreichte Stufe bleibt, ebenso wie die gesammelten Tage, auch wenn die Aktivitäten, mit denen sie erreicht wurden, gelöscht werden.</translation>
     </message>
 </context>
 <context>
@@ -2266,6 +2266,390 @@
         <source>Giacomo Puccini is born</source>
         <translation>Giacomo Puccini wird geboren</translation>
     </message>
+    <message>
+        <source>An earthquake devastates Haiti</source>
+        <translation>Ein Erdbeben verwüstet Haiti</translation>
+    </message>
+    <message>
+        <source>Hunga Tonga erupts and sends a tsunami across the Pacific</source>
+        <translation>Der Hunga Tonga bricht aus und schickt einen Tsunami über den Pazifik</translation>
+    </message>
+    <message>
+        <source>The Grote Mandrenke floods the North Sea coast and drowns Rungholt</source>
+        <translation>Die Grote Mandrenke überflutet die Nordseeküste und lässt Rungholt versinken</translation>
+    </message>
+    <message>
+        <source>An earthquake strikes Kobe</source>
+        <translation>Ein Erdbeben trifft Kōbe</translation>
+    </message>
+    <message>
+        <source>The deadliest earthquake on record strikes Shaanxi</source>
+        <translation>Das tödlichste überlieferte Erdbeben trifft Shaanxi</translation>
+    </message>
+    <message>
+        <source>A storm surge floods the Netherlands and the coasts of the North Sea</source>
+        <translation>Eine Sturmflut überschwemmt die Niederlande und die Küsten der Nordsee</translation>
+    </message>
+    <message>
+        <source>Earthquakes strike Turkey and Syria</source>
+        <translation>Erdbeben treffen die Türkei und Syrien</translation>
+    </message>
+    <message>
+        <source>A storm surge floods Hamburg</source>
+        <translation>Eine Sturmflut überschwemmt Hamburg</translation>
+    </message>
+    <message>
+        <source>An earthquake and tsunami strike Tōhoku, Japan</source>
+        <translation>Ein Erdbeben und ein Tsunami treffen Tōhoku in Japan</translation>
+    </message>
+    <message>
+        <source>The Good Friday earthquake strikes Alaska</source>
+        <translation>Das Karfreitagsbeben trifft Alaska</translation>
+    </message>
+    <message>
+        <source>Tambora erupts, bringing the year without a summer</source>
+        <translation>Der Tambora bricht aus und bringt das Jahr ohne Sommer</translation>
+    </message>
+    <message>
+        <source>An earthquake and fire destroy San Francisco</source>
+        <translation>Ein Erdbeben und ein Großbrand zerstören San Francisco</translation>
+    </message>
+    <message>
+        <source>An earthquake strikes Nepal</source>
+        <translation>Ein Erdbeben trifft Nepal</translation>
+    </message>
+    <message>
+        <source>Cyclone Nargis strikes Myanmar</source>
+        <translation>Zyklon Nargis trifft Myanmar</translation>
+    </message>
+    <message>
+        <source>Mount Pelée erupts and destroys Saint-Pierre, Martinique</source>
+        <translation>Der Mont Pelée bricht aus und zerstört Saint-Pierre auf Martinique</translation>
+    </message>
+    <message>
+        <source>An earthquake strikes Sichuan</source>
+        <translation>Ein Erdbeben trifft Sichuan</translation>
+    </message>
+    <message>
+        <source>Mount St. Helens erupts</source>
+        <translation>Der Mount St. Helens bricht aus</translation>
+    </message>
+    <message>
+        <source>The strongest earthquake on record strikes Valdivia, Chile</source>
+        <translation>Das stärkste je gemessene Erdbeben trifft Valdivia in Chile</translation>
+    </message>
+    <message>
+        <source>An earthquake strikes Peru and an avalanche buries Yungay</source>
+        <translation>Ein Erdbeben trifft Peru, und eine Lawine begräbt Yungay</translation>
+    </message>
+    <message>
+        <source>Laki begins to erupt in Iceland</source>
+        <translation>Die Laki-Spalte auf Island beginnt auszubrechen</translation>
+    </message>
+    <message>
+        <source>Mount Pinatubo erupts in the Philippines</source>
+        <translation>Der Pinatubo auf den Philippinen bricht aus</translation>
+    </message>
+    <message>
+        <source>Floods devastate the Ahr valley and western Europe</source>
+        <translation>Fluten verwüsten das Ahrtal und Westeuropa</translation>
+    </message>
+    <message>
+        <source>An earthquake destroys Tangshan</source>
+        <translation>Ein Erdbeben zerstört Tangshan</translation>
+    </message>
+    <message>
+        <source>Lake Nyos releases a cloud of carbon dioxide in Cameroon</source>
+        <translation>Der Nyos-See in Kamerun setzt eine Wolke aus Kohlendioxid frei</translation>
+    </message>
+    <message>
+        <source>Vesuvius erupts and buries Pompeii</source>
+        <translation>Der Vesuv bricht aus und begräbt Pompeji</translation>
+    </message>
+    <message>
+        <source>Krakatoa explodes</source>
+        <translation>Der Krakatau explodiert</translation>
+    </message>
+    <message>
+        <source>Hurricane Katrina strikes New Orleans</source>
+        <translation>Hurrikan Katrina trifft New Orleans</translation>
+    </message>
+    <message>
+        <source>The Great Kantō earthquake strikes Tokyo and Yokohama</source>
+        <translation>Das Große Kantō-Erdbeben trifft Tokio und Yokohama</translation>
+    </message>
+    <message>
+        <source>A hurricane destroys Galveston</source>
+        <translation>Ein Hurrikan zerstört Galveston</translation>
+    </message>
+    <message>
+        <source>An earthquake strikes Mexico City</source>
+        <translation>Ein Erdbeben trifft Mexiko-Stadt</translation>
+    </message>
+    <message>
+        <source>An earthquake strikes Kashmir</source>
+        <translation>Ein Erdbeben trifft Kaschmir</translation>
+    </message>
+    <message>
+        <source>The Great Hurricane strikes the Caribbean</source>
+        <translation>Der Große Hurrikan trifft die Karibik</translation>
+    </message>
+    <message>
+        <source>An earthquake destroys Basel</source>
+        <translation>Ein Erdbeben zerstört Basel</translation>
+    </message>
+    <message>
+        <source>Hurricane Mitch strikes Central America</source>
+        <translation>Hurrikan Mitch trifft Mittelamerika</translation>
+    </message>
+    <message>
+        <source>An earthquake, a tsunami and fire destroy Lisbon</source>
+        <translation>Ein Erdbeben, ein Tsunami und ein Großbrand zerstören Lissabon</translation>
+    </message>
+    <message>
+        <source>Typhoon Haiyan strikes the Philippines</source>
+        <translation>Taifun Haiyan trifft die Philippinen</translation>
+    </message>
+    <message>
+        <source>The Bhola cyclone strikes East Pakistan, now Bangladesh</source>
+        <translation>Der Bhola-Zyklon trifft Ostpakistan, das heutige Bangladesch</translation>
+    </message>
+    <message>
+        <source>Nevado del Ruiz erupts and its mudflows bury Armero</source>
+        <translation>Der Nevado del Ruiz bricht aus, und seine Schlammströme begraben Armero</translation>
+    </message>
+    <message>
+        <source>The St. Elizabeth&apos;s flood breaks the dykes of Holland</source>
+        <translation>Die Elisabethenflut bricht die Deiche Hollands</translation>
+    </message>
+    <message>
+        <source>An earthquake strikes Haiyuan, China</source>
+        <translation>Ein Erdbeben trifft Haiyuan in China</translation>
+    </message>
+    <message>
+        <source>An earthquake sends a tsunami across the Indian Ocean</source>
+        <translation>Ein Erdbeben schickt einen Tsunami über den Indischen Ozean</translation>
+    </message>
+    <message>
+        <source>An earthquake and tsunami destroy Messina and Reggio Calabria</source>
+        <translation>Ein Erdbeben und ein Tsunami zerstören Messina und Reggio Calabria</translation>
+    </message>
+    <message>
+        <source>An eclipse darkens New York City</source>
+        <translation>Eine Finsternis verdunkelt New York City</translation>
+    </message>
+    <message>
+        <source>A total eclipse crosses southern Europe from France to Russia</source>
+        <translation>Eine totale Finsternis zieht von Frankreich bis Russland über Südeuropa</translation>
+    </message>
+    <message>
+        <source>A total eclipse crosses Africa and India</source>
+        <translation>Eine totale Finsternis zieht über Afrika und Indien</translation>
+    </message>
+    <message>
+        <source>The last total eclipse over the mainland United States for 38 years</source>
+        <translation>Die letzte totale Finsternis über dem Festland der USA für 38 Jahre</translation>
+    </message>
+    <message>
+        <source>A total eclipse crosses Mexico and the American east coast</source>
+        <translation>Eine totale Finsternis zieht über Mexiko und die amerikanische Ostküste</translation>
+    </message>
+    <message>
+        <source>A total eclipse crosses Indonesia</source>
+        <translation>Eine totale Finsternis zieht über Indonesien</translation>
+    </message>
+    <message>
+        <source>A total eclipse darkens the Faroe Islands and Svalbard</source>
+        <translation>Eine totale Finsternis verdunkelt die Färöer und Spitzbergen</translation>
+    </message>
+    <message>
+        <source>A total eclipse crosses the Sahara and Turkey</source>
+        <translation>Eine totale Finsternis zieht über die Sahara und die Türkei</translation>
+    </message>
+    <message>
+        <source>A total eclipse crosses Mexico, the United States and Canada</source>
+        <translation>Eine totale Finsternis zieht über Mexiko, die USA und Kanada</translation>
+    </message>
+    <message>
+        <source>An eclipse darkens Prince Igor&apos;s campaign against the Cumans</source>
+        <translation>Eine Finsternis verdunkelt Fürst Igors Feldzug gegen die Kumanen</translation>
+    </message>
+    <message>
+        <source>Halley&apos;s eclipse crosses England, as he foretold</source>
+        <translation>Halleys Finsternis zieht über England, wie er sie vorhergesagt hat</translation>
+    </message>
+    <message>
+        <source>An eclipse darkens the Frankish empire weeks before Louis the Pious dies</source>
+        <translation>Eine Finsternis verdunkelt das Frankenreich, Wochen bevor Ludwig der Fromme stirbt</translation>
+    </message>
+    <message>
+        <source>An eclipse ends the battle of the Halys, as Thales foretold</source>
+        <translation>Eine Finsternis beendet die Schlacht am Halys, wie Thales sie vorhergesagt hat</translation>
+    </message>
+    <message>
+        <source>Eddington&apos;s eclipse confirms Einstein&apos;s general relativity</source>
+        <translation>Eddingtons Finsternis bestätigt Einsteins allgemeine Relativitätstheorie</translation>
+    </message>
+    <message>
+        <source>A total eclipse crosses Europe from Spain to Italy</source>
+        <translation>Eine totale Finsternis zieht von Spanien bis Italien über Europa</translation>
+    </message>
+    <message>
+        <source>Assyrian scribes record the eclipse that dates the ancient Near East</source>
+        <translation>Assyrische Schreiber halten die Finsternis fest, nach der sich der Alte Orient datieren lässt</translation>
+    </message>
+    <message>
+        <source>Tenskwatawa, the Shawnee Prophet, foretells an eclipse</source>
+        <translation>Tenskwatawa, der Prophet der Shawnee, sagt eine Finsternis voraus</translation>
+    </message>
+    <message>
+        <source>The longest total eclipse of the 20th century crosses South-East Asia</source>
+        <translation>Die längste totale Finsternis des 20. Jahrhunderts zieht über Südostasien</translation>
+    </message>
+    <message>
+        <source>The first total eclipse of the millennium crosses southern Africa</source>
+        <translation>Die erste totale Finsternis des Jahrtausends zieht über das südliche Afrika</translation>
+    </message>
+    <message>
+        <source>England sees its first total eclipse in two hundred years</source>
+        <translation>England sieht seine erste totale Finsternis seit zweihundert Jahren</translation>
+    </message>
+    <message>
+        <source>Concorde chases an eclipse&apos;s shadow across Africa for 74 minutes</source>
+        <translation>Die Concorde jagt dem Schatten einer Finsternis 74 Minuten lang über Afrika nach</translation>
+    </message>
+    <message>
+        <source>A total eclipse crosses Chile and Argentina</source>
+        <translation>Eine totale Finsternis zieht über Chile und Argentinien</translation>
+    </message>
+    <message>
+        <source>A total eclipse crosses Europe and shows the Sun&apos;s prominences</source>
+        <translation>Eine totale Finsternis zieht über Europa und zeigt die Protuberanzen der Sonne</translation>
+    </message>
+    <message>
+        <source>The eclipse of the century crosses Hawaii and Mexico</source>
+        <translation>Die Finsternis des Jahrhunderts zieht über Hawaii und Mexiko</translation>
+    </message>
+    <message>
+        <source>Photographs in Spain show that the prominences belong to the Sun</source>
+        <translation>Fotos aus Spanien zeigen, dass die Protuberanzen zur Sonne gehören</translation>
+    </message>
+    <message>
+        <source>The longest total eclipse of the 21st century crosses India and China</source>
+        <translation>Die längste totale Finsternis des 21. Jahrhunderts zieht über Indien und China</translation>
+    </message>
+    <message>
+        <source>The first photograph of a total eclipse is taken in Königsberg</source>
+        <translation>In Königsberg entsteht das erste Foto einer totalen Finsternis</translation>
+    </message>
+    <message>
+        <source>Edison and astronomers watch an eclipse in the Rocky Mountains</source>
+        <translation>Edison und Astronomen beobachten eine Finsternis in den Rocky Mountains</translation>
+    </message>
+    <message>
+        <source>A total eclipse crosses Siberia and China</source>
+        <translation>Eine totale Finsternis zieht über Sibirien und China</translation>
+    </message>
+    <message>
+        <source>An eclipse darkens England as Henry I leaves for Normandy</source>
+        <translation>Eine Finsternis verdunkelt England, als Heinrich I. in die Normandie aufbricht</translation>
+    </message>
+    <message>
+        <source>Harkness and Young find the corona&apos;s green line</source>
+        <translation>Harkness und Young finden die grüne Linie der Korona</translation>
+    </message>
+    <message>
+        <source>The last total eclipse of the millennium crosses Europe</source>
+        <translation>Die letzte totale Finsternis des Jahrtausends zieht über Europa</translation>
+    </message>
+    <message>
+        <source>A total eclipse crosses Greenland, Iceland and Spain</source>
+        <translation>Eine totale Finsternis zieht über Grönland, Island und Spanien</translation>
+    </message>
+    <message>
+        <source>Janssen sees an unknown line in the Sun&apos;s light, later named helium</source>
+        <translation>Janssen sieht eine unbekannte Linie im Sonnenlicht, später Helium genannt</translation>
+    </message>
+    <message>
+        <source>Mendeleev rises above the clouds in a balloon to watch an eclipse</source>
+        <translation>Mendelejew steigt im Ballon über die Wolken, um eine Finsternis zu sehen</translation>
+    </message>
+    <message>
+        <source>The Great American Eclipse crosses the United States</source>
+        <translation>Die Great American Eclipse zieht über die USA</translation>
+    </message>
+    <message>
+        <source>An eclipse at Wallal, Australia, confirms relativity again</source>
+        <translation>Eine Finsternis in Wallal, Australien, bestätigt die Relativitätstheorie erneut</translation>
+    </message>
+    <message>
+        <source>A total eclipse crosses India and South-East Asia</source>
+        <translation>Eine totale Finsternis zieht über Indien und Südostasien</translation>
+    </message>
+    <message>
+        <source>A total eclipse darkens northern Australia</source>
+        <translation>Eine totale Finsternis verdunkelt den Norden Australiens</translation>
+    </message>
+    <message>
+        <source>A total eclipse darkens Antarctica</source>
+        <translation>Eine totale Finsternis verdunkelt die Antarktis</translation>
+    </message>
+    <message>
+        <source>A total eclipse darkens Patagonia</source>
+        <translation>Eine totale Finsternis verdunkelt Patagonien</translation>
+    </message>
+    <message>
+        <source>Leo the Deacon describes the corona from Constantinople</source>
+        <translation>Leon Diakonos beschreibt in Konstantinopel die Korona</translation>
+    </message>
+    <message>
+        <source>Wolf Moon, the full moon of January</source>
+        <translation>Wolfsmond, der Vollmond im Januar</translation>
+    </message>
+    <message>
+        <source>Snow Moon, the full moon of February</source>
+        <translation>Schneemond, der Vollmond im Februar</translation>
+    </message>
+    <message>
+        <source>Worm Moon, the full moon of March</source>
+        <translation>Wurmmond, der Vollmond im März</translation>
+    </message>
+    <message>
+        <source>Pink Moon, the full moon of April</source>
+        <translation>Rosa Mond, der Vollmond im April</translation>
+    </message>
+    <message>
+        <source>Flower Moon, the full moon of May</source>
+        <translation>Blumenmond, der Vollmond im Mai</translation>
+    </message>
+    <message>
+        <source>Strawberry Moon, the full moon of June</source>
+        <translation>Erdbeermond, der Vollmond im Juni</translation>
+    </message>
+    <message>
+        <source>Buck Moon, the full moon of July</source>
+        <translation>Hirschmond, der Vollmond im Juli</translation>
+    </message>
+    <message>
+        <source>Sturgeon Moon, the full moon of August</source>
+        <translation>Störmond, der Vollmond im August</translation>
+    </message>
+    <message>
+        <source>Corn Moon, the full moon of September</source>
+        <translation>Maismond, der Vollmond im September</translation>
+    </message>
+    <message>
+        <source>Hunter&apos;s Moon, the full moon of October</source>
+        <translation>Jägermond, der Vollmond im Oktober</translation>
+    </message>
+    <message>
+        <source>Beaver Moon, the full moon of November</source>
+        <translation>Bibermond, der Vollmond im November</translation>
+    </message>
+    <message>
+        <source>Cold Moon, the full moon of December</source>
+        <translation>Kalter Mond, der Vollmond im Dezember</translation>
+    </message>
 </context>
 <context>
     <name>OverviewPage</name>
@@ -2718,6 +3102,30 @@
         <source>An activity started on one of these %1 days collects it, in any year, driving aside. Each day counts once.</source>
         <extracomment>How a calendar achievement collects its days; %1 is how many there are</extracomment>
         <translation>Eine Aktivität, die an einem dieser %1 Tage beginnt, sammelt ihn, in jedem Jahr, Autofahrten ausgenommen. Jeder Tag zählt einmal.</translation>
+    </message>
+    <message>
+        <source>Force of Nature</source>
+        <translation>Naturgewalt</translation>
+    </message>
+    <message>
+        <source>The days of great natural disasters: earthquakes, eruptions, floods, storms and tsunamis.</source>
+        <translation>Die Tage großer Naturkatastrophen: Erdbeben, Vulkanausbrüche, Fluten, Stürme und Tsunamis.</translation>
+    </message>
+    <message>
+        <source>Shadow Chaser</source>
+        <translation>Schattenjäger</translation>
+    </message>
+    <message>
+        <source>The days of historic total solar eclipses, when the Moon&apos;s shadow crossed the Earth.</source>
+        <translation>Die Tage historischer totaler Sonnenfinsternisse, an denen der Schatten des Mondes über die Erde zog.</translation>
+    </message>
+    <message>
+        <source>Werewolf</source>
+        <translation>Werwolf</translation>
+    </message>
+    <message>
+        <source>The days of the full moon, each month&apos;s under its traditional name. Known up to 2031, by the moment of the full moon in UTC, so the day may be one off where you are.</source>
+        <translation>Die Tage des Vollmonds, der jedes Monats unter seinem überlieferten Namen. Bekannt bis 2031, nach dem Zeitpunkt des Vollmonds in UTC, sodass der Tag dort, wo Sie sind, um einen abweichen kann.</translation>
     </message>
 </context>
 </TS>
