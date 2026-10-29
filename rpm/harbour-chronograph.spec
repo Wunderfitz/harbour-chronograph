@@ -27,13 +27,37 @@ BuildRequires:  pkgconfig(keepalive)
 BuildRequires:  qt5-qttools-linguist
 BuildRequires:  desktop-file-utils
 
+# The last paragraph of the description is the metadata SailfishOS:Chum shows
+# the app with (https://github.com/sailfishos-chum/main/blob/main/Metadata.md).
+# It must stay the last and contiguous; outside Chum's builds it is left out.
 %description
 Chronograph is an activity tracker for Sailfish OS. It records your runs,
-walks, bike rides, rowing and drives with GPS, on an OpenStreetMap map, and
-replays them. It also
-counts your steps with the phone's accelerometer, also while the display is
-off, keeps the count of each day, and shows today's on its main page and its
-cover.
+walks, bike rides, rowing and drives with GPS on an OpenStreetMap map, stores
+each as a GPX file and replays it, with charts of the pace and the elevation
+and the land cover it went through. It counts your steps with the phone's
+accelerometer, also while the display is off, and keeps the count of every
+day. A statistics page totals what you have done, and achievements in seven
+levels mark the milestones on the way. Everything stays on the phone.
+
+%if 0%{?_chum}
+Title: Chronograph
+Type: desktop-application
+Categories:
+ - Utility
+ - Maps
+Custom:
+  Repo: https://github.com/Wunderfitz/harbour-chronograph
+PackageIcon: https://github.com/Wunderfitz/harbour-chronograph/raw/master/images/harbour-chronograph.svg
+AIRating: V
+Screenshots:
+ - https://github.com/Wunderfitz/harbour-chronograph/raw/master/screenshots/overview.png
+ - https://github.com/Wunderfitz/harbour-chronograph/raw/master/screenshots/activity.png
+ - https://github.com/Wunderfitz/harbour-chronograph/raw/master/screenshots/charts.png
+ - https://github.com/Wunderfitz/harbour-chronograph/raw/master/screenshots/land-cover.png
+ - https://github.com/Wunderfitz/harbour-chronograph/raw/master/screenshots/statistics.png
+ - https://github.com/Wunderfitz/harbour-chronograph/raw/master/screenshots/achievements.png
+ - https://github.com/Wunderfitz/harbour-chronograph/raw/master/screenshots/achievement.png
+%endif
 
 %prep
 %setup -q -n %{name}-%{version}

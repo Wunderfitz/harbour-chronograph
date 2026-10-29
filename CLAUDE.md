@@ -88,6 +88,30 @@ sfdk engine exec cat /srv/mer/toolings/SailfishOS-4.6.0.13/usr/share/sdk-harbour
 # allowed_libraries.conf, allowed_qmlimports.conf and allowed_requires.conf sit beside it
 ```
 
+## Publishing on SailfishOS:Chum
+
+Decided 2026-10-29, at the project owner's request: the app goes to
+SailfishOS:Chum, built on the Sailfish OS OBS from a tag of this repository.
+Harbour-compliance stays the rule all the same.
+
+- **Chum's metadata** is the last paragraph of the spec's `%description`,
+  inside `%if 0%{?_chum}`, contiguous, with no blank or comment line in it
+  ([Metadata.md](https://github.com/sailfishos-chum/main/blob/main/Metadata.md)).
+  `AIRating: V`, at the project owner's choice. Its icon and screenshot URLs
+  point at `master` on GitHub.
+- **The screenshots** in `screenshots/` are the emulator's, in English,
+  portrait, from **generated activities only** - never from a real one, whose
+  map shows real places (see the ground rules). Routed along real paths in
+  Tampere, with elevations from a public terrain model, written in the app's
+  own GPX format with rows to match, then replayed once each so the app read
+  their land cover off the map as it would. The step count's "No
+  accelerometer" was patched out of the installed QML for them. Retake them
+  when a page they show changes visibly, and keep the names the spec lists.
+- **The `_service` file on OBS** pins a tag (`revision`) and has no webhook;
+  a release is a new tag, then that tag in the `_service` file at
+  `sailfishos:chum:testing`, then a submit request there and on to
+  `sailfishos:chum`. The tag is the spec's `Version`.
+
 ## Architecture decisions
 
 ### Flat single-project layout
@@ -1145,7 +1169,8 @@ images/                       icon master, cover backdrops, heading arrow, activ
                               achievement pictograms (SVG), installed whole
 icons/<size>/                 the rendered launcher icon
 translations/                 German catalogue; the template is regenerated, untracked
-rpm/                          spec and changelog
+rpm/                          spec (with Chum's metadata) and changelog
+screenshots/                  for Chum: the emulator's, with generated activities only
 ```
 
 ## Building
