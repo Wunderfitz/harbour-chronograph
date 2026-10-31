@@ -32,6 +32,9 @@ Item {
     // caption to the middle or the right edge; the statistics page centres
     // them.
     property int horizontalAlignment: Text.AlignLeft
+    // The number's size; the activity page has it smaller in landscape,
+    // where the values have half the width but all of the height to share.
+    property real valuePixelSize: Theme.fontSizeExtraLarge
 
     implicitHeight: column.height
 
@@ -54,7 +57,7 @@ Item {
                                 - (unitLabel.visible ? unitLabel.width + valueRow.spacing : 0))
                 fontSizeMode: Text.HorizontalFit
                 minimumPixelSize: Theme.fontSizeMedium
-                font.pixelSize: Theme.fontSizeExtraLarge
+                font.pixelSize: activityValue.valuePixelSize
                 font.family: Theme.fontFamilyHeading
                 color: Theme.highlightColor
             }

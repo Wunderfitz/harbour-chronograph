@@ -68,6 +68,16 @@ Page {
                                                     - Theme.horizontalPageMargin)
                                       : 0
 
+    // The values' numbers: smaller in landscape, so that all eight and the
+    // land cover fit the height of a phone turned on its side - large where
+    // they fit so (valueProbe), else medium, and scrolled should even that
+    // not fit.
+    readonly property real valuePixelSize:
+        isPortrait ? Theme.fontSizeExtraLarge
+                   : 4 * valueProbe.implicitHeight + 3 * grid.rowSpacing + valueColumn.spacing
+                     + landCoverRow.height + Theme.paddingLarge <= views.height
+                     ? Theme.fontSizeLarge : Theme.fontSizeMedium
+
     allowedOrientations: Orientation.All
 
     // A new activity's map starts where the receiver last had a position,
@@ -309,13 +319,17 @@ Page {
 
             // What the half page leaves: the values, or swiped to, the charts of
             // the pace and the elevation over the activity's time, and the land
-            // cover - with a dot for each below, the one shown highlighted.
+            // cover - with a dot for each below, the one shown highlighted. In
+            // portrait it grows to fit the values, shrinking the map; in
+            // landscape there is nothing below to take the room from, so it
+            // keeps to the page, and the values scroll should they not fit.
             Item {
                 width: parent.width
-                height: Math.max(valueColumn.height + Theme.paddingLarge + dots.height
-                                 + dots.anchors.bottomMargin,
-                                 (page.isPortrait ? page.height / 2 : page.height)
-                                 - titleArea.height - Theme.itemSizeExtraSmall)
+                height: page.isPortrait
+                        ? Math.max(valueColumn.height + Theme.paddingLarge + dots.height
+                                   + dots.anchors.bottomMargin,
+                                   page.height / 2 - titleArea.height - Theme.itemSizeExtraSmall)
+                        : page.height - titleArea.height - Theme.itemSizeExtraSmall
 
                 SlideshowView {
                     id: views
@@ -331,10 +345,13 @@ Page {
 
                     model: VisualItemModel {
                         // The values sit in the middle, the land cover in a
-                        // row of its own below them.
-                        Item {
+                        // row of its own below them. Scrolled up and down
+                        // only where they do not fit.
+                        SilicaFlickable {
                             width: views.itemWidth
                             height: views.itemHeight
+                            contentHeight: Math.max(height, valueColumn.height + Theme.paddingLarge)
+                            interactive: contentHeight > height
 
                             Column {
                                 id: valueColumn
@@ -356,47 +373,55 @@ Page {
 
                                     ActivityValue {
                                         width: grid.cellWidth
+                                        valuePixelSize: page.valuePixelSize
                                         label: qsTr("Duration")
                                         value: Units.duration(activity.elapsed)
                                     }
                                     ActivityValue {
                                         width: grid.cellWidth
+                                        valuePixelSize: page.valuePixelSize
                                         label: qsTr("Distance")
                                         value: Units.distance(activity.distance)
                                         unit: "km"
                                     }
                                     ActivityValue {
                                         width: grid.cellWidth
+                                        valuePixelSize: page.valuePixelSize
                                         label: qsTr("Pace")
                                         value: Units.pace(activity.speed)
                                         unit: "min/km"
                                     }
                                     ActivityValue {
                                         width: grid.cellWidth
+                                        valuePixelSize: page.valuePixelSize
                                         label: qsTr("Speed")
                                         value: Units.speed(activity.speed)
                                         unit: "km/h"
                                     }
                                     ActivityValue {
                                         width: grid.cellWidth
+                                        valuePixelSize: page.valuePixelSize
                                         label: qsTr("Average pace")
                                         value: Units.pace(activity.averageSpeed)
                                         unit: "min/km"
                                     }
                                     ActivityValue {
                                         width: grid.cellWidth
+                                        valuePixelSize: page.valuePixelSize
                                         label: qsTr("Average speed")
                                         value: Units.speed(activity.averageSpeed)
                                         unit: "km/h"
                                     }
                                     ActivityValue {
                                         width: grid.cellWidth
+                                        valuePixelSize: page.valuePixelSize
                                         label: qsTr("Elevation")
                                         value: Units.metres(activity.altitude)
                                         unit: "m"
                                     }
                                     ActivityValue {
                                         width: grid.cellWidth
+                                        valuePixelSize: page.valuePixelSize
                                         label: qsTr("Elevation gain")
                                         value: Units.metres(activity.elevationGain)
                                         unit: "m"
@@ -439,6 +464,8 @@ Page {
                                     }
                                 }
                             }
+
+                            VerticalScrollDecorator {}
                         }
 
                         // One above the other, the time along the bottom for both;
@@ -484,12 +511,17 @@ Page {
                         }
 
                         // Read off the tiles the map has shown, so it fills in
-                        // as the map loads them - also after the stop.
-                        Item {
+                        // as the map loads them - also after the stop. Scrolled
+                        // like the values, should all the kinds not fit.
+                        SilicaFlickable {
                             width: views.itemWidth
                             height: views.itemHeight
+                            contentHeight: Math.max(height, landCoverList.implicitHeight
+                                                            + landCoverList.y + Theme.paddingSmall)
+                            interactive: contentHeight > height
 
                             LandCoverList {
+                                id: landCoverList
                                 x: Theme.horizontalPageMargin
                                 y: Theme.paddingSmall
                                 width: parent.width - 2 * Theme.horizontalPageMargin
@@ -498,6 +530,8 @@ Page {
                                 label: qsTr("Land cover")
                                 emptyText: page.chartEmptyText
                             }
+
+                            VerticalScrollDecorator {}
                         }
                     }
                 }
@@ -528,6 +562,19 @@ Page {
                     }
                 }
             }
+        }
+
+        // A value as tall as one in landscape at the large size, never
+        // shown: how tall the values would be, whatever size they are at.
+        // Transparent rather than hidden, as a hidden Column has no height.
+        ActivityValue {
+            id: valueProbe
+            opacity: 0
+            width: grid.cellWidth
+            valuePixelSize: Theme.fontSizeLarge
+            value: "0"
+            unit: "m"
+            label: "0"
         }
 
         TileMap {

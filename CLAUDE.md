@@ -564,8 +564,18 @@ type or its surface.
   `Activity.currentLandCover`, the key at the point the values are from:
   the latest while recording, the slider's in a replay; "Unknown" where the
   point has none, a dash before the first.
-  The slide grows the values' half to fit should it not, shrinking the map;
-  on the emulator's screen it fits in both orientations as it is.
+  In portrait the slide grows the values' half to fit should it not,
+  shrinking the map. In landscape there is nothing below to take the room
+  from, so the slides keep to the page, the dots below them always in
+  view (fixed 2026-10-31: the Jolla Phone (2026), 688 units high in
+  landscape against the emulator's 720, pushed them off the page). The
+  values' numbers are `fontSizeExtraLarge` in portrait; in landscape, at
+  the project owner's request, `fontSizeLarge` where all of them fit so -
+  an unseen `ActivityValue` at that size, `valueProbe`, tells - else
+  `fontSizeMedium`. Measured in the emulator: the Jolla C2's 720 units
+  and so the phone's 688 take the large size, the Xperia 10 III's 617
+  the medium one, with 2 px to spare. Should even that not fit, the values
+  and the land cover scroll up and down.
 - **The distance per kind**: each step of `Track`'s distance counts for the
   point that ends it, so the kinds add up to the distance; up to the replay
   position, like the other values.
