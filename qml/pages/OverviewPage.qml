@@ -48,19 +48,14 @@ Page {
         return Qt.locale().dayName(date.getDay(), Locale.ShortFormat)
     }
 
-    // The activity history reads a page of activities at a time; the list
-    // asks it for the next as it scrolls towards the end of what it has.
-    SilicaListView {
-        id: activityList
-
-        anchors {
-            left: parent.left
-            top: parent.top
-            right: overviewPage.isPortrait ? parent.right : stepsPanel.left
-            bottom: overviewPage.isPortrait ? stepsPanel.top : parent.bottom
-        }
-        clip: true
-        model: activityHistory
+    // The pulley, the header, the list and the steps in one flickable, so
+    // that the pulley pulls the whole page down, and is pulled over the steps
+    // too. The list stops at its top (it has no pulley of its own), so a drag
+    // down from there goes on to the flickable.
+    SilicaFlickable {
+        anchors.fill: parent
+        contentWidth: width
+        contentHeight: height
 
         PullDownMenu {
             MenuItem {
@@ -81,243 +76,261 @@ Page {
             }
         }
 
-        header: PageHeader {
+        // Across the whole width, over the list and in landscape over the
+        // steps as well.
+        PageHeader {
+            id: pageHeader
             title: qsTr("Chronograph")
         }
 
-        delegate: ListItem {
-            id: delegate
+        // The activity history reads a page of activities at a time; the list
+        // asks it for the next as it scrolls towards the end of what it has.
+        SilicaListView {
+            id: activityList
 
-            // Deleted only once the remorse timer has run out; tapping the
-            // countdown keeps the activity. The file name is taken now, as
-            // the delegate may be gone by then.
-            function deleteActivity() {
-                var fileName = model.fileName
-                remorseAction(qsTr("Activity deleted"), function() {
-                    activityHistory.remove(fileName)
-                }, app.deleteRemorseTimeout)
+            anchors {
+                left: parent.left
+                top: pageHeader.bottom
+                right: overviewPage.isPortrait ? parent.right : stepsPanel.left
+                bottom: overviewPage.isPortrait ? stepsPanel.top : parent.bottom
             }
+            clip: true
+            model: activityHistory
 
-            contentHeight: Theme.itemSizeMedium
-            onClicked: pageStack.push(Qt.resolvedUrl("ActivityPage.qml"),
-                                      { fileName: model.fileName, type: model.type })
-            ListView.onRemove: animateRemoval(delegate)
+            delegate: ListItem {
+                id: delegate
 
-            menu: ContextMenu {
-                MenuItem {
-                    text: qsTr("Delete activity")
-                    onClicked: delegate.deleteActivity()
+                // Deleted only once the remorse timer has run out; tapping the
+                // countdown keeps the activity. The file name is taken now, as
+                // the delegate may be gone by then.
+                function deleteActivity() {
+                    var fileName = model.fileName
+                    remorseAction(qsTr("Activity deleted"), function() {
+                        activityHistory.remove(fileName)
+                    }, app.deleteRemorseTimeout)
+                }
+
+                contentHeight: Theme.itemSizeMedium
+                onClicked: pageStack.push(Qt.resolvedUrl("ActivityPage.qml"),
+                                          { fileName: model.fileName, type: model.type })
+                ListView.onRemove: animateRemoval(delegate)
+
+                menu: ContextMenu {
+                    MenuItem {
+                        text: qsTr("Delete activity")
+                        onClicked: delegate.deleteActivity()
+                    }
+                }
+
+                // The type's pictogram, as tall as the two lines beside it. Tinted
+                // by Icon, so it suits a dark and a light ambience alike.
+                Icon {
+                    id: typeIcon
+                    anchors {
+                        left: parent.left
+                        leftMargin: Theme.horizontalPageMargin
+                        verticalCenter: parent.verticalCenter
+                    }
+                    width: height
+                    height: details.height
+                    sourceSize.width: width
+                    sourceSize.height: height
+                    highlighted: delegate.highlighted
+                    source: app.activityTypeIcon(model.type)
+                }
+
+                Column {
+                    id: details
+                    anchors {
+                        left: typeIcon.right
+                        right: parent.right
+                        leftMargin: Theme.paddingLarge
+                        rightMargin: Theme.horizontalPageMargin
+                        verticalCenter: parent.verticalCenter
+                    }
+
+                    Item {
+                        width: parent.width
+                        height: typeLabel.height
+
+                        Label {
+                            id: typeLabel
+                            width: parent.width - distanceLabel.width - Theme.paddingMedium
+                            truncationMode: TruncationMode.Fade
+                            color: delegate.highlighted ? Theme.highlightColor : Theme.primaryColor
+                            text: app.activityTypeName(model.type)
+                        }
+
+                        Label {
+                            id: distanceLabel
+                            anchors.right: parent.right
+                            color: delegate.highlighted ? Theme.highlightColor : Theme.primaryColor
+                            text: Units.distance(model.distance) + " km"
+                        }
+                    }
+
+                    Item {
+                        width: parent.width
+                        height: startLabel.height
+
+                        Label {
+                            id: startLabel
+                            width: parent.width - durationLabel.width - Theme.paddingMedium
+                            truncationMode: TruncationMode.Fade
+                            font.pixelSize: Theme.fontSizeExtraSmall
+                            color: delegate.highlighted ? Theme.secondaryHighlightColor : Theme.secondaryColor
+                            text: Format.formatDate(model.start, Formatter.DateMedium) + ", "
+                                  + Format.formatDate(model.start, Formatter.TimeValue)
+                        }
+
+                        Label {
+                            id: durationLabel
+                            anchors.right: parent.right
+                            font.pixelSize: Theme.fontSizeExtraSmall
+                            color: delegate.highlighted ? Theme.secondaryHighlightColor : Theme.secondaryColor
+                            text: Units.duration(model.duration)
+                        }
+                    }
                 }
             }
 
-            // The type's pictogram, as tall as the two lines beside it. Tinted
-            // by Icon, so it suits a dark and a light ambience alike.
-            Icon {
-                id: typeIcon
-                anchors {
-                    left: parent.left
-                    leftMargin: Theme.horizontalPageMargin
-                    verticalCenter: parent.verticalCenter
-                }
-                width: height
-                height: details.height
-                sourceSize.width: width
-                sourceSize.height: height
-                highlighted: delegate.highlighted
-                source: app.activityTypeIcon(model.type)
+            ViewPlaceholder {
+                enabled: activityList.count === 0
+                text: qsTr("No activities yet")
+                hintText: qsTr("Pull down to start one")
+            }
+
+            VerticalScrollDecorator {}
+        }
+
+        // Today's steps with the three days before them, centred in their third.
+        Item {
+            id: stepsPanel
+
+            anchors {
+                left: overviewPage.isPortrait ? parent.left : undefined
+                right: parent.right
+                top: overviewPage.isPortrait ? undefined : pageHeader.bottom
+                bottom: parent.bottom
+            }
+            width: overviewPage.isPortrait ? overviewPage.width : overviewPage.width / 3
+            height: overviewPage.isPortrait ? overviewPage.height / 3 : overviewPage.height
+
+            Separator {
+                anchors.top: parent.top
+                width: parent.width
+                visible: overviewPage.isPortrait
+                color: Theme.primaryColor
+                horizontalAlignment: Qt.AlignHCenter
             }
 
             Column {
-                id: details
-                anchors {
-                    left: typeIcon.right
-                    right: parent.right
-                    leftMargin: Theme.paddingLarge
-                    rightMargin: Theme.horizontalPageMargin
-                    verticalCenter: parent.verticalCenter
+                id: steps
+
+                visible: !overviewPage.unavailable
+                anchors.verticalCenter: parent.verticalCenter
+                width: parent.width
+                spacing: Theme.paddingSmall
+
+                Label {
+                    x: Theme.horizontalPageMargin
+                    width: parent.width - 2 * Theme.horizontalPageMargin
+                    horizontalAlignment: Text.AlignHCenter
+                    // Shrinks rather than truncates should the number ever
+                    // outgrow the width.
+                    fontSizeMode: Text.HorizontalFit
+                    minimumPixelSize: Theme.fontSizeLarge
+                    font.pixelSize: Theme.fontSizeHuge
+                    font.family: Theme.fontFamilyHeading
+                    color: Theme.highlightColor
+                    text: Number(stepHistory.todaySteps).toLocaleString(Qt.locale(), "f", 0)
                 }
 
-                Item {
-                    width: parent.width
-                    height: typeLabel.height
-
-                    Label {
-                        id: typeLabel
-                        width: parent.width - distanceLabel.width - Theme.paddingMedium
-                        truncationMode: TruncationMode.Fade
-                        color: delegate.highlighted ? Theme.highlightColor : Theme.primaryColor
-                        text: app.activityTypeName(model.type)
-                    }
-
-                    Label {
-                        id: distanceLabel
-                        anchors.right: parent.right
-                        color: delegate.highlighted ? Theme.highlightColor : Theme.primaryColor
-                        text: Units.distance(model.distance) + " km"
-                    }
+                Label {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    font.pixelSize: Theme.fontSizeMedium
+                    color: Theme.highlightColor
+                    text: qsTr("Steps")
                 }
 
-                Item {
-                    width: parent.width
-                    height: startLabel.height
-
-                    Label {
-                        id: startLabel
-                        width: parent.width - durationLabel.width - Theme.paddingMedium
-                        truncationMode: TruncationMode.Fade
-                        font.pixelSize: Theme.fontSizeExtraSmall
-                        color: delegate.highlighted ? Theme.secondaryHighlightColor : Theme.secondaryColor
-                        text: Format.formatDate(model.start, Formatter.DateMedium) + ", "
-                              + Format.formatDate(model.start, Formatter.TimeValue)
-                    }
-
-                    Label {
-                        id: durationLabel
-                        anchors.right: parent.right
-                        font.pixelSize: Theme.fontSizeExtraSmall
-                        color: delegate.highlighted ? Theme.secondaryHighlightColor : Theme.secondaryColor
-                        text: Units.duration(model.duration)
-                    }
+                Label {
+                    x: Theme.horizontalPageMargin
+                    width: parent.width - 2 * Theme.horizontalPageMargin
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    font.pixelSize: Theme.fontSizeExtraSmall
+                    color: Theme.secondaryHighlightColor
+                    text: stepCounter.status === StepCounter.Starting
+                          ? qsTr("Waiting for the accelerometer…")
+                          : qsTr("Today")
                 }
-            }
-        }
 
-        ViewPlaceholder {
-            enabled: activityList.count === 0
-            text: qsTr("No activities yet")
-            hintText: qsTr("Pull down to start one")
-        }
+                Item { width: 1; height: Theme.paddingMedium }
 
-        VerticalScrollDecorator {}
-    }
+                // Yesterday first; a day without any steps reads 0. Side by side
+                // under the count in portrait, one below the other in landscape.
+                Grid {
+                    id: previousDays
 
-    // Today's steps with the three days before them, centred in their third.
-    Item {
-        id: stepsPanel
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    columns: overviewPage.isPortrait ? 3 : 1
+                    columnSpacing: Theme.paddingLarge
+                    rowSpacing: Theme.paddingSmall
 
-        anchors {
-            left: overviewPage.isPortrait ? parent.left : undefined
-            right: parent.right
-            top: overviewPage.isPortrait ? undefined : parent.top
-            bottom: parent.bottom
-        }
-        width: overviewPage.isPortrait ? overviewPage.width : overviewPage.width / 3
-        height: overviewPage.isPortrait ? overviewPage.height / 3 : overviewPage.height
+                    Repeater {
+                        model: stepHistory.recentDays
 
-        Separator {
-            anchors.top: parent.top
-            width: parent.width
-            visible: overviewPage.isPortrait
-            color: Theme.primaryColor
-            horizontalAlignment: Qt.AlignHCenter
-        }
+                        Column {
+                            width: overviewPage.isPortrait
+                                   ? (steps.width - 2 * Theme.horizontalPageMargin - 2 * previousDays.columnSpacing) / 3
+                                   : steps.width - 2 * Theme.horizontalPageMargin
 
-        Column {
-            id: steps
+                            Label {
+                                width: parent.width
+                                horizontalAlignment: Text.AlignHCenter
+                                font.pixelSize: Theme.fontSizeMedium
+                                color: Theme.primaryColor
+                                text: Number(modelData.steps).toLocaleString(Qt.locale(), "f", 0)
+                            }
 
-            visible: !overviewPage.unavailable
-            anchors.verticalCenter: parent.verticalCenter
-            width: parent.width
-            spacing: Theme.paddingSmall
-
-            Label {
-                x: Theme.horizontalPageMargin
-                width: parent.width - 2 * Theme.horizontalPageMargin
-                horizontalAlignment: Text.AlignHCenter
-                // Shrinks rather than truncates should the number ever
-                // outgrow the width.
-                fontSizeMode: Text.HorizontalFit
-                minimumPixelSize: Theme.fontSizeLarge
-                font.pixelSize: Theme.fontSizeHuge
-                font.family: Theme.fontFamilyHeading
-                color: Theme.highlightColor
-                text: Number(stepHistory.todaySteps).toLocaleString(Qt.locale(), "f", 0)
-            }
-
-            Label {
-                anchors.horizontalCenter: parent.horizontalCenter
-                font.pixelSize: Theme.fontSizeMedium
-                color: Theme.highlightColor
-                text: qsTr("Steps")
-            }
-
-            Label {
-                x: Theme.horizontalPageMargin
-                width: parent.width - 2 * Theme.horizontalPageMargin
-                horizontalAlignment: Text.AlignHCenter
-                wrapMode: Text.WordWrap
-                font.pixelSize: Theme.fontSizeExtraSmall
-                color: Theme.secondaryHighlightColor
-                text: stepCounter.status === StepCounter.Starting
-                      ? qsTr("Waiting for the accelerometer…")
-                      : qsTr("Today")
-            }
-
-            Item { width: 1; height: Theme.paddingMedium }
-
-            // Yesterday first; a day without any steps reads 0. Side by side
-            // under the count in portrait, one below the other in landscape.
-            Grid {
-                id: previousDays
-
-                anchors.horizontalCenter: parent.horizontalCenter
-                columns: overviewPage.isPortrait ? 3 : 1
-                columnSpacing: Theme.paddingLarge
-                rowSpacing: Theme.paddingSmall
-
-                Repeater {
-                    model: stepHistory.recentDays
-
-                    Column {
-                        width: overviewPage.isPortrait
-                               ? (steps.width - 2 * Theme.horizontalPageMargin - 2 * previousDays.columnSpacing) / 3
-                               : steps.width - 2 * Theme.horizontalPageMargin
-
-                        Label {
-                            width: parent.width
-                            horizontalAlignment: Text.AlignHCenter
-                            font.pixelSize: Theme.fontSizeMedium
-                            color: Theme.primaryColor
-                            text: Number(modelData.steps).toLocaleString(Qt.locale(), "f", 0)
-                        }
-
-                        Label {
-                            width: parent.width
-                            horizontalAlignment: Text.AlignHCenter
-                            truncationMode: TruncationMode.Fade
-                            font.pixelSize: Theme.fontSizeExtraSmall
-                            color: Theme.secondaryColor
-                            text: index === 0 ? qsTr("Yesterday")
-                                              : overviewPage.dayName(modelData.day)
+                            Label {
+                                width: parent.width
+                                horizontalAlignment: Text.AlignHCenter
+                                truncationMode: TruncationMode.Fade
+                                font.pixelSize: Theme.fontSizeExtraSmall
+                                color: Theme.secondaryColor
+                                text: index === 0 ? qsTr("Yesterday")
+                                                  : overviewPage.dayName(modelData.day)
+                            }
                         }
                     }
                 }
             }
-        }
 
-        Column {
-            visible: overviewPage.unavailable
-            anchors.verticalCenter: parent.verticalCenter
-            x: Theme.horizontalPageMargin
-            width: parent.width - 2 * Theme.horizontalPageMargin
-            spacing: Theme.paddingSmall
+            Column {
+                visible: overviewPage.unavailable
+                anchors.verticalCenter: parent.verticalCenter
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                spacing: Theme.paddingSmall
 
-            Label {
-                width: parent.width
-                horizontalAlignment: Text.AlignHCenter
-                wrapMode: Text.WordWrap
-                font.pixelSize: Theme.fontSizeLarge
-                color: Theme.highlightColor
-                text: qsTr("No accelerometer")
-            }
+                Label {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    font.pixelSize: Theme.fontSizeLarge
+                    color: Theme.highlightColor
+                    text: qsTr("No accelerometer")
+                }
 
-            Label {
-                width: parent.width
-                horizontalAlignment: Text.AlignHCenter
-                wrapMode: Text.WordWrap
-                font.pixelSize: Theme.fontSizeExtraSmall
-                color: Theme.secondaryHighlightColor
-                text: qsTr("Chronograph counts steps with the accelerometer, which this device does not offer.")
+                Label {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    font.pixelSize: Theme.fontSizeExtraSmall
+                    color: Theme.secondaryHighlightColor
+                    text: qsTr("Chronograph counts steps with the accelerometer, which this device does not offer.")
+                }
             }
         }
     }
