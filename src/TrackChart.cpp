@@ -31,12 +31,14 @@ namespace {
  * wherever the page shows one. */
 const double kSlowestSpeed = 1000.0 / 1800.0;
 
-/* The share of the paces at either end the axis need not reach. */
-const double kPaceOutliers = 0.05;
+/* The share of the paces or speeds at either end the axis need not reach. */
+const double kOutliers = 0.05;
 
-/* The least an axis spans: seconds per kilometre, metres, seconds. */
+/* The least an axis spans: seconds per kilometre, metres, kilometres per
+ * hour, seconds. */
 const double kMinimumPaceSpan = 60.0;
 const double kMinimumElevationSpan = 20.0;
+const double kMinimumSpeedSpan = 5.0;
 const double kMinimumLength = 60.0;
 
 /* At most this many steps between grid lines, up and across: a chart on the
@@ -61,8 +63,8 @@ const std::vector<double> &timeSteps()
     return steps;
 }
 
-/* 1, 2, 5, 10, 20, 50... */
-const std::vector<double> &elevationSteps()
+/* 1, 2, 5, 10, 20, 50... - metres or kilometres per hour. */
+const std::vector<double> &decimalSteps()
 {
     static std::vector<double> steps;
     if (steps.empty()) {
@@ -73,6 +75,28 @@ const std::vector<double> &elevationSteps()
         }
     }
     return steps;
+}
+
+/* The values that leave the share kOutliers of `values` below and above
+ * them; reorders `values`, which must not be empty. */
+void spread(std::vector<double> &values, double &low, double &high)
+{
+    const std::size_t last = values.size() - 1;
+    const auto lower = values.begin() + std::ptrdiff_t(std::floor(kOutliers * last));
+    const auto upper = values.begin() + std::ptrdiff_t(std::ceil((1 - kOutliers) * last));
+    std::nth_element(values.begin(), lower, values.end());
+    low = *lower;
+    std::nth_element(values.begin(), upper, values.end());
+    high = *upper;
+}
+
+/* Moves [low, high] up until it starts at 0 at the lowest. */
+void notBelowZero(double &low, double &high)
+{
+    if (low < 0) {
+        high -= low;
+        low = 0;
+    }
 }
 
 /* Widens [low, high] to at least `span` around its middle. */
@@ -107,6 +131,8 @@ void TrackChart::update(const Track &track)
         m_times.push_back(track.elapsedAtPoint(i));
         if (m_quantity == Elevation) {
             m_values.push_back(track.altitudeAtPoint(i));
+        } else if (m_quantity == Speed) {
+            m_values.push_back(track.speedAtPoint(i) * 3.6);
         } else {
             const double speed = track.speedAtPoint(i);
             m_values.push_back(speed >= kSlowestSpeed ? 1000.0 / speed : std::nan(""));
@@ -201,9 +227,11 @@ void TrackChart::fitAxes(const Track &track)
         m_timeAxis.ticks.push_back(i * step);
 
     m_average = std::nan("");
-    if (m_quantity == Pace && !track.isEmpty() && track.duration() > 0) {
+    if (m_quantity != Elevation && !track.isEmpty() && track.duration() > 0) {
         const double speed = track.distanceAtPoint(track.size() - 1) / track.duration();
-        if (speed >= kSlowestSpeed)
+        if (m_quantity == Speed)
+            m_average = speed * 3.6;
+        else if (speed >= kSlowestSpeed)
             m_average = 1000.0 / speed;
     }
 
@@ -225,27 +253,25 @@ void TrackChart::fitAxes(const Track &track)
         low = *range.first;
         high = *range.second;
         widen(low, high, kMinimumElevationSpan);
-        m_valueAxis = fit(low, high, elevationSteps(), kValueIntervals);
+        m_valueAxis = fit(low, high, decimalSteps(), kValueIntervals);
         return;
     }
 
-    const std::size_t last = values.size() - 1;
-    const auto fastest = values.begin() + std::ptrdiff_t(std::floor(kPaceOutliers * last));
-    const auto slowest = values.begin() + std::ptrdiff_t(std::ceil((1 - kPaceOutliers) * last));
-    std::nth_element(values.begin(), fastest, values.end());
-    low = *fastest;
-    std::nth_element(values.begin(), slowest, values.end());
-    high = *slowest;
+    spread(values, low, high);
     if (!std::isnan(m_average)) {
         low = std::min(low, m_average);
         high = std::max(high, m_average);
     }
+    if (m_quantity == Speed) {
+        widen(low, high, kMinimumSpeedSpan);
+        // No speed is under standing still.
+        notBelowZero(low, high);
+        m_valueAxis = fit(low, high, decimalSteps(), kValueIntervals);
+        return;
+    }
     widen(low, high, kMinimumPaceSpan);
     // No pace is under nothing per kilometre, however fast the drive.
-    if (low < 0) {
-        high -= low;
-        low = 0;
-    }
+    notBelowZero(low, high);
     m_valueAxis = fit(low, high, paceSteps(), kValueIntervals);
     std::swap(m_valueAxis.from, m_valueAxis.to);
 }

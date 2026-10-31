@@ -38,12 +38,21 @@ Item {
     // Shown in place of the chart while there is nothing to draw.
     property alias emptyText: emptyLabel.text
     property bool showTime: true
+    // The caption in the highlight colour, as while the chart is pressed.
+    property bool highlighted
 
     // The height of one line of the axes' labels.
     readonly property real labelHeight: widest.height
 
     function valueText(value) {
-        return line.quantity === ChartLine.Pace ? Units.paceOf(value) : Units.metres(value)
+        switch (line.quantity) {
+        case ChartLine.Pace:
+            return Units.paceOf(value)
+        case ChartLine.Speed:
+            return Number(value).toLocaleString(Qt.locale(), "f", 0)
+        default:
+            return Units.metres(value)
+        }
     }
 
     Row {
@@ -53,18 +62,18 @@ Item {
         Label {
             id: captionLabel
             font.pixelSize: Theme.fontSizeExtraSmall
-            color: Theme.secondaryColor
+            color: chart.highlighted ? Theme.highlightColor : Theme.secondaryColor
         }
 
         Label {
             id: unitLabel
             anchors.baseline: captionLabel.baseline
             font.pixelSize: Theme.fontSizeTiny
-            color: Theme.secondaryColor
+            color: chart.highlighted ? Theme.highlightColor : Theme.secondaryColor
         }
     }
 
-    // The widest of the value's labels: a pace of 10:00, or 1.000 m.
+    // The widest of the value's labels: a pace of 10:00, 1.000 m or 100 km/h.
     Label {
         id: widest
         visible: false

@@ -200,8 +200,8 @@ The same split as for steps:
   and stops on its own, in plain C++11 without Qt; `tests/tst_autopause.cpp`
   drives it on the host. `Activity` feeds it and does what it says. See
   [Auto-pause](#auto-pause-standing-too-fast-and-the-stop-after-half-an-hour).
-- `TrackChart` (`src/TrackChart.*`) is a `Track`'s pace or elevation per
-  point and the axes for them, in plain C++11 without Qt;
+- `TrackChart` (`src/TrackChart.*`) is a `Track`'s pace, speed or
+  elevation per point and the axes for them, in plain C++11 without Qt;
   `tests/tst_trackchart.cpp` drives it on the host. `ChartLine`
   (`src/ChartLine.*`) paints it. See [The charts](#the-charts-painted-in-c-like-the-route).
 - `LandCover` (`src/LandCover.*`) tells the land cover around a place from a
@@ -483,10 +483,18 @@ caption and the axis labels in Silica's fonts, placed by `ChartLine`'s
   off and stopping pass through every pace there is, and min to max would
   squash the rest flat. The extremes run off the edge. At least a minute per
   km tall, never below 0:00.
+- **The speed, tapped** (decided 2026-10-31, at the project owner's
+  request): a tap on the pace chart shows the speed in its place, in km/h,
+  and another brings the pace back; the caption lights up while pressed.
+  For the page only, not remembered. Right way up, 0 while standing, with
+  a dotted line at the average speed; its axis from the 5th to the 95th
+  percentile plus the average, as the pace's, at least 5 km/h tall, never
+  below 0. The project owner checked on the Jolla Phone (2026) that a tap
+  switches it and a swipe between the views does not.
 - **Elevation axis from min to max**, at least 20 m tall, so a receiver's
   wander on the flat does not look like hills.
 - **Ticks on whole steps**: at most 3 intervals up (pace in 10 s to 15 min,
-  elevation 1-2-5), at most 4 across (15 s to a day); the time axis ends at
+  speed and elevation 1-2-5), at most 4 across (15 s to a day); the time axis ends at
   the activity's end, over a minute at least, not on a step. Only the lower
   chart labels the time; both share it.
 - **Replay**: full up to the current point, faint after, with a dot at it -
@@ -1139,7 +1147,8 @@ src/Achievements.*            the achievements' levels, worked out and kept for 
 src/Gpx.*                     Track to and from GPX 1.1
 src/TrackReader.*             reads a stored activity's GPX file, in a thread of its own
 src/TrackLine.*               the route, painted over the map
-src/TrackChart.*              a Track's pace or elevation per point and the axes, Qt-free
+src/TrackChart.*              a Track's pace, speed or elevation per point and the axes,
+                              Qt-free
 src/ChartLine.*               one chart's grid, line and average, painted
 src/LandCover.*               the land cover around a place from a tile's colours, Qt-free
 src/TileCache.*               the map's cached tiles, read for LandCover, never fetched
@@ -1272,8 +1281,9 @@ g++ -std=c++11 -Wall -Wextra -O2 -Isrc tests/tst_trackfilter.cpp \
 **`tests/tst_trackchart.cpp`** checks `TrackChart` on the host: an empty
 track, a steady run (pace, average, the axis upside down and its ticks), a
 run with stops whose slowing down must not stretch the axis, standing still,
-a fast drive (the axis not below 0:00), a flat walk and a climb, no
-altitude, a pause, points taken one by one against all at once, another
+a fast drive (the axis not below 0:00); the speed of a steady ride, with
+stops (the axis from 0), standing and on a fast drive; a flat walk and a
+climb, no altitude, a pause, points taken one by one against all at once, another
 track, and fitting an axis. Run it after any change to `TrackChart`, and to
 `Track`'s speed or altitude, also with `-O0`:
 

@@ -37,11 +37,12 @@ struct ChartAxis {
 
 /**
  * One of a track's values over its time, for a chart on the activity page:
- * the pace or the elevation at each point, and axes that show them well.
+ * the pace, the speed or the elevation at each point, and axes that show them
+ * well.
  *
  * Plain C++ without Qt, like Track, so tests/tst_trackchart.cpp drives it on
  * the host. The values are those the page shows at that point - the current
- * pace, the smoothed altitude - against the time with the pauses left out, so
+ * pace or speed, the smoothed altitude - against the time with the pauses left out, so
  * a chart never disagrees with the values beside it.
  *
  * - Pace is in seconds per kilometre, and there is none while standing or
@@ -50,6 +51,10 @@ struct ChartAxis {
  *   the slowest and fastest twentieth may run off its ends, or the seconds of
  *   setting off and stopping would squash all the rest flat. It always takes
  *   in the average.
+ * - Speed is in kilometres per hour, 0 while standing. Its axis is the right
+ *   way up and spans what the speed was most of the time, as the pace's does,
+ *   but never less than 5 km/h, and never below 0. It takes in the average
+ *   too.
  * - Elevation is in metres. Its axis spans all of it, but never less than
  *   20 m, so that a receiver's wander on the flat does not look like hills.
  * - Time runs from the start to the end - to the last point while recording -
@@ -58,7 +63,7 @@ struct ChartAxis {
 class TrackChart
 {
 public:
-    enum Quantity { Pace, Elevation };
+    enum Quantity { Pace, Elevation, Speed };
 
     explicit TrackChart(Quantity quantity = Pace);
 
@@ -74,7 +79,8 @@ public:
     /* NaN where there is none. */
     double value(std::size_t index) const;
     bool hasValues() const;
-    /* The whole activity's average pace; NaN for none, and for elevation. */
+    /* The whole activity's average pace or speed; NaN for none, and for
+     * elevation. */
     double average() const;
 
     const ChartAxis &timeAxis() const;

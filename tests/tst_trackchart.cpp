@@ -19,9 +19,10 @@
 
 /*
  * Host-side checks for TrackChart, which has no Qt in it for that reason: the
- * pace and elevation at each point, the average pace, and axes that take in
- * what matters - with the pace upside down, setting off and stopping left to
- * run off the edge, and the flat not made to look like hills. Every track here
+ * pace, speed and elevation at each point, the average pace and speed, and
+ * axes that take in what matters - with the pace upside down, setting off and
+ * stopping left to run off the edge, and the flat not made to look like
+ * hills. Every track here
  * is generated, a fix a second. Build and run from the project root:
  *
  *   g++ -std=c++11 -Wall -Wextra -O2 -Isrc tests/tst_trackchart.cpp \
@@ -207,6 +208,95 @@ void testFastDrive()
     expectBetween("fast drive: pace inside the axis", place(chart.valueAxis(), 24), 0.1, 0.9);
 }
 
+/* A ride at 20 km/h with a sprint and a slow climb now and then: the speed
+ * the right way up, the sprints and climbs inside the axis or just off it. */
+void testSteadyRide()
+{
+    Track track;
+    double time = kStartTime;
+    double north = 0;
+    track.begin(time);
+    for (int lap = 0; lap < 6; ++lap) {
+        go(track, time, north, 20 / 3.6, 240);
+        go(track, time, north, 30 / 3.6, 30);
+        go(track, time, north, 12 / 3.6, 30);
+    }
+    track.end(time);
+
+    TrackChart chart(TrackChart::Speed);
+    chart.update(track);
+    const ChartAxis &axis = chart.valueAxis();
+    expectNear("steady ride: speed at a point, km/h", chart.value(100), 20, 0.01);
+    expectBetween("steady ride: average speed, km/h", chart.average(), 19, 21);
+    expectNear("steady ride: speed the right way up", axis.to > axis.from ? 1 : 0, 1, 0);
+    expectBetween("steady ride: the axis from 10 km/h or below", axis.from, 0, 10);
+    expectBetween("steady ride: the axis to 30 km/h or above", axis.to, 30, 40);
+    expectBetween("steady ride: the speed well inside the axis", place(axis, 20), 0.1, 0.9);
+    expectNear("steady ride: speed ticks even and on the axis", ticksEven(axis) ? 1 : 0, 1, 0);
+    expectBetween("steady ride: speed ticks", double(axis.ticks.size()), 3, 4);
+}
+
+/* Stopping at lights: the speed falls to 0, which the axis takes in, as the
+ * stops are more than a twentieth of the time. */
+void testSpeedStops()
+{
+    Track track;
+    double time = kStartTime;
+    double north = 0;
+    track.begin(time);
+    for (int stop = 0; stop < 10; ++stop) {
+        go(track, time, north, 6.0, 150);
+        go(track, time, north, 3.0, 2);
+        go(track, time, north, 0.0, 15);
+        go(track, time, north, 3.0, 2);
+    }
+    track.end(time);
+
+    TrackChart chart(TrackChart::Speed);
+    chart.update(track);
+    int standing = 0;
+    for (std::size_t i = 0; i < chart.size(); ++i) {
+        if (chart.value(i) == 0)
+            ++standing;
+    }
+    const ChartAxis &axis = chart.valueAxis();
+    expectBetween("speed stops: 0 km/h while standing (points)", standing, 80, 170);
+    expectNear("speed stops: the axis from 0", axis.from, 0, 0);
+    expectBetween("speed stops: riding speed inside the axis", place(axis, 6.0 * 3.6), 0.5, 1);
+    expectBetween("speed stops: average inside the axis", place(axis, chart.average()), 0, 1);
+}
+
+/* Standing has a speed, 0, unlike a pace: the axis from 0 over 5 km/h. */
+void testSpeedStanding()
+{
+    Track track;
+    double time = kStartTime;
+    double north = 0;
+    track.begin(time);
+    go(track, time, north, 0.0, 60);
+    TrackChart chart(TrackChart::Speed);
+    chart.update(track);
+    expectNear("speed standing: a speed", chart.hasValues() ? 1 : 0, 1, 0);
+    expectNear("speed standing: average 0 km/h", chart.average(), 0, 0);
+    expectNear("speed standing: the axis from 0", chart.valueAxis().from, 0, 0);
+    expectBetween("speed standing: the axis to 5 km/h or so", chart.valueAxis().to, 5, 6);
+}
+
+void testSpeedFastDrive()
+{
+    Track track;
+    double time = kStartTime;
+    double north = 0;
+    track.begin(time);
+    go(track, time, north, 150 / 3.6, 600);
+    TrackChart chart(TrackChart::Speed);
+    chart.update(track);
+    expectBetween("speed fast drive: 150 km/h inside the axis",
+                  place(chart.valueAxis(), 150), 0.1, 0.9);
+    expectNear("speed fast drive: ticks even and on the axis",
+               ticksEven(chart.valueAxis()) ? 1 : 0, 1, 0);
+}
+
 void testFlat()
 {
     Track track;
@@ -329,6 +419,10 @@ int main()
     testStops();
     testStanding();
     testFastDrive();
+    testSteadyRide();
+    testSpeedStops();
+    testSpeedStanding();
+    testSpeedFastDrive();
     testFlat();
     testClimb();
     testNoAltitude();

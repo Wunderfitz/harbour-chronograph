@@ -31,11 +31,12 @@
 class QPolygonF;
 
 /**
- * One of an activity's values over its time - the pace or the elevation -
- * drawn as a line chart filling the item: a grid line at each of the value
- * axis's ticks, the line, broken where there is no value and at each pause,
- * and for the pace a dotted line at the average. In a replay the part up to
- * `progress` is drawn full and the rest faint, as on the map.
+ * One of an activity's values over its time - the pace, the speed or the
+ * elevation - drawn as a line chart filling the item: a grid line at each of
+ * the value axis's ticks, the line, broken where there is no value and at each
+ * pause, and for the pace and the speed a dotted line at the average. In a
+ * replay the part up to `progress` is drawn full and the rest faint, as on the
+ * map.
  *
  * What the axes stand for comes from TrackChart; the labels are left to QML,
  * which places them by the properties below.
@@ -56,7 +57,7 @@ class ChartLine : public QQuickPaintedItem
     /* Whether there is anything to draw at all. */
     Q_PROPERTY(bool hasValues READ hasValues NOTIFY scaleChanged)
     /* The values at the top and bottom edges - seconds per kilometre, upside
-     * down, or metres - and those to label. */
+     * down, kilometres per hour or metres - and those to label. */
     Q_PROPERTY(qreal topValue READ topValue NOTIFY scaleChanged)
     Q_PROPERTY(qreal bottomValue READ bottomValue NOTIFY scaleChanged)
     Q_PROPERTY(QVariantList valueTicks READ valueTicks NOTIFY scaleChanged)
@@ -67,7 +68,8 @@ class ChartLine : public QQuickPaintedItem
 public:
     enum Quantity {
         Pace = TrackChart::Pace,
-        Elevation = TrackChart::Elevation
+        Elevation = TrackChart::Elevation,
+        Speed = TrackChart::Speed
     };
     Q_ENUM(Quantity)
 

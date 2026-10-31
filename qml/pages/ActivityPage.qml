@@ -25,10 +25,10 @@ import "../js/Units.js" as Units
 
 // Records an activity, or replays one. Pushed without a fileName it starts the
 // receiver and waits for Start; with one it shows that stored activity. The
-// values take the upper half - or, swiped to, charts of the pace and the
-// elevation, and the distance over each land cover - the map the lower, and the control at the bottom follows the
-// activity: Start, then Pause or Resume - held to stop - and once it is over
-// a slider through it. Beside the button, until the stop, a switch for the
+// values take the upper half - or, swiped to, charts of the pace (tapped, the
+// speed) and the elevation, and the distance over each land cover - the map
+// the lower, and the control at the bottom follows the activity: Start, then
+// Pause or Resume - held to stop - and once it is over a slider through it. Beside the button, until the stop, a switch for the
 // auto-pause, which pauses and resumes the recording on its own.
 //
 // Leaving the page while recording stops the activity and stores it: Activity
@@ -318,11 +318,12 @@ Page {
             }
 
             // What the half page leaves: the values, or swiped to, the charts of
-            // the pace and the elevation over the activity's time, and the land
-            // cover - with a dot for each below, the one shown highlighted. In
-            // portrait it grows to fit the values, shrinking the map; in
-            // landscape there is nothing below to take the room from, so it
-            // keeps to the page, and the values scroll should they not fit.
+            // the pace or speed and the elevation over the activity's time, and
+            // the land cover - with a dot for each below, the one shown
+            // highlighted. In portrait it grows to fit the values, shrinking the
+            // map; in landscape there is nothing below to take the room from,
+            // so it keeps to the page, and the values scroll should they not
+            // fit.
             Item {
                 width: parent.width
                 height: page.isPortrait
@@ -480,19 +481,31 @@ Page {
                             width: views.itemWidth
                             height: views.itemHeight
 
+                            // The pace, or after a tap on it the speed; another
+                            // tap brings the pace back.
                             ActivityChart {
                                 id: paceChart
+
+                                property bool showSpeed
+
                                 x: Theme.horizontalPageMargin
                                 y: Theme.paddingSmall
                                 width: parent.width - 2 * Theme.horizontalPageMargin
                                 height: charts.chartHeight
                                 activity: activity
-                                quantity: ChartLine.Pace
+                                quantity: showSpeed ? ChartLine.Speed : ChartLine.Pace
                                 progress: page.finished ? activity.currentPoint : -1
                                 showTime: false
-                                label: qsTr("Pace")
-                                unit: "min/km"
+                                highlighted: speedSwitch.pressed && speedSwitch.containsMouse
+                                label: showSpeed ? qsTr("Speed") : qsTr("Pace")
+                                unit: showSpeed ? "km/h" : "min/km"
                                 emptyText: page.chartEmptyText
+
+                                MouseArea {
+                                    id: speedSwitch
+                                    anchors.fill: parent
+                                    onClicked: paceChart.showSpeed = !paceChart.showSpeed
+                                }
                             }
 
                             ActivityChart {
