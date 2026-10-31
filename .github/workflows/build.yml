@@ -1,0 +1,179 @@
+# Builds the RPMs for aarch64, armv7hl and i486 on every push to master - a
+# nightly, kept as the run's artifacts for 30 days - and for every tag on
+# master a GitHub release of the same name, the tag being the version.
+#
+# master and tags only, on purpose. Pull requests would build code from
+# outside the repository, and other branches are work in progress: neither
+# should quietly produce something that looks like a nightly or a release.
+# Nothing can be started by hand either, as that would run on any branch.
+
+name: Build RPMs
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - '*'
+
+permissions:
+  contents: read
+
+# A newer push to master supersedes a nightly still building; a release is
+# always seen through.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref == 'refs/heads/master' }}
+
+jobs:
+  version:
+    name: Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      release: ${{ steps.version.outputs.release }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+
+    steps:
+      # The whole history, to tell whether a tag's commit is on master.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # A nightly keeps the spec's Version and has to lose to the release it
+      # precedes: RPM compares Release field by field, so "0.<when>.git<commit>"
+      # sorts below a release's "1". A tag is the version itself, and must be a
+      # semantic version - a leading "v" is let pass and left out - on a commit
+      # that is on master; anything else stops here, before anything is built.
+      - name: Work out the version
+        id: version
+        run: |
+          set -euo pipefail
+          spec=rpm/harbour-chronograph.spec
+          spec_version="$(sed -n 's/^Version:[[:space:]]*//p' "$spec")"
+
+          if [[ "$GITHUB_REF" != refs/tags/* ]]; then
+              version="$spec_version"
+              release="0.$(date -u +%Y%m%d%H%M).git$(git rev-parse --short HEAD)"
+              prerelease=false
+          else
+              tag="$GITHUB_REF_NAME"
+              semver='^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-([0-9A-Za-z.-]+))?(\+([0-9A-Za-z.-]+))?$'
+              if ! [[ "$tag" =~ $semver ]]; then
+                  echo "::error::The tag $tag is not a semantic version (MAJOR.MINOR.PATCH)."
+                  exit 1
+              fi
+              core="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+              pre="${BASH_REMATCH[5]}"
+              build="${BASH_REMATCH[7]}"
+              if ! git merge-base --is-ancestor "$(git rev-parse "$GITHUB_REF^{commit}")" origin/master; then
+                  echo "::error::The tag $tag is not on master; no release is made from it."
+                  exit 1
+              fi
+
+              # RPM allows no hyphen in Version. A tilde sorts before the
+              # version without it, as a semantic pre-release does: 1.0.0~rc.1
+              # comes before 1.0.0. Hyphens within are made underscores.
+              version="$core"
+              [ -z "$pre" ] || version="$version~${pre//-/_}"
+              [ -z "$build" ] || version="$version+${build//-/_}"
+              release=1
+              prerelease="$([ -n "$pre" ] && echo true || echo false)"
+
+              # The tag decides the RPM's version; the rest of the sources
+              # should agree with it, or the app names another one.
+              about="$(sed -n 's/.*qsTr("Chronograph %1").arg("\([^"]*\)").*/\1/p' qml/pages/AboutPage.qml)"
+              changes="$(sed -n '1s/.* \([^ ]*\)-[^ -]*$/\1/p' rpm/harbour-chronograph.changes)"
+              [ "$spec_version" = "$version" ] || echo "::warning::The spec's Version is $spec_version, the tag says $version."
+              [ "$about" = "$version" ] || echo "::warning::The about page names version $about, the tag says $version."
+              [ "$changes" = "$version" ] || echo "::warning::The changelog's latest entry is for $changes, the tag says $version."
+          fi
+
+          echo "Version $version, release $release, prerelease $prerelease"
+          {
+              echo "version=$version"
+              echo "release=$release"
+              echo "prerelease=$prerelease"
+          } >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build ${{ matrix.arch }}
+    needs: version
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [aarch64, armv7hl, i486]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set the version
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          RELEASE: ${{ needs.version.outputs.release }}
+        run: |
+          set -eu
+          sed -i -e "s/^Version:.*/Version:    ${VERSION}/" \
+                 -e "s/^Release:.*/Release:    ${RELEASE}/" rpm/harbour-chronograph.spec
+          grep -E '^(Version|Release):' rpm/harbour-chronograph.spec
+
+      # 4.6.0.13 for every architecture: the oldest target the app supports,
+      # as for local builds (see CLAUDE.md). The action copies the sources
+      # without .git, so mb2 takes the version from the spec as set above.
+      # Pinned to a commit, as it runs its container privileged.
+      - name: Build
+        uses: coderus/github-sfos-build@7f0423ce7ad045b50e2d1b8926734fc9cd1e9a7c
+        with:
+          release: 4.6.0.13
+          arch: ${{ matrix.arch }}
+
+      - name: Upload the RPMs
+        uses: actions/upload-artifact@v4
+        with:
+          name: harbour-chronograph-${{ needs.version.outputs.version }}-${{ needs.version.outputs.release }}.${{ matrix.arch }}
+          path: RPMS/*.rpm
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: Release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download the RPMs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: harbour-chronograph-*
+          path: RPMS
+          merge-multiple: true
+
+      # The notes are the changelog's latest entry, if it is this version's;
+      # a run made again replaces the RPMs of a release already there.
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.version.outputs.version }}
+          PRERELEASE: ${{ needs.version.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+          tag="$GITHUB_REF_NAME"
+          ls -l RPMS
+          if head -n 1 rpm/harbour-chronograph.changes | grep -q " ${VERSION}-[^ -]*$"; then
+              awk 'NR > 1 && /^\* / { exit } NR > 1' rpm/harbour-chronograph.changes > notes.md
+          else
+              echo "Chronograph $tag." > notes.md
+          fi
+          if gh release view "$tag" > /dev/null 2>&1; then
+              gh release upload "$tag" RPMS/*.rpm --clobber
+          else
+              flags=()
+              [ "$PRERELEASE" != true ] || flags+=(--prerelease)
+              gh release create "$tag" RPMS/*.rpm --verify-tag --title "$tag" \
+                  --notes-file notes.md "${flags[@]}"
+          fi

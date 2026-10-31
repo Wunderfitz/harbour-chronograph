@@ -94,6 +94,12 @@ Decided 2026-10-29, at the project owner's request: the app goes to
 SailfishOS:Chum, built on the Sailfish OS OBS from a tag of this repository.
 Harbour-compliance stays the rule all the same.
 
+**Only an option so far** (the project owner's words, 2026-10-31): the
+repository is prepared for Chum, but Chronograph is **not live there
+yet**, and no one gets the app through Chum.
+Do not speak of changes "reaching Chum" with the next release, nor tell
+users to install it from there, until the project owner says it is live.
+
 - **Chum's metadata** is the last paragraph of the spec's `%description`,
   inside `%if 0%{?_chum}`, contiguous, with no blank or comment line in it
   ([Metadata.md](https://github.com/sailfishos-chum/main/blob/main/Metadata.md)).
@@ -1128,6 +1134,7 @@ the OS; like the sensorfw plugin it is not `Require`d, as Harbour would refuse i
 
 ```
 harbour-chronograph.pro       CONFIG += sailfishapp, QT += sensors, PKGCONFIG += keepalive
+.github/workflows/build.yml   nightly RPMs from master, releases from tags (GitHub Actions)
 harbour-chronograph.desktop   Sailjail: Permissions=Location;Internet (Location brings Sensors)
 src/main.cpp                  creates Database, the histories, StepCounter, then the view
 src/Database.*                the SQLite connection and the schema's migrations
@@ -1219,11 +1226,50 @@ cd ../build-harbour-chronograph-4.6.0.13-aarch64
 - `rpm/harbour-chronograph.changes` is the RPM changelog, newest first; sfdk
   appends it to the spec at build time.
 - **Bump the version in three places**: the spec, the changelog, and
-  `AboutPage.qml`'s label.
+  `AboutPage.qml`'s label. From the first tag on, a semantic version
+  (`0.4.0`, not `0.3`), the same as the tag - see below.
 - `sailfishapp_i18n` runs lupdate on `translations/` during `%install`. That
   rewrites `harbour-chronograph.ts` (the untracked template) and merges new
   strings into `harbour-chronograph-de.ts` as unfinished - translate them before
   committing.
+
+### Nightly builds and releases: GitHub Actions
+
+Decided 2026-10-31, at the project owner's request:
+`.github/workflows/build.yml` builds the RPMs for aarch64, armv7hl and i486
+on GitHub, in the way of Lauscher's nightly and Fernschreiber's releases.
+
+- **Only pushes to `master` and tags** start it. Never pull requests, other
+  branches or a run by hand (which could start from any branch) - the
+  project owner's rule; keep it so.
+- **A push to `master` is a nightly**: the spec's `Version`, `Release`
+  `0.<UTC time>.git<commit>`, so that it sorts below the release it
+  precedes. The RPMs are the run's artifacts, one per architecture, kept for
+  30 days; nothing is published.
+- **A tag is a release**, made only if it is a semantic version - a leading
+  `v` is let pass and left out of the RPM - on a commit that is on
+  `master`; otherwise the run fails before building. The tag is the RPM's
+  `Version`, with `Release` 1; RPM allows no hyphen there, so a
+  pre-release's becomes a tilde (`1.0.0-rc.1` → `1.0.0~rc.1`, which sorts
+  before `1.0.0`, as in semantic versioning) and the GitHub release is
+  marked a pre-release. The release is named as the tag, carries the three
+  RPMs, and has the changelog's latest entry as its notes if that entry is
+  this version's. Run again, it replaces the RPMs. A warning is shown
+  where the spec, the about page's label or the changelog name another
+  version than the tag: the RPM follows the tag, but the app would not.
+- **Built against 4.6.0.13 for every architecture**, the oldest supported
+  target, as locally, with `coderus/github-sfos-build` and its
+  `coderus/sailfishos-platform-sdk:4.6.0.13` image, which has all three
+  targets. It copies the sources without `.git`, so `mb2` takes the version
+  from the spec as the workflow sets it, not from the tags as `sfdk` would.
+  Pinned to a commit, as it runs its container privileged; update the pin
+  deliberately.
+- **Not run there**: the tests and `sfdk check`. Both stay local, as
+  described here.
+- Tried locally only, 2026-10-31: the version step against tags of every
+  kind (plain, `v`, pre-release, build metadata, annotated, not semantic,
+  off `master`) and the release step with a stub `gh`. The first real run
+  is the first push to `master`.
 
 ### Tests
 
