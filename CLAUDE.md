@@ -1264,8 +1264,16 @@ on GitHub, in the way of Lauscher's nightly and Fernschreiber's releases.
   from the spec as the workflow sets it, not from the tags as `sfdk` would.
   Pinned to a commit, as it runs its container privileged; update the pin
   deliberately.
-- **Not run there**: the tests and `sfdk check`. Both stay local, as
-  described here.
+- **Every unit test runs first** (decided 2026-11-01, at the project
+  owner's request), in a job of its own that the build needs: if any
+  suite fails, nothing is built or released. The host suites with the
+  runner's `g++`, at `-O2` and `-O0`; `tst_stephistory` and
+  `tst_activityhistory` in the same SDK image as the build, against the
+  4.6.0.13 i486 target - `mb2 build-init` and `build-requires reset` in a
+  copy of the sources give the build shell its QtSql without a build. The
+  recordings are not there, so `tst_stepdetector` skips them. A new suite
+  goes into the workflow as well as under [Tests](#tests).
+- **Not run there**: `sfdk check`. It stays local, as described here.
 - Tried locally only, 2026-10-31: the version step against tags of every
   kind (plain, `v`, pre-release, build metadata, annotated, not semantic,
   off `master`) and the release step with a stub `gh`. The first real run

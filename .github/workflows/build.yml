@@ -1,6 +1,7 @@
 # Builds the RPMs for aarch64, armv7hl and i486 on every push to master - a
 # nightly, kept as the run's artifacts for 30 days - and for every tag on
-# master a GitHub release of the same name, the tag being the version.
+# master a GitHub release of the same name, the tag being the version. All
+# unit tests run first; if any fails, nothing is built, nightly or release.
 #
 # master and tags only, on purpose. Pull requests would build code from
 # outside the repository, and other branches are work in progress: neither
@@ -96,9 +97,93 @@ jobs:
               echo "prerelease=$prerelease"
           } >> "$GITHUB_OUTPUT"
 
+  # Every test suite, as CLAUDE.md runs them locally: the host suites with the
+  # runner's g++, at -O2 and -O0, and the two that need QtSql and its SQLite
+  # driver in the same SDK image the build uses, against the i486 target.
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run the host suites
+        run: |
+          set -euo pipefail
+          out="$(mktemp -d)"
+          suite() {
+              local name="$1" sources=() opt s
+              shift
+              for s in "$@"; do sources+=("src/$s.cpp"); done
+              for opt in -O2 -O0; do
+                  echo "::group::$name $opt"
+                  g++ -std=c++11 -Wall -Wextra "$opt" -Isrc "tests/$name.cpp" \
+                      "${sources[@]}" -o "$out/$name"
+                  "$out/$name"
+                  echo "::endgroup::"
+              done
+          }
+          suite tst_stepdetector StepDetector
+          suite tst_track Track
+          suite tst_trackfilter TrackFilter Track
+          suite tst_trackchart TrackChart Track
+          suite tst_autopause AutoPause
+          suite tst_landcover LandCover
+          suite tst_achievements AchievementCatalogue
+
+      # The image's mb2 sets up a build tree in a copy of the sources and
+      # installs the spec's BuildRequires into the target, without building:
+      # the build shell then has Qt 5.6 with QtSql, as the local build engine
+      # does. Run privileged, as the build action runs it.
+      - name: Run the suites in the build engine
+        run: |
+          set -euo pipefail
+          docker run --rm -i --privileged -v "$GITHUB_WORKSPACE:/workspace:ro" \
+              coderus/sailfishos-platform-sdk:4.6.0.13 bash -s <<'OUTER'
+          set -euo pipefail
+          mkdir -p chronograph
+          cp -r /workspace/. chronograph/
+          cd chronograph
+          target=SailfishOS-4.6.0.13-i486
+          mb2 -t "$target" build-init
+          mb2 -t "$target" build-requires reset
+
+          cat > ../qt-tests.sh <<'EOF'
+          set -eu
+          S="$PWD" B="$PWD/../build-tests"
+          mkdir -p "$B"
+          QT_CFLAGS="$(pkg-config --cflags Qt5Sql | sed 's/-I/-isystem /g')"
+          QT_LIBS="$(pkg-config --libs Qt5Sql)"
+
+          echo "::group::tst_stephistory"
+          moc "$S/src/StepHistory.h" -o "$B/moc_StepHistory.cpp"
+          g++ -std=c++11 -Wall -Wextra -fPIC -I"$S/src" $QT_CFLAGS \
+              "$S/tests/tst_stephistory.cpp" "$S/src/Database.cpp" "$S/src/StepHistory.cpp" \
+              "$B/moc_StepHistory.cpp" $QT_LIBS -o "$B/tst_stephistory"
+          "$B/tst_stephistory"
+          echo "::endgroup::"
+
+          echo "::group::tst_activityhistory"
+          for h in ActivityHistory ActivityStatistics Achievements TrackSummaryReader; do
+              moc "$S/src/$h.h" -o "$B/moc_$h.cpp"
+          done
+          g++ -std=c++11 -Wall -Wextra -fPIC -I"$S/src" $QT_CFLAGS \
+              "$S/tests/tst_activityhistory.cpp" "$S/src/ActivityHistory.cpp" \
+              "$S/src/ActivityStatistics.cpp" "$S/src/Achievements.cpp" \
+              "$S/src/AchievementCatalogue.cpp" "$S/src/TrackSummaryReader.cpp" \
+              "$S/src/Database.cpp" "$S/src/Gpx.cpp" "$S/src/LandCover.cpp" "$S/src/Track.cpp" \
+              "$B/moc_ActivityHistory.cpp" "$B/moc_ActivityStatistics.cpp" \
+              "$B/moc_Achievements.cpp" "$B/moc_TrackSummaryReader.cpp" \
+              $QT_LIBS -o "$B/tst_activityhistory"
+          "$B/tst_activityhistory"
+          echo "::endgroup::"
+          EOF
+          mb2 -t "$target" build-shell sh ../qt-tests.sh
+          OUTER
+
   build:
     name: Build ${{ matrix.arch }}
-    needs: version
+    needs: [version, test]
     runs-on: ubuntu-latest
     strategy:
       matrix:
