@@ -60,7 +60,7 @@ Page {
             Label {
                 anchors.horizontalCenter: parent.horizontalCenter
                 // Bump together with rpm/harbour-chronograph.spec.
-                text: qsTr("Chronograph %1").arg("0.3")
+                text: qsTr("Chronograph %1").arg("0.3.0")
                 font.pixelSize: Theme.fontSizeExtraLarge
             }
 

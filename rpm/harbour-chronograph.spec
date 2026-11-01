@@ -1,6 +1,6 @@
 Name:       harbour-chronograph
 Summary:    Activity tracker for Sailfish OS
-Version:    0.3
+Version:    0.3.0
 Release:    1
 License:    GPLv3+
 URL:        https://github.com/Wunderfitz/harbour-chronograph

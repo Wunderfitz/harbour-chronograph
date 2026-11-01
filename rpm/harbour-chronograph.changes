@@ -1,4 +1,4 @@
-* Sat Oct 17 2026 Sebastian Wolf <sebastian@ygriega.de> 0.3-1
+* Sun Nov 01 2026 Sebastian Wolf <sebastian@ygriega.de> 0.3.0-1
 - Records runs, walks, bike rides, rowing and drives with GPS: duration,
   distance, current and average pace and speed, elevation and climb, with the
   position and the route on an OpenStreetMap map. Pause with a tap, stop by holding the button. Each
@@ -11,7 +11,8 @@
   the pace and the climb steady.
 - Swiping the values aside shows charts of the pace and the elevation over
   the activity's time, with the average pace as a dotted line; two dots
-  below say which is shown.
+  below say which is shown. A tap on the pace chart shows the speed in its
+  place, and another brings the pace back.
 - Deletes an activity from its context menu in the list or from the pulley
   menu of its page, after a ten-second countdown that a tap undoes.
 - While an activity is recorded, the cover shows its type, duration, distance
